@@ -1,0 +1,89 @@
+# Source: https://craigporteous.com/cicd-for-azure-data-factory-create-a-yaml-deployment-pipeline/
+
+parameters:
+  - name: name
+    type: string
+    displayName: Name of the environment
+  - name: instance_name
+    type: string
+  - name: env_path
+    type: string
+  - name: env
+    type: string  
+  - name: depends_on
+    type: string
+  - name: service_connection
+    type: string
+
+stages:
+- stage: Deploy_${{ parameters.name }}
+
+  variables:
+    data_factory_name: adf-ing-${{ parameters.env_path }}-${{ parameters.env }}-we-${{ parameters.instance_name }}
+    data_factory_resource_group_name: rg-ingestion-${{ parameters.env_path }}-we-${{ parameters.instance_name }}
+
+  dependsOn: ${{ parameters.depends_on }}
+  jobs:
+  - job: ADF_${{ parameters.name }}
+    displayName: ADF ${{ parameters.name }}
+    steps:
+    - task: DownloadPipelineArtifact@2
+      inputs:
+        artifact: 'IngestionADFArmTemplates'
+        path: '$(Pipeline.Workspace)'
+    
+    - task: AzureCLI@2
+      displayName: 'Lookup subscription id'
+      inputs:
+        azureSubscription: ${{ parameters.service_connection }}
+        scriptLocation: inlineScript
+        addSpnToEnvironment: true
+        scriptType: bash
+        inlineScript: |
+          set -evu
+          az config set extension.use_dynamic_install=yes_without_prompt
+
+          subscriptionId=$(az account list --query "[?isDefault].id" -o tsv)
+          echo "##vso[task.setvariable variable=subscriptionId]$subscriptionId"
+
+    - task: AzurePowerShell@5
+      displayName: 'Stop ADF triggers'
+      inputs:
+        azureSubscription: ${{ parameters.service_connection }}
+        ScriptType: 'FilePath'
+        ScriptPath: '$(Pipeline.Workspace)/PrePostDeploymentScript.ps1'
+        ScriptArguments:  -armTemplate "$(Pipeline.Workspace)/ARMTemplateForFactory.json"
+                          -ResourceGroupName $(data_factory_resource_group_name)
+                          -DataFactoryName $(data_factory_name)
+                          -predeployment $true
+                          -deleteDeployment $false
+        azurePowerShellVersion: 'LatestVersion'
+
+    - task: AzureResourceManagerTemplateDeployment@3
+      displayName: 'ARM Template deployment'
+      inputs:
+        deploymentScope: 'Resource Group'
+        azureResourceManagerConnection: ${{ parameters.service_connection }}
+        subscriptionId: $(subscriptionId)
+        action: 'Create Or Update Resource Group'
+        resourceGroupName: $(data_factory_resource_group_name)
+        location: 'NA'
+        templateLocation: 'Linked artifact'
+        csmFile: '$(Pipeline.Workspace)/ARMTemplateForFactory.json'
+        csmParametersFile: '$(Pipeline.Workspace)/ARMTemplateParametersForFactory.json'
+        overrideParameters: -factoryName $(data_factory_name)
+        deploymentMode: 'Incremental'
+
+    - task: AzurePowerShell@5
+      displayName: 'Clean resources and start ADF triggers'
+      inputs:
+        azureSubscription: ${{ parameters.service_connection }}
+        ScriptType: 'FilePath'
+        ScriptPath: '$(Pipeline.Workspace)/PrePostDeploymentScript.ps1'
+        ScriptArguments:  -armTemplate "$(Pipeline.Workspace)/ARMTemplateForFactory.json"
+                          -ResourceGroupName $(data_factory_resource_group_name)
+                          -DataFactoryName $(data_factory_name)
+                          -predeployment $false
+                          -deleteDeployment $true
+
+        azurePowerShellVersion: 'LatestVersion'

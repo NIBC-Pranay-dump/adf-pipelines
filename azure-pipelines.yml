@@ -1,0 +1,51 @@
+name: Ingestion Data Factory
+
+pr:
+  autoCancel: false
+
+trigger:
+  branches:
+    include:
+      - main
+    exclude:
+      - /**/*.md
+
+stages:
+- ${{ if or(eq(variables['Build.SourceBranch'], 'refs/heads/main'), eq(variables['Build.Reason'], 'Manual')) }}:
+  - template: azure_devops/templates/build-stage.yaml
+    parameters:
+      name: Build
+      service_connection: scn-sub-cdp-preprd-we-001
+      env_path: cdp-preprd
+      env: dev
+      instance_name: ojsu
+
+- ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/main') }}:
+  - template: azure_devops/templates/release-stage.yaml
+    parameters:
+      name: CDPPreProd
+      env_path: cdp-preprd
+      env: dev      
+      instance_name: ojsu
+      service_connection: scn-sub-cdp-preprd-we-001
+      depends_on: Build
+
+- ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/main') }}:
+  - template: azure_devops/templates/release-stage.yaml
+    parameters:
+      name: CDPPreProd
+      env_path: cdp-preprd
+      env: tst      
+      instance_name: ojsu
+      service_connection: scn-sub-cdp-preprd-we-001
+      depends_on: Build
+
+- ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/main') }}:
+  - template: azure_devops/templates/release-stage.yaml
+    parameters:
+      name: CDPPreProd
+      env_path: cdp-preprd
+      env: acp      
+      instance_name: ojsu
+      service_connection: scn-sub-cdp-preprd-we-001
+      depends_on: Build

@@ -1,0 +1,79 @@
+# Source: https://docs.microsoft.com/en-us/azure/data-factory/continuous-integration-deployment-improvements#create-an-azure-pipeline
+parameters:
+  - name: instance_name
+    type: string
+  - name: env_path
+    type: string
+  - name: env
+    type: string    
+  - name: service_connection
+    type: string
+  - name: name
+    type: string
+
+stages:
+- stage: Build
+  displayName: Build
+  dependsOn: []
+
+  variables:
+    data_factory_name: adf-ing-${{ parameters.env_path }}-${{ parameters.env }}-we-${{ parameters.instance_name }}
+    data_factory_resource_group_name: rg-ingestion-${{ parameters.env_path }}-we-${{ parameters.instance_name }}
+
+  jobs:
+  - job: build
+    displayName: Build the ARM templates
+    steps:
+    - task: AzureCLI@2
+      displayName: 'Lookup data factory id'
+      inputs:
+        azureSubscription: ${{ parameters.service_connection }}
+        scriptLocation: inlineScript
+        addSpnToEnvironment: true
+        scriptType: bash
+        inlineScript: |
+          set -evu
+          az config set extension.use_dynamic_install=yes_without_prompt
+
+          dataFactoryId=$(az datafactory show --resource-group ${{ variables.data_factory_resource_group_name }} --name ${{ variables.data_factory_name }} --query id -o tsv)
+          echo "##vso[task.setvariable variable=dataFactoryId]$dataFactoryId"
+
+    - task: NodeTool@0
+      inputs:
+        versionSpec: '18.x'
+      displayName: 'Install Node.js'
+
+    - task: Npm@1
+      inputs:
+        command: 'install'
+        workingDir: '$(Build.Repository.LocalPath)/build'
+        verbose: true
+      displayName: 'Install npm package'
+
+    - task: Npm@1
+      inputs:
+        command: 'custom'
+        workingDir: '$(Build.Repository.LocalPath)/build'
+        customCommand: 'run build validate $(Build.Repository.LocalPath)/ $(dataFactoryId)'
+      displayName: 'Validate'
+
+    - task: Npm@1
+      inputs:
+        command: 'custom'
+        workingDir: '$(Build.Repository.LocalPath)/build'
+        customCommand: 'run build export $(Build.Repository.LocalPath)/ $(dataFactoryId) "ArmTemplate"'
+      displayName: 'Generate ARM template'
+      
+    - bash: |
+        # set triggersDeployed and deletedintegrationruntimes to an empty list to prevent this pipeline from removing them
+        # those are managed by terraform in the infra repo/metadata repo
+        sed -i 's/$triggersDeployed = Get-SortedTrigger.*/$triggersDeployed = @()/' PrePostDeploymentScript.ps1
+        sed -i 's/Write-Host "Deleting integration runtimes"/$deletedintegrationruntimes = @()/' PrePostDeploymentScript.ps1
+      workingDirectory: $(Build.Repository.LocalPath)/build/ArmTemplate
+      displayName: Disable trigger deletions
+
+    - task: PublishPipelineArtifact@1
+      inputs:
+        targetPath: '$(Build.Repository.LocalPath)/build/ArmTemplate'
+        artifact: 'IngestionADFArmTemplates'
+        publishLocation: 'pipeline'  
