@@ -1,0 +1,37 @@
+{
+	"name": "adf-ing-cdp-preprd-dev-we-ojsu",
+	"properties": {
+		"globalParameters": {
+			"key_vault_uri": {
+				"type": "String",
+				"value": "https://kv-ing-cdp-preprd-dev-we.vault.azure.net/"
+			},
+			"storage_account_backup_uri": {
+				"type": "String",
+				"value": "https://stbackupcdppreprdweojsu.dfs.core.windows.net/"
+			},
+			"storage_account_data_factory_uri": {
+				"type": "String",
+				"value": "https://stingcdppreprddevweojsu.blob.core.windows.net/"
+			},
+			"storage_account_datalake_uri": {
+				"type": "String",
+				"value": "https://stdatalakecdppreprdweojs.dfs.core.windows.net/"
+			},
+			"storage_container_data_factory": {
+				"type": "String",
+				"value": "internal"
+			},
+			"storage_container_datalake": {
+				"type": "String",
+				"value": "ingestion-dev"
+			}
+		}
+	},
+	"location": "westeurope",
+	"identity": {
+		"type": "SystemAssigned",
+		"principalId": "faf4e804-01fb-4f10-a5ee-6b8486510739",
+		"tenantId": "8614d95f-762b-4789-a741-2589e3d0b08b"
+	}
+}
