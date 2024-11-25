@@ -107,6 +107,9 @@
 				"defaultValue": "sql-connection-string-edw-dev"
 			}
 		},
+		"folder": {
+			"name": "on_prem"
+		},
 		"annotations": [],
 		"lastPublishTime": "2024-02-08T15:34:06Z"
 	},

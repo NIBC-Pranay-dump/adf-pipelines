@@ -312,6 +312,9 @@
 				"type": "String"
 			}
 		},
+		"folder": {
+			"name": "cloud"
+		},
 		"annotations": [],
 		"lastPublishTime": "2024-02-08T15:34:06Z"
 	},
