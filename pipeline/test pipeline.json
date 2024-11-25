@@ -1,9 +1,9 @@
 {
-	"name": "pipeline1",
+	"name": "test pipeline",
 	"properties": {
 		"activities": [
 			{
-				"name": "convert XML to parquet",
+				"name": "test writing to ingestion container",
 				"description": "Copy XML data to a flattened parquet file, adding the file_name and download_timestamp columns",
 				"type": "Copy",
 				"dependsOn": [],
@@ -38,8 +38,12 @@
 					},
 					"enableStaging": false,
 					"translator": {
-						"value": "@json(string(pipeline().parameters.column_mapping))",
-						"type": "Expression"
+						"type": "TabularTranslator",
+						"typeConversion": true,
+						"typeConversionSettings": {
+							"allowDataTruncation": true,
+							"treatBooleanAsNumber": false
+						}
 					}
 				},
 				"inputs": [
