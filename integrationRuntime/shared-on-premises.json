@@ -4,7 +4,7 @@
 		"type": "SelfHosted",
 		"typeProperties": {
 			"linkedInfo": {
-				"resourceId": "/subscriptions/d12cd7ca-ec96-4566-8890-89f3194d1169/resourceGroups/rg-ingestion-cdp-preprd-we-ojsu/providers/Microsoft.DataFactory/factories/adf-ingestion-cdp-preprd-we-ojsu/integrationruntimes/dev",
+				"resourceId": "/subscriptions/0286f6a8-8caa-4f73-bc6e-e5da3422fcf1/resourceGroups/rg-ingestion-dev-we-nwgm/providers/Microsoft.DataFactory/factories/adf-ingestion-dev-we-nwgm/integrationruntimes/self-hosted-runtime",
 				"authorizationType": "Rbac"
 			},
 			"selfContainedInteractiveAuthoringEnabled": false
