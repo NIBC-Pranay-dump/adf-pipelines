@@ -18,22 +18,6 @@
 				"typeProperties": {
 					"source": {
 						"type": "ParquetSource",
-						"additionalColumns": [
-							{
-								"name": "file_name",
-								"value": {
-									"value": "@variables('file_name')",
-									"type": "Expression"
-								}
-							},
-							{
-								"name": "download_timestamp",
-								"value": {
-									"value": "@variables('download_timestamp')",
-									"type": "Expression"
-								}
-							}
-						],
 						"storeSettings": {
 							"type": "AzureBlobFSReadSettings",
 							"recursive": true,
