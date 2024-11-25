@@ -1,0 +1,16 @@
+{
+	"name": "ls_key_vault_no_shir",
+	"type": "Microsoft.DataFactory/factories/linkedservices",
+	"properties": {
+		"parameters": {
+			"key_vault_uri": {
+				"type": "string"
+			}
+		},
+		"annotations": [],
+		"type": "AzureKeyVault",
+		"typeProperties": {
+			"baseUrl": "@{linkedService().key_vault_uri}"
+		}
+	}
+}

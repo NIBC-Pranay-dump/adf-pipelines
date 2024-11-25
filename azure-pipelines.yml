@@ -11,7 +11,7 @@ trigger:
       - /**/*.md
 
 stages:
-- ${{ if or(eq(variables['Build.SourceBranch'], 'refs/heads/main'), eq(variables['Build.Reason'], 'Manual')) }}:
+- ${{ if or(eq(variables['Build.SourceBranch'], 'refs/heads/main'), eq(variables['Build.Reason'], 'PullRequest'), eq(variables['Build.Reason'], 'Manual')) }}:
   - template: azure_devops/templates/build-stage.yaml
     parameters:
       name: Build

@@ -1,0 +1,16 @@
+{
+	"name": "ls_adls_auto_resolve",
+	"properties": {
+		"parameters": {
+			"storage_account_uri": {
+				"type": "string"
+			}
+		},
+		"annotations": [],
+		"type": "AzureBlobFS",
+		"typeProperties": {
+			"url": "@{linkedService().storage_account_uri}"
+		}
+	},
+	"type": "Microsoft.DataFactory/factories/linkedservices"
+}

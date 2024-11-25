@@ -1,0 +1,50 @@
+{
+	"name": "ds_sql_server_on_prem",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "ls_sql_server_on_prem",
+			"type": "LinkedServiceReference",
+			"parameters": {
+				"key_vault_uri": {
+					"value": "@dataset().key_vault_uri",
+					"type": "Expression"
+				},
+				"connection_string_secret_name": {
+					"value": "@dataset().connection_string_secret_name",
+					"type": "Expression"
+				}
+			}
+		},
+		"parameters": {
+			"schema_name": {
+				"type": "string"
+			},
+			"table_name": {
+				"type": "string"
+			},
+			"key_vault_uri": {
+				"type": "string"
+			},
+			"connection_string_secret_name": {
+				"type": "string"
+			}
+		},
+		"folder": {
+			"name": "on_prem"
+		},
+		"annotations": [],
+		"type": "SqlServerTable",
+		"schema": [],
+		"typeProperties": {
+			"schema": {
+				"value": "@dataset().schema_name",
+				"type": "Expression"
+			},
+			"table": {
+				"value": "@dataset().table_name",
+				"type": "Expression"
+			}
+		}
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}
