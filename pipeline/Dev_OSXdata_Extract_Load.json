@@ -1,0 +1,7 @@
+{
+	"name": "Dev_OSXdata_Extract_Load",
+	"properties": {
+		"description": "Extract data from OSX FSDB_NIBC on-prem database",
+		"annotations": []
+	}
+}
