@@ -9,7 +9,7 @@
 		"annotations": [],
 		"type": "AzureKeyVault",
 		"typeProperties": {
-			"baseUrl": "https://kv-shir-preprd-we-ojsu.vault.azure.net/"
+			"baseUrl": "@{linkedService().key_vault_uri}"
 		}
 	},
 	"type": "Microsoft.DataFactory/factories/linkedservices"
