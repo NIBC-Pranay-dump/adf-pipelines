@@ -3,14 +3,24 @@
 	"properties": {
 		"linkedServiceName": {
 			"referenceName": "SqlServer1",
-			"type": "LinkedServiceReference"
+			"type": "LinkedServiceReference",
+			"parameters": {
+				"key_vault_uri": "@dataset().key_vault_uri",
+				"connection_string_secret_name": "@dataset().connection_string_secret_name"
+			}
 		},
 		"annotations": [],
 		"type": "SqlServerTable",
 		"schema": [],
 		"typeProperties": {
-			"schema": "@dataset().schema_name",
-			"table": "@dataset().table_name"
+			"schema": {
+				"value": "@dataset().schema_name",
+				"type": "Expression"
+			},
+			"table": {
+				"value": "@dataset().table_name",
+				"type": "Expression"
+			}
 		}
 	}
 }
