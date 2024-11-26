@@ -11,5 +11,6 @@
 		"typeProperties": {
 			"baseUrl": "https://kv-shir-preprd-we-ojsu.vault.azure.net/"
 		}
-	}
+	},
+	"type": "Microsoft.DataFactory/factories/linkedservices"
 }
