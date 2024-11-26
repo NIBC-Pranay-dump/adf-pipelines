@@ -4,7 +4,7 @@
 		"description": "Extract data from OSX FSDB_NIBC on-prem database",
 		"activities": [
 			{
-				"name": "Copy_OSX_Data",
+				"name": "Copy data1",
 				"type": "Copy",
 				"dependsOn": [],
 				"policy": {
@@ -25,8 +25,14 @@
 				},
 				"inputs": [
 					{
-						"referenceName": "SqlServerTable2",
-						"type": "DatasetReference"
+						"referenceName": "SqlServerTable1",
+						"type": "DatasetReference",
+						"parameters": {
+							"schema_name": "@pipeline().parameters.datastore_name",
+							"table_name": "@pipeline().parameters.dataset_name",
+							"key_vault_uri": "@pipeline().globalParameters.key_vault_uri",
+							"connection_string_secret_name": "@pipeline().parameters.connection_string_secret_name"
+						}
 					}
 				]
 			}
