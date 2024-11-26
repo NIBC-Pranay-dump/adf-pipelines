@@ -3,7 +3,11 @@
 	"properties": {
 		"linkedServiceName": {
 			"referenceName": "SqlServer1",
-			"type": "LinkedServiceReference"
+			"type": "LinkedServiceReference",
+			"parameters": {
+				"key_vault_uri": "@dataset().key_vault_uri",
+				"connection_string_secret_name": "@dataset().connection_string_secret_name"
+			}
 		},
 		"parameters": {
 			"schema_name": {
