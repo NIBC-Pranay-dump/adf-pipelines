@@ -1,0 +1,6 @@
+{
+	"name": "integrationRuntime-OSX-DEV-fsdb-nibc",
+	"properties": {
+		"type": "SelfHosted"
+	}
+}
