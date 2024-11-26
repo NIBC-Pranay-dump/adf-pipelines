@@ -1,6 +1,14 @@
 {
 	"name": "SqlServer1",
 	"properties": {
+		"parameters": {
+			"key_vault_uri": {
+				"type": "string"
+			},
+			"connection_string_secret_name": {
+				"type": "string"
+			}
+		},
 		"annotations": [],
 		"type": "SqlServer",
 		"typeProperties": {
@@ -13,7 +21,10 @@
 						"key_vault_uri": "@linkedService().key_vault_uri"
 					}
 				},
-				"secretName": "@linkedService().connection_string_secret_name"
+				"secretName": {
+					"value": "@linkedService().connection_string_secret_name",
+					"type": "Expression"
+				}
 			}
 		},
 		"connectVia": {
