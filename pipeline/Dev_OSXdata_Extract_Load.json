@@ -2,6 +2,24 @@
 	"name": "Dev_OSXdata_Extract_Load",
 	"properties": {
 		"description": "Extract data from OSX FSDB_NIBC on-prem database",
+		"parameters": {
+			"OSX_DEV_Server": {
+				"type": "string",
+				"defaultValue": "SVNIBCSQLD027,11433"
+			},
+			"Database": {
+				"type": "string",
+				"defaultValue": "fsdb_nibc"
+			},
+			"ExtractUserId": {
+				"type": "string",
+				"defaultValue": "SRV_OSX-SBI-DEV"
+			},
+			"ExtractUserPassword": {
+				"type": "string",
+				"defaultValue": "K#onN3s7&p*8V"
+			}
+		},
 		"annotations": []
 	}
 }
