@@ -4,7 +4,7 @@
 		"description": "Extract data from OSX FSDB_NIBC on-prem database",
 		"activities": [
 			{
-				"name": "Copy data1",
+				"name": "Copy_OSX_Data",
 				"type": "Copy",
 				"dependsOn": [],
 				"policy": {
@@ -16,8 +16,19 @@
 				},
 				"userProperties": [],
 				"typeProperties": {
+					"source": {
+						"type": "SqlServerSource",
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
+					},
 					"enableStaging": false
-				}
+				},
+				"inputs": [
+					{
+						"referenceName": "SqlServerTable2",
+						"type": "DatasetReference"
+					}
+				]
 			}
 		],
 		"parameters": {
