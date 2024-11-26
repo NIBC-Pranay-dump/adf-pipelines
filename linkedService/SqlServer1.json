@@ -1,0 +1,21 @@
+{
+	"name": "SqlServer1",
+	"type": "Microsoft.DataFactory/factories/linkedservices",
+	"properties": {
+		"annotations": [],
+		"type": "SqlServer",
+		"typeProperties": {
+			"server": "SVNIBCSQLD027,11433",
+			"database": "fsdb_nibc",
+			"encrypt": "mandatory",
+			"trustServerCertificate": false,
+			"authenticationType": "SQL",
+			"userName": "SRV_OSX-SBI-DEV",
+			"encryptedCredential": "eyJDcmVkZW50aWFsSWQiOiIwZDgyNTY4Ni0zYWE2LTRlMDYtYjU0Ni03OGU5ZWUyZjJiZGUiLCJWZXJzaW9uIjoiMi4wIiwiQ2xhc3NUeXBlIjoiTWljcm9zb2Z0LkRhdGFQcm94eS5Db3JlLkludGVyU2VydmljZURhdGFDb250cmFjdC5DcmVkZW50aWFsU1UwNkNZMTQifQ=="
+		},
+		"connectVia": {
+			"referenceName": "shared-on-premises",
+			"type": "IntegrationRuntimeReference"
+		}
+	}
+}
