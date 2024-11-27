@@ -39,3 +39,4 @@ stages:
       instance_name: kutk
       service_connection: sscn-cdp-prd-we-001
       depends_on: Build
+      shared_ir_resource_id: /subscriptions/50c97cee-4d5e-44b3-ba85-6b12b2634abe/resourcegroups/rg-ingestion-cdp-prd-we-kutk/providers/Microsoft.DataFactory/factories/adf-ingestion-cdp-prd-we-kutk/integrationruntimes/prd
