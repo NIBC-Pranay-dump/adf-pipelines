@@ -16,7 +16,7 @@ parameters:
     type: string
 
 stages:
-- stage: Deploy_${{ parameters.name }}
+- stage: Deploy_${{ parameters.name }}_${{ parameters.env }}
 
   variables:
     data_factory_name: adf-ing-${{ parameters.env_path }}-${{ parameters.env }}-we-${{ parameters.instance_name }}
@@ -24,7 +24,7 @@ stages:
 
   dependsOn: ${{ parameters.depends_on }}
   jobs:
-  - job: ADF_${{ parameters.name }}
+  - job: ADF_${{ parameters.name }}_${{ parameters.env }}
     displayName: ADF ${{ parameters.name }}
     steps:
     - task: DownloadPipelineArtifact@2

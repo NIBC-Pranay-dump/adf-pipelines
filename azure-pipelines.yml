@@ -38,7 +38,7 @@ stages:
       env: tst      
       instance_name: ojsu
       service_connection: scn-sub-cdp-preprd-we-001
-      depends_on: Build
+      depends_on: Deploy_CDPPreProd_dev
 
 - ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/main') }}:
   - template: azure_devops/templates/release-stage.yaml
@@ -48,4 +48,4 @@ stages:
       env: acp      
       instance_name: ojsu
       service_connection: scn-sub-cdp-preprd-we-001
-      depends_on: Build
+      depends_on: Deploy_CDPPreProd_tst
