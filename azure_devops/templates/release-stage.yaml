@@ -18,7 +18,7 @@ parameters:
     type: string
 
 stages:
-- stage: Deploy_${{ parameters.name }}_${{ parameters.env }}
+- stage: ${{ parameters.name }}
 
   variables:
     data_factory_name: adf-ing-${{ parameters.env_path }}-${{ parameters.env }}-we-${{ parameters.instance_name }}
@@ -26,7 +26,7 @@ stages:
 
   dependsOn: ${{ parameters.depends_on }}
   jobs:
-  - job: ADF_${{ parameters.name }}_${{ parameters.env }}
+  - job: ADF_${{ parameters.name }}
     displayName: ADF ${{ parameters.name }}
     steps:
     - task: DownloadPipelineArtifact@2
@@ -73,7 +73,7 @@ stages:
         templateLocation: 'Linked artifact'
         csmFile: '$(Pipeline.Workspace)/ARMTemplateForFactory.json'
         csmParametersFile: '$(Pipeline.Workspace)/ARMTemplateParametersForFactory.json'
-        overrideParameters: -factoryName $(data_factory_name) -shared-on-premises_properties_typeProperties_linkedInfo_resourceId $(shared_ir_resource_id)
+        overrideParameters: -factoryName $(data_factory_name) -shared-on-premises_properties_typeProperties_linkedInfo_resourceId ${{ parameters.shared_ir_resource_id }}
         deploymentMode: 'Incremental'
 
     - task: AzurePowerShell@5
