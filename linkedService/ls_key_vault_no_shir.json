@@ -1,6 +1,5 @@
 {
 	"name": "ls_key_vault_no_shir",
-	"type": "Microsoft.DataFactory/factories/linkedservices",
 	"properties": {
 		"parameters": {
 			"key_vault_uri": {
@@ -12,5 +11,6 @@
 		"typeProperties": {
 			"baseUrl": "@{linkedService().key_vault_uri}"
 		}
-	}
+	},
+	"type": "Microsoft.DataFactory/factories/linkedservices"
 }
