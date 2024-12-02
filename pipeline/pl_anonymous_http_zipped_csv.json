@@ -1,0 +1,346 @@
+{
+	"name": "pl_anonymous_http_zipped_csv",
+	"properties": {
+		"description": "Example usage: download zipped csv file from CBS website",
+		"activities": [
+			{
+				"name": "Unpack Zip",
+				"description": "Then we can extract each csv file in the zip",
+				"type": "Copy",
+				"dependsOn": [
+					{
+						"activity": "Download Zip",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "DelimitedTextSource",
+						"storeSettings": {
+							"type": "AzureBlobStorageReadSettings",
+							"recursive": true,
+							"wildcardFolderPath": {
+								"value": "@concat(\n    'datastore_', pipeline().parameters.datastore_name,\n    '/dataset_', pipeline().parameters.dataset_name,'_zip'\n)",
+								"type": "Expression"
+							},
+							"wildcardFileName": {
+								"value": "@pipeline().parameters.zip_file_name",
+								"type": "Expression"
+							},
+							"enablePartitionDiscovery": false
+						},
+						"formatSettings": {
+							"type": "DelimitedTextReadSettings",
+							"compressionProperties": {
+								"type": "ZipDeflateReadSettings",
+								"preserveZipFileNameAsFolder": false
+							}
+						}
+					},
+					"sink": {
+						"type": "DelimitedTextSink",
+						"storeSettings": {
+							"type": "AzureBlobStorageWriteSettings"
+						},
+						"formatSettings": {
+							"type": "DelimitedTextWriteSettings",
+							"quoteAllText": true,
+							"fileExtension": ".txt"
+						}
+					},
+					"enableStaging": false
+				},
+				"inputs": [
+					{
+						"referenceName": "ds_blob_zipped_csv_unpack_auto_resolve",
+						"type": "DatasetReference",
+						"parameters": {
+							"storage_account_uri": {
+								"value": "@pipeline().globalParameters.storage_account_data_factory_uri",
+								"type": "Expression"
+							},
+							"container_name": {
+								"value": "@pipeline().globalParameters.storage_container_data_factory",
+								"type": "Expression"
+							},
+							"datastore_name": {
+								"value": "@pipeline().parameters.datastore_name",
+								"type": "Expression"
+							},
+							"column_delimiter": ",",
+							"encoding": "UTF-8",
+							"first_row_as_header": true
+						}
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "ds_blob_csv_auto_resolve_no_filename",
+						"type": "DatasetReference",
+						"parameters": {
+							"storage_account_uri": {
+								"value": "@pipeline().globalParameters.storage_account_data_factory_uri",
+								"type": "Expression"
+							},
+							"container_name": {
+								"value": "@pipeline().globalParameters.storage_container_data_factory",
+								"type": "Expression"
+							},
+							"datastore_name": {
+								"value": "@pipeline().parameters.datastore_name",
+								"type": "Expression"
+							},
+							"dataset_name": {
+								"value": "@concat(pipeline().parameters.dataset_name,'_unzip')",
+								"type": "Expression"
+							},
+							"file_name": "teststs",
+							"column_delimiter": ",",
+							"encoding": "UTF-8",
+							"first_row_as_header": true
+						}
+					}
+				]
+			},
+			{
+				"name": "CSV to parquet",
+				"description": "And then we can write it to parquet",
+				"type": "Copy",
+				"dependsOn": [
+					{
+						"activity": "Unpack Zip",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "DelimitedTextSource",
+						"storeSettings": {
+							"type": "AzureBlobStorageReadSettings",
+							"recursive": false,
+							"enablePartitionDiscovery": false
+						},
+						"formatSettings": {
+							"type": "DelimitedTextReadSettings"
+						}
+					},
+					"sink": {
+						"type": "ParquetSink",
+						"storeSettings": {
+							"type": "AzureBlobFSWriteSettings",
+							"copyBehavior": "FlattenHierarchy"
+						},
+						"formatSettings": {
+							"type": "ParquetWriteSettings"
+						}
+					},
+					"enableStaging": false
+				},
+				"inputs": [
+					{
+						"referenceName": "ds_blob_csv_azure_shir",
+						"type": "DatasetReference",
+						"parameters": {
+							"storage_account_uri": {
+								"value": "@pipeline().globalParameters.storage_account_data_factory_uri",
+								"type": "Expression"
+							},
+							"container_name": {
+								"value": "@pipeline().globalParameters.storage_container_data_factory",
+								"type": "Expression"
+							},
+							"datastore_name": {
+								"value": "@pipeline().parameters.datastore_name",
+								"type": "Expression"
+							},
+							"dataset_name": {
+								"value": "@concat(pipeline().parameters.dataset_name,'_unzip')",
+								"type": "Expression"
+							},
+							"file_name": {
+								"value": "@pipeline().parameters.csv_file_name",
+								"type": "Expression"
+							},
+							"column_delimiter": {
+								"value": "@pipeline().parameters.column_delimiter",
+								"type": "Expression"
+							},
+							"encoding": {
+								"value": "@pipeline().parameters.encoding",
+								"type": "Expression"
+							},
+							"first_row_as_header": {
+								"value": "@pipeline().parameters.first_row_as_header",
+								"type": "Expression"
+							}
+						}
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "ds_adls_parquet_auto_resolve",
+						"type": "DatasetReference",
+						"parameters": {
+							"datastore_name": {
+								"value": "@pipeline().parameters.datastore_name",
+								"type": "Expression"
+							},
+							"dataset_name": {
+								"value": "@pipeline().parameters.dataset_name",
+								"type": "Expression"
+							},
+							"storage_account_uri": {
+								"value": "@pipeline().globalParameters.storage_account_datalake_uri",
+								"type": "Expression"
+							},
+							"container_name": {
+								"value": "@pipeline().globalParameters.storage_container_datalake",
+								"type": "Expression"
+							},
+							"file_name": {
+								"value": "@pipeline().parameters.dataset_name",
+								"type": "Expression"
+							}
+						}
+					}
+				]
+			},
+			{
+				"name": "Download Zip",
+				"description": "First we need to download the complete zip file",
+				"type": "Copy",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "BinarySource",
+						"storeSettings": {
+							"type": "HttpReadSettings",
+							"requestMethod": "GET"
+						},
+						"formatSettings": {
+							"type": "BinaryReadSettings"
+						}
+					},
+					"sink": {
+						"type": "BinarySink",
+						"storeSettings": {
+							"type": "AzureBlobStorageWriteSettings"
+						}
+					},
+					"enableStaging": false
+				},
+				"inputs": [
+					{
+						"referenceName": "ds_anonymous_http_binary_auto_resolve",
+						"type": "DatasetReference",
+						"parameters": {
+							"base_url": {
+								"value": "@pipeline().parameters.base_url",
+								"type": "Expression"
+							},
+							"relative_url": {
+								"value": "@pipeline().parameters.relative_url",
+								"type": "Expression"
+							}
+						}
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "ds_blob_binary_auto_resolve",
+						"type": "DatasetReference",
+						"parameters": {
+							"storage_account_uri": {
+								"value": "@pipeline().globalParameters.storage_account_data_factory_uri",
+								"type": "Expression"
+							},
+							"container_name": {
+								"value": "@pipeline().globalParameters.storage_container_data_factory",
+								"type": "Expression"
+							},
+							"datastore_name": {
+								"value": "@pipeline().parameters.datastore_name",
+								"type": "Expression"
+							},
+							"dataset_name": {
+								"value": "@concat(pipeline().parameters.dataset_name,'_zip')",
+								"type": "Expression"
+							},
+							"file_name": {
+								"value": "@pipeline().parameters.zip_file_name",
+								"type": "Expression"
+							}
+						}
+					}
+				]
+			}
+		],
+		"parameters": {
+			"base_url": {
+				"type": "string",
+				"defaultValue": "https://download.cbs.nl"
+			},
+			"relative_url": {
+				"type": "string",
+				"defaultValue": "postcode/2024-cbs-pc6huisnr20240801_buurt.zip"
+			},
+			"zip_file_name": {
+				"type": "string",
+				"defaultValue": "2024-cbs-pc6huisnr20240801_buurt.zip"
+			},
+			"csv_file_name": {
+				"type": "string",
+				"defaultValue": "pc6hnr20240801_gwb.csv"
+			},
+			"datastore_name": {
+				"type": "string",
+				"defaultValue": "cbs"
+			},
+			"dataset_name": {
+				"type": "string",
+				"defaultValue": "pc6huisnr20240801_buurt"
+			},
+			"column_delimiter": {
+				"type": "string",
+				"defaultValue": ","
+			},
+			"encoding": {
+				"type": "string",
+				"defaultValue": "UTF-8"
+			},
+			"first_row_as_header": {
+				"type": "bool",
+				"defaultValue": true
+			}
+		},
+		"annotations": []
+	}
+}

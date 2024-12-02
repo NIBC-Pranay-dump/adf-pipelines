@@ -1,0 +1,47 @@
+{
+	"name": "ls_fileserver_on_prem",
+	"properties": {
+		"description": "Service to connect to a file server",
+		"parameters": {
+			"key_vault_uri": {
+				"type": "string"
+			},
+			"fileserver_password_secret_name": {
+				"type": "string"
+			},
+			"host_name": {
+				"type": "string"
+			},
+			"user_name": {
+				"type": "string"
+			}
+		},
+		"annotations": [],
+		"type": "FileServer",
+		"typeProperties": {
+			"host": "@{linkedService().host_name}",
+			"userId": "@{linkedService().user_name}",
+			"password": {
+				"type": "AzureKeyVaultSecret",
+				"store": {
+					"referenceName": "ls_key_vault_no_shir",
+					"type": "LinkedServiceReference",
+					"parameters": {
+						"key_vault_uri": {
+							"value": "@linkedService().key_vault_uri",
+							"type": "Expression"
+						}
+					}
+				},
+				"secretName": {
+					"value": "@linkedService().fileserver_password_secret_name",
+					"type": "Expression"
+				}
+			}
+		},
+		"connectVia": {
+			"referenceName": "shared-on-premises",
+			"type": "IntegrationRuntimeReference"
+		}
+	}
+}

@@ -1,0 +1,69 @@
+{
+	"name": "ds_blob_zipped_csv_unpack_auto_resolve",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "ls_blob_auto_resolve",
+			"type": "LinkedServiceReference",
+			"parameters": {
+				"storage_account_uri": {
+					"value": "@dataset().storage_account_uri",
+					"type": "Expression"
+				}
+			}
+		},
+		"parameters": {
+			"storage_account_uri": {
+				"type": "string"
+			},
+			"container_name": {
+				"type": "string"
+			},
+			"datastore_name": {
+				"type": "string"
+			},
+			"column_delimiter": {
+				"type": "string",
+				"defaultValue": ","
+			},
+			"encoding": {
+				"type": "string",
+				"defaultValue": "UTF-8"
+			},
+			"first_row_as_header": {
+				"type": "bool",
+				"defaultValue": true
+			}
+		},
+		"folder": {
+			"name": "auto_resolve"
+		},
+		"annotations": [],
+		"type": "DelimitedText",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobStorageLocation",
+				"container": {
+					"value": "@dataset().container_name",
+					"type": "Expression"
+				}
+			},
+			"columnDelimiter": {
+				"value": "@dataset().column_delimiter",
+				"type": "Expression"
+			},
+			"compressionCodec": "ZipDeflate",
+			"compressionLevel": "Optimal",
+			"encodingName": {
+				"value": "@dataset().encoding",
+				"type": "Expression"
+			},
+			"escapeChar": "\\",
+			"firstRowAsHeader": {
+				"value": "@dataset().first_row_as_header",
+				"type": "Expression"
+			},
+			"quoteChar": "\""
+		},
+		"schema": []
+	}
+}

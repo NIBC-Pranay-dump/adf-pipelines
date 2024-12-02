@@ -1,0 +1,86 @@
+{
+	"name": "ds_sftp_binary_azure_shir",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "ls_sftp_ssh_azure_shir",
+			"type": "LinkedServiceReference",
+			"parameters": {
+				"host": {
+					"value": "@dataset().host",
+					"type": "Expression"
+				},
+				"port": {
+					"value": "@dataset().port",
+					"type": "Expression"
+				},
+				"fingerprint": {
+					"value": "@dataset().fingerprint",
+					"type": "Expression"
+				},
+				"username": {
+					"value": "@dataset().username",
+					"type": "Expression"
+				},
+				"key_vault_uri": {
+					"value": "@dataset().key_vault_uri",
+					"type": "Expression"
+				},
+				"secret_name_pkc": {
+					"value": "@dataset().secret_name_pkc",
+					"type": "Expression"
+				},
+				"secret_name_pp": {
+					"value": "@dataset().secret_name_pp",
+					"type": "Expression"
+				}
+			}
+		},
+		"parameters": {
+			"folder_name": {
+				"type": "string"
+			},
+			"file_name": {
+				"type": "string"
+			},
+			"host": {
+				"type": "string"
+			},
+			"port": {
+				"type": "int"
+			},
+			"fingerprint": {
+				"type": "string"
+			},
+			"username": {
+				"type": "string"
+			},
+			"key_vault_uri": {
+				"type": "string"
+			},
+			"secret_name_pkc": {
+				"type": "string"
+			},
+			"secret_name_pp": {
+				"type": "string"
+			}
+		},
+		"folder": {
+			"name": "azure_shir"
+		},
+		"annotations": [],
+		"type": "Binary",
+		"typeProperties": {
+			"location": {
+				"type": "SftpLocation",
+				"fileName": {
+					"value": "@dataset().file_name",
+					"type": "Expression"
+				},
+				"folderPath": {
+					"value": "@dataset().folder_name",
+					"type": "Expression"
+				}
+			}
+		}
+	}
+}

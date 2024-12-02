@@ -1,0 +1,65 @@
+{
+	"name": "ds_fileserver_binary_on_prem",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "ls_fileserver_on_prem",
+			"type": "LinkedServiceReference",
+			"parameters": {
+				"key_vault_uri": {
+					"value": "@dataset().key_vault_uri",
+					"type": "Expression"
+				},
+				"fileserver_password_secret_name": {
+					"value": "@dataset().fileserver_password_secret_name",
+					"type": "Expression"
+				},
+				"host_name": {
+					"value": "@dataset().host_name",
+					"type": "Expression"
+				},
+				"user_name": {
+					"value": "@dataset().user_name",
+					"type": "Expression"
+				}
+			}
+		},
+		"parameters": {
+			"user_name": {
+				"type": "string"
+			},
+			"host_name": {
+				"type": "string"
+			},
+			"key_vault_uri": {
+				"type": "string"
+			},
+			"fileserver_password_secret_name": {
+				"type": "string"
+			},
+			"directory": {
+				"type": "string"
+			},
+			"file_name": {
+				"type": "string"
+			}
+		},
+		"folder": {
+			"name": "on_prem"
+		},
+		"annotations": [],
+		"type": "Binary",
+		"typeProperties": {
+			"location": {
+				"type": "FileServerLocation",
+				"fileName": {
+					"value": "@dataset().file_name",
+					"type": "Expression"
+				},
+				"folderPath": {
+					"value": "@dataset().directory",
+					"type": "Expression"
+				}
+			}
+		}
+	}
+}

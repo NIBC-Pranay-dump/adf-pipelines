@@ -1,0 +1,29 @@
+{
+	"name": "ls_databricks_interactive_cluster_azure_shir",
+	"properties": {
+		"description": "Use compute of existing interactive cluster",
+		"parameters": {
+			"dbx_workspace_url": {
+				"type": "string"
+			},
+			"dbx_workspace_resource_id": {
+				"type": "string"
+			},
+			"dbx_cluster_id": {
+				"type": "string"
+			}
+		},
+		"annotations": [],
+		"type": "AzureDatabricks",
+		"typeProperties": {
+			"domain": "@linkedService().dbx_workspace_url",
+			"authentication": "MSI",
+			"workspaceResourceId": "@linkedService().dbx_workspace_resource_id",
+			"existingClusterId": "@linkedService().dbx_cluster_id"
+		},
+		"connectVia": {
+			"referenceName": "cloud",
+			"type": "IntegrationRuntimeReference"
+		}
+	}
+}

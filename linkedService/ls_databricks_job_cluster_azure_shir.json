@@ -1,0 +1,38 @@
+{
+	"name": "ls_databricks_job_cluster_azure_shir",
+	"properties": {
+		"parameters": {
+			"dbx_workspace_url": {
+				"type": "string"
+			},
+			"dbx_workspace_resource_id": {
+				"type": "string"
+			},
+			"dbx_cluster_version": {
+				"type": "string"
+			},
+			"dbx_cluster_node_type": {
+				"type": "string"
+			}
+		},
+		"annotations": [],
+		"type": "AzureDatabricks",
+		"typeProperties": {
+			"domain": "@linkedService().dbx_workspace_url",
+			"authentication": "MSI",
+			"workspaceResourceId": "@linkedService().dbx_workspace_resource_id",
+			"newClusterNodeType": "@linkedService().dbx_cluster_node_type",
+			"newClusterNumOfWorker": "1",
+			"newClusterSparkEnvVars": {
+				"PYSPARK_PYTHON": "/databricks/python3/bin/python3"
+			},
+			"newClusterVersion": "@linkedService().dbx_cluster_version",
+			"clusterOption": "Fixed",
+			"newClusterInitScripts": []
+		},
+		"connectVia": {
+			"referenceName": "cloud",
+			"type": "IntegrationRuntimeReference"
+		}
+	}
+}

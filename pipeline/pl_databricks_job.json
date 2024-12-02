@@ -1,0 +1,219 @@
+{
+	"name": "pl_databricks_job",
+	"properties": {
+		"description": "Run a Databricks Job. Based on example described here: https://techcommunity.microsoft.com/t5/analytics-on-azure-blog/leverage-azure-databricks-jobs-orchestration-from-azure-data/ba-p/3123862",
+		"activities": [
+			{
+				"name": "Kick Off Job through API",
+				"description": "Call API to start Databricks Job",
+				"type": "WebActivity",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"method": "POST",
+					"url": {
+						"value": "@concat(pipeline().parameters.workspace_url,'/api/2.1/jobs/run-now')",
+						"type": "Expression"
+					},
+					"connectVia": {
+						"referenceName": "self-hosted-runtime",
+						"type": "IntegrationRuntimeReference"
+					},
+					"body": {
+						"value": "@concat('{\"job_id\":',pipeline().parameters.job_id,'}')",
+						"type": "Expression"
+					},
+					"authentication": {
+						"type": "MSI",
+						"resource": "2ff814a6-3304-4ab8-85cb-cd0e6f879c1d"
+					}
+				}
+			},
+			{
+				"name": "Poll Until Job Completes",
+				"type": "Until",
+				"dependsOn": [
+					{
+						"activity": "Set run_id",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@not(equals(variables('job_status'),'Running'))",
+						"type": "Expression"
+					},
+					"activities": [
+						{
+							"name": "Check Job Run API",
+							"type": "WebActivity",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"method": "GET",
+								"url": {
+									"value": "@concat(pipeline().parameters.workspace_url,'/api/2.1/jobs/runs/get?run_id=',variables('run_id'))",
+									"type": "Expression"
+								},
+								"connectVia": {
+									"referenceName": "self-hosted-runtime",
+									"type": "IntegrationRuntimeReference"
+								},
+								"authentication": {
+									"type": "MSI",
+									"resource": "2ff814a6-3304-4ab8-85cb-cd0e6f879c1d"
+								}
+							}
+						},
+						{
+							"name": "Set Job Status",
+							"type": "SetVariable",
+							"dependsOn": [
+								{
+									"activity": "Check Job Run API",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "job_status",
+								"value": {
+									"value": "@if(\nor(\nequals(activity('Check Job Run API').output.state.life_cycle_state, 'PENDING'), equals(activity('Check Job Run API').output.state.life_cycle_state, 'RUNNING')\n),\n'Running',\nactivity('Check Job Run API').output.state.life_cycle_state\n)",
+									"type": "Expression"
+								}
+							}
+						},
+						{
+							"name": "Wait to Recheck API",
+							"type": "Wait",
+							"dependsOn": [
+								{
+									"activity": "Set Job Status",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"userProperties": [],
+							"typeProperties": {
+								"waitTimeInSeconds": {
+									"value": "@pipeline().parameters.wait_seconds_between_polls",
+									"type": "Expression"
+								}
+							}
+						}
+					],
+					"timeout": "0.12:00:00"
+				}
+			},
+			{
+				"name": "Job State Check",
+				"description": "See if job has run successfully or not",
+				"type": "IfCondition",
+				"dependsOn": [
+					{
+						"activity": "Poll Until Job Completes",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@equals(string(activity('Check Job Run API').output.state.result_state),'SUCCESS')",
+						"type": "Expression"
+					},
+					"ifFalseActivities": [
+						{
+							"name": "Fail",
+							"type": "Fail",
+							"dependsOn": [],
+							"userProperties": [],
+							"typeProperties": {
+								"message": {
+									"value": "@string(activity('Check Job Run API').output.state.result_state)",
+									"type": "Expression"
+								},
+								"errorCode": "500"
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "Set run_id",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "Kick Off Job through API",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "run_id",
+					"value": {
+						"value": "@activity('Kick Off Job through API').output.run_id",
+						"type": "Expression"
+					}
+				}
+			}
+		],
+		"parameters": {
+			"job_id": {
+				"type": "string",
+				"defaultValue": "396570710626532"
+			},
+			"workspace_url": {
+				"type": "string",
+				"defaultValue": "https://adb-7348359736582708.8.azuredatabricks.net"
+			},
+			"wait_seconds_between_polls": {
+				"type": "int",
+				"defaultValue": 5
+			}
+		},
+		"variables": {
+			"job_status": {
+				"type": "String",
+				"defaultValue": "Running"
+			},
+			"run_id": {
+				"type": "Integer"
+			}
+		},
+		"annotations": [],
+		"lastPublishTime": "2023-04-03T13:21:37Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

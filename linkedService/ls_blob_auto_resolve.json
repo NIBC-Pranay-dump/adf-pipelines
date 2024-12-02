@@ -1,0 +1,17 @@
+{
+	"name": "ls_blob_auto_resolve",
+	"properties": {
+		"description": "Read from blob using auto resolve runtime",
+		"parameters": {
+			"storage_account_uri": {
+				"type": "string"
+			}
+		},
+		"annotations": [],
+		"type": "AzureBlobStorage",
+		"typeProperties": {
+			"serviceEndpoint": "@{linkedService().storage_account_uri}",
+			"accountKind": "StorageV2"
+		}
+	}
+}

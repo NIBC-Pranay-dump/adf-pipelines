@@ -1,0 +1,21 @@
+{
+	"name": "ls_blob_azure_shir",
+	"properties": {
+		"parameters": {
+			"storage_account_uri": {
+				"type": "string"
+			}
+		},
+		"annotations": [],
+		"type": "AzureBlobStorage",
+		"typeProperties": {
+			"serviceEndpoint": "@{linkedService().storage_account_uri}",
+			"accountKind": "StorageV2"
+		},
+		"connectVia": {
+			"referenceName": "cloud",
+			"type": "IntegrationRuntimeReference"
+		}
+	},
+	"type": "Microsoft.DataFactory/factories/linkedservices"
+}

@@ -1,0 +1,76 @@
+{
+	"name": "ls_sftp_ssh_azure_shir",
+	"properties": {
+		"parameters": {
+			"host": {
+				"type": "string"
+			},
+			"port": {
+				"type": "int"
+			},
+			"fingerprint": {
+				"type": "string"
+			},
+			"username": {
+				"type": "string"
+			},
+			"key_vault_uri": {
+				"type": "string"
+			},
+			"secret_name_pkc": {
+				"type": "string"
+			},
+			"secret_name_pp": {
+				"type": "string"
+			}
+		},
+		"annotations": [],
+		"type": "Sftp",
+		"typeProperties": {
+			"host": "@{linkedService().host}",
+			"port": "@linkedService().port",
+			"skipHostKeyValidation": false,
+			"hostKeyFingerprint": "@{linkedService().fingerprint}",
+			"authenticationType": "SshPublicKey",
+			"userName": "@{linkedService().username}",
+			"privateKeyContent": {
+				"type": "AzureKeyVaultSecret",
+				"store": {
+					"referenceName": "ls_key_vault_no_shir",
+					"type": "LinkedServiceReference",
+					"parameters": {
+						"key_vault_uri": {
+							"value": "@linkedService().key_vault_uri",
+							"type": "Expression"
+						}
+					}
+				},
+				"secretName": {
+					"value": "@linkedService().secret_name_pkc",
+					"type": "Expression"
+				}
+			},
+			"passPhrase": {
+				"type": "AzureKeyVaultSecret",
+				"store": {
+					"referenceName": "ls_key_vault_no_shir",
+					"type": "LinkedServiceReference",
+					"parameters": {
+						"key_vault_uri": {
+							"value": "@linkedService().key_vault_uri",
+							"type": "Expression"
+						}
+					}
+				},
+				"secretName": {
+					"value": "@linkedService().secret_name_pp",
+					"type": "Expression"
+				}
+			}
+		},
+		"connectVia": {
+			"referenceName": "cloud",
+			"type": "IntegrationRuntimeReference"
+		}
+	}
+}

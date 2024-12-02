@@ -1,0 +1,154 @@
+{
+	"name": "pl_adls_fileserver_parquet_on_prem",
+	"properties": {
+		"description": "ADF pipeline to copy files from ADLS to a file server ",
+		"activities": [
+			{
+				"name": "ADLS Parquet to Fileserver CSV",
+				"description": "",
+				"type": "Copy",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "ParquetSource",
+						"storeSettings": {
+							"type": "AzureBlobFSReadSettings",
+							"recursive": true,
+							"wildcardFolderPath": {
+								"value": "@pipeline().parameters.adls_folder_path",
+								"type": "Expression"
+							},
+							"wildcardFileName": {
+								"value": "*.parquet",
+								"type": "Expression"
+							},
+							"enablePartitionDiscovery": false
+						},
+						"formatSettings": {
+							"type": "ParquetReadSettings"
+						}
+					},
+					"sink": {
+						"type": "DelimitedTextSink",
+						"storeSettings": {
+							"type": "FileServerWriteSettings",
+							"copyBehavior": "MergeFiles"
+						},
+						"formatSettings": {
+							"type": "DelimitedTextWriteSettings",
+							"quoteAllText": true,
+							"fileExtension": ".txt"
+						}
+					},
+					"enableStaging": false,
+					"translator": {
+						"type": "TabularTranslator",
+						"typeConversion": true,
+						"typeConversionSettings": {
+							"allowDataTruncation": true,
+							"treatBooleanAsNumber": false
+						}
+					}
+				},
+				"inputs": [
+					{
+						"referenceName": "ds_adls_parquet_wildcard_path_auto_resolve",
+						"type": "DatasetReference",
+						"parameters": {
+							"storage_account_uri": {
+								"value": "@pipeline().globalParameters.storage_account_datalake_uri",
+								"type": "Expression"
+							},
+							"container_name": {
+								"value": "@pipeline().parameters.adls_container",
+								"type": "Expression"
+							}
+						}
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "ds_fileserver_csv_file_on_prem",
+						"type": "DatasetReference",
+						"parameters": {
+							"host_name": {
+								"value": "@pipeline().parameters.fileserver_host_name",
+								"type": "Expression"
+							},
+							"user_name": {
+								"value": "@pipeline().parameters.fileserver_user_name",
+								"type": "Expression"
+							},
+							"key_vault_uri": {
+								"value": "@pipeline().globalParameters.key_vault_uri",
+								"type": "Expression"
+							},
+							"fileserver_password_secret_name": {
+								"value": "@pipeline().parameters.fileserver_credentials_secret_name",
+								"type": "Expression"
+							},
+							"directory": {
+								"value": "@pipeline().parameters.fileserver_directory",
+								"type": "Expression"
+							},
+							"file_name": {
+								"value": "@pipeline().parameters.sink_file_name",
+								"type": "Expression"
+							},
+							"column_delimiter": {
+								"value": "@pipeline().parameters.column_delimiter",
+								"type": "Expression"
+							}
+						}
+					}
+				]
+			}
+		],
+		"parameters": {
+			"adls_container": {
+				"type": "string",
+				"defaultValue": "exports"
+			},
+			"adls_folder_path": {
+				"type": "string",
+				"defaultValue": "databricks_test/export_test__cdp_preprd_transformation.staging_spaargids_be.stg_spaargids_be__on_demand_savings_interest_rates"
+			},
+			"fileserver_host_name": {
+				"type": "string",
+				"defaultValue": "\\\\SVNIBCFILD101\\e$"
+			},
+			"fileserver_user_name": {
+				"type": "string",
+				"defaultValue": "PRD\\SRV_AA_DEV"
+			},
+			"fileserver_credentials_secret_name": {
+				"type": "string",
+				"defaultValue": "fileserver-credentials-ods"
+			},
+			"fileserver_directory": {
+				"type": "string",
+				"defaultValue": "CDP\\Export_Test"
+			},
+			"sink_file_name": {
+				"type": "string",
+				"defaultValue": "databricks_test_spaargids.csv"
+			},
+			"column_delimiter": {
+				"type": "string",
+				"defaultValue": ";"
+			}
+		},
+		"folder": {
+			"name": "on_prem"
+		},
+		"annotations": []
+	}
+}

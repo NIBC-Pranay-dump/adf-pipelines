@@ -1,0 +1,19 @@
+{
+	"name": "ls_adls_azure_shir",
+	"properties": {
+		"parameters": {
+			"storage_account_uri": {
+				"type": "String"
+			}
+		},
+		"annotations": [],
+		"type": "AzureBlobFS",
+		"typeProperties": {
+			"url": "@{linkedService().storage_account_uri}"
+		},
+		"connectVia": {
+			"referenceName": "cloud",
+			"type": "IntegrationRuntimeReference"
+		}
+	}
+}

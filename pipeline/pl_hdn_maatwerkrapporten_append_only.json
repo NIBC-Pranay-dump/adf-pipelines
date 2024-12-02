@@ -1,0 +1,312 @@
+{
+	"name": "pl_hdn_maatwerkrapporten_append_only",
+	"properties": {
+		"activities": [
+			{
+				"name": "set file name",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "set file date",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "file_name",
+					"value": {
+						"value": "@replace(\n    pipeline().parameters.file_name_template, \n    '{yyyymmdd}', \n    variables('file_date')\n)",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "set file date",
+				"description": "Set file date to file_date_param when not empty otherwise as current date in west europe timezone",
+				"type": "SetVariable",
+				"dependsOn": [],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "file_date",
+					"value": {
+						"value": "@if (empty(pipeline().parameters.file_date_param),\nformatDateTime(convertTimeZone(pipeline().TriggerTime,'UTC','W. Europe Standard Time'), 'yyyyMMdd'),\npipeline().parameters.file_date_param)\n\n",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "create parquet from csv",
+				"type": "Copy",
+				"dependsOn": [
+					{
+						"activity": "get files from sftp",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "DelimitedTextSource",
+						"additionalColumns": [
+							{
+								"name": "file_name",
+								"value": {
+									"value": "@variables('file_name')",
+									"type": "Expression"
+								}
+							},
+							{
+								"name": "file_date",
+								"value": {
+									"value": "@variables('file_date')",
+									"type": "Expression"
+								}
+							}
+						],
+						"storeSettings": {
+							"type": "AzureBlobStorageReadSettings",
+							"recursive": true,
+							"enablePartitionDiscovery": false
+						},
+						"formatSettings": {
+							"type": "DelimitedTextReadSettings"
+						}
+					},
+					"sink": {
+						"type": "ParquetSink",
+						"storeSettings": {
+							"type": "AzureBlobFSWriteSettings"
+						},
+						"formatSettings": {
+							"type": "ParquetWriteSettings"
+						}
+					},
+					"enableStaging": false,
+					"translator": {
+						"value": "@json(string(pipeline().parameters.column_mapping))",
+						"type": "Expression"
+					}
+				},
+				"inputs": [
+					{
+						"referenceName": "ds_blob_csv_azure_shir",
+						"type": "DatasetReference",
+						"parameters": {
+							"storage_account_uri": "@pipeline().globalParameters.storage_account_data_factory_uri",
+							"container_name": "@pipeline().globalParameters.storage_container_data_factory",
+							"datastore_name": "@pipeline().parameters.datastore_name",
+							"dataset_name": "@pipeline().parameters.dataset_name",
+							"file_name": "@variables('file_name')",
+							"column_delimiter": ";",
+							"encoding": "UTF-8",
+							"first_row_as_header": "True"
+						}
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "ds_adls_parquet_auto_resolve",
+						"type": "DatasetReference",
+						"parameters": {
+							"datastore_name": {
+								"value": "@pipeline().parameters.datastore_name",
+								"type": "Expression"
+							},
+							"dataset_name": {
+								"value": "@pipeline().parameters.dataset_name",
+								"type": "Expression"
+							},
+							"storage_account_uri": {
+								"value": "@pipeline().globalParameters.storage_account_datalake_uri",
+								"type": "Expression"
+							},
+							"container_name": {
+								"value": "@pipeline().globalParameters.storage_container_datalake",
+								"type": "Expression"
+							},
+							"file_name": {
+								"value": "@toLower(replace(\n    variables('file_name'), \n    '.csv', \n    ''\n))",
+								"type": "Expression"
+							}
+						}
+					}
+				]
+			},
+			{
+				"name": "get files from sftp",
+				"description": "get files from sftp",
+				"type": "Copy",
+				"dependsOn": [
+					{
+						"activity": "set file name",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "BinarySource",
+						"storeSettings": {
+							"type": "SftpReadSettings",
+							"recursive": false,
+							"disableChunking": false
+						},
+						"formatSettings": {
+							"type": "BinaryReadSettings"
+						}
+					},
+					"sink": {
+						"type": "BinarySink",
+						"storeSettings": {
+							"type": "AzureBlobStorageWriteSettings"
+						}
+					},
+					"enableStaging": false
+				},
+				"inputs": [
+					{
+						"referenceName": "ds_sftp_binary_azure_shir",
+						"type": "DatasetReference",
+						"parameters": {
+							"folder_name": {
+								"value": "@pipeline().parameters.sftp_folder_name",
+								"type": "Expression"
+							},
+							"file_name": {
+								"value": "@variables('file_name')",
+								"type": "Expression"
+							},
+							"host": {
+								"value": "@pipeline().parameters.sftp_host",
+								"type": "Expression"
+							},
+							"port": {
+								"value": "@pipeline().parameters.sftp_port",
+								"type": "Expression"
+							},
+							"fingerprint": {
+								"value": "@pipeline().parameters.sftp_fingerprint",
+								"type": "Expression"
+							},
+							"username": {
+								"value": "@pipeline().parameters.sftp_username",
+								"type": "Expression"
+							},
+							"key_vault_uri": {
+								"value": "@pipeline().globalParameters.key_vault_uri",
+								"type": "Expression"
+							},
+							"secret_name_pkc": {
+								"value": "@pipeline().parameters.key_vault_secret_name_pkc",
+								"type": "Expression"
+							},
+							"secret_name_pp": {
+								"value": "@pipeline().parameters.key_vault_secret_name_pp",
+								"type": "Expression"
+							}
+						}
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "ds_blob_binary_azure_shir",
+						"type": "DatasetReference",
+						"parameters": {
+							"storage_account_uri": "@pipeline().globalParameters.storage_account_data_factory_uri",
+							"container_name": "@pipeline().globalParameters.storage_container_data_factory",
+							"datastore_name": "@pipeline().parameters.datastore_name",
+							"dataset_name": "@pipeline().parameters.dataset_name",
+							"file_name": "@variables('file_name')"
+						}
+					}
+				]
+			}
+		],
+		"parameters": {
+			"file_name_template": {
+				"type": "string",
+				"defaultValue": "NIBC_maatwerkrapport_2_levels_{yyyymmdd}.csv"
+			},
+			"datastore_name": {
+				"type": "string",
+				"defaultValue": "hdn"
+			},
+			"dataset_name": {
+				"type": "string",
+				"defaultValue": "nibc_maatwerkrapport_2_levels"
+			},
+			"environment": {
+				"type": "string",
+				"defaultValue": "dev"
+			},
+			"column_mapping": {
+				"type": "string"
+			},
+			"file_date_param": {
+				"type": "string"
+			},
+			"sftp_folder_name": {
+				"type": "string",
+				"defaultValue": "download"
+			},
+			"sftp_host": {
+				"type": "string"
+			},
+			"sftp_port": {
+				"type": "int"
+			},
+			"sftp_fingerprint": {
+				"type": "string"
+			},
+			"sftp_username": {
+				"type": "string"
+			},
+			"key_vault_secret_name_pkc": {
+				"type": "string"
+			},
+			"key_vault_secret_name_pp": {
+				"type": "string"
+			}
+		},
+		"variables": {
+			"file_name": {
+				"type": "String"
+			},
+			"file_date": {
+				"type": "String"
+			}
+		},
+		"folder": {
+			"name": "cloud"
+		},
+		"annotations": []
+	}
+}

@@ -1,0 +1,136 @@
+{
+	"name": "pl_adls_fileserver_on_prem",
+	"properties": {
+		"description": "ADF pipeline to copy files from a file server ",
+		"activities": [
+			{
+				"name": "Binary Blob to Fileserver",
+				"description": "Todo: have export container, copy data from there",
+				"type": "Copy",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "BinarySource",
+						"storeSettings": {
+							"type": "AzureBlobStorageReadSettings",
+							"recursive": false
+						},
+						"formatSettings": {
+							"type": "BinaryReadSettings"
+						}
+					},
+					"sink": {
+						"type": "BinarySink",
+						"storeSettings": {
+							"type": "FileServerWriteSettings",
+							"copyBehavior": "PreserveHierarchy"
+						}
+					},
+					"enableStaging": false
+				},
+				"inputs": [
+					{
+						"referenceName": "ds_blob_binary_auto_resolve",
+						"type": "DatasetReference",
+						"parameters": {
+							"storage_account_uri": {
+								"value": "@pipeline().globalParameters.storage_account_data_factory_uri",
+								"type": "Expression"
+							},
+							"container_name": {
+								"value": "@pipeline().globalParameters.storage_container_data_factory",
+								"type": "Expression"
+							},
+							"datastore_name": {
+								"value": "@pipeline().parameters.datastore_name",
+								"type": "Expression"
+							},
+							"dataset_name": {
+								"value": "@pipeline().parameters.dataset_name",
+								"type": "Expression"
+							},
+							"file_name": {
+								"value": "@pipeline().parameters.file_name",
+								"type": "Expression"
+							}
+						}
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "ds_fileserver_binary_on_prem",
+						"type": "DatasetReference",
+						"parameters": {
+							"user_name": {
+								"value": "@pipeline().parameters.fileserver_user_name",
+								"type": "Expression"
+							},
+							"host_name": {
+								"value": "@pipeline().parameters.fileserver_host_name",
+								"type": "Expression"
+							},
+							"key_vault_uri": {
+								"value": "@pipeline().globalParameters.key_vault_uri",
+								"type": "Expression"
+							},
+							"fileserver_password_secret_name": {
+								"value": "@pipeline().parameters.keyvault_secret_name",
+								"type": "Expression"
+							},
+							"directory": {
+								"value": "@pipeline().parameters.fileserver_directory",
+								"type": "Expression"
+							},
+							"file_name": {
+								"value": "@pipeline().parameters.file_name",
+								"type": "Expression"
+							}
+						}
+					}
+				]
+			}
+		],
+		"parameters": {
+			"keyvault_secret_name": {
+				"type": "string",
+				"defaultValue": "fileserver-credentials-ods"
+			},
+			"datastore_name": {
+				"type": "string",
+				"defaultValue": "moneyview"
+			},
+			"dataset_name": {
+				"type": "string",
+				"defaultValue": "empty_file"
+			},
+			"file_name": {
+				"type": "string",
+				"defaultValue": "file_with_one_dummy_row.csv"
+			},
+			"fileserver_user_name": {
+				"type": "string",
+				"defaultValue": "PRD\\SRV_AA_DEV"
+			},
+			"fileserver_host_name": {
+				"type": "string",
+				"defaultValue": "\\\\SVNIBCFILD101\\e$"
+			},
+			"fileserver_directory": {
+				"type": "string",
+				"defaultValue": "CDP\\Export_Test"
+			}
+		},
+		"folder": {
+			"name": "on_prem"
+		},
+		"annotations": []
+	}
+}

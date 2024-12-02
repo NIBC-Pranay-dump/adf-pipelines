@@ -1,0 +1,431 @@
+{
+	"name": "pl_custom_moneyview_create_parquet_only",
+	"properties": {
+		"activities": [
+			{
+				"name": "set delta days",
+				"description": "The number of ticks that have elapsed since 12:00:00 midnight, January 1, 0001 in the Gregorian calendar since the input timestamp",
+				"type": "SetVariable",
+				"dependsOn": [],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "delta_days",
+					"value": {
+						"value": "@div(\n    sub(\n        ticks(formatDateTime(pipeline().parameters.end_date,'yyyy-MM-dd')\n        ),\n        ticks(formatDateTime(pipeline().parameters.start_date,'yyyy-MM-dd')\n        )\n    )\n,864000000000)\n\n\n",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "ForEach1",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "set delta days",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@range(0,add(variables('delta_days'),1))",
+						"type": "Expression"
+					},
+					"isSequential": true,
+					"activities": [
+						{
+							"name": "Set file date",
+							"type": "SetVariable",
+							"dependsOn": [],
+							"policy": {
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "file_date",
+								"value": {
+									"value": "@addDays(formatDateTime(pipeline().parameters.start_date,'yyyy-MM-dd'),item())\n\n",
+									"type": "Expression"
+								}
+							}
+						},
+						{
+							"name": "set file name",
+							"type": "SetVariable",
+							"dependsOn": [
+								{
+									"activity": "Set file date",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "file_name",
+								"value": {
+									"value": "@replace(\n    pipeline().parameters.file_name_template, \n    '{yyyymmdd}', \n    formatDateTime(variables('file_date'),'yyyyMMdd')\n)\n\n",
+									"type": "Expression"
+								}
+							}
+						},
+						{
+							"name": "create parquet",
+							"type": "Copy",
+							"dependsOn": [
+								{
+									"activity": "set file name",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "DelimitedTextSource",
+									"additionalColumns": [
+										{
+											"name": "_input_file_name",
+											"value": {
+												"value": "@variables('file_name')",
+												"type": "Expression"
+											}
+										},
+										{
+											"name": "_input_file_date",
+											"value": {
+												"value": "@formatDateTime(variables('file_date'),'yyyy-MM-dd')",
+												"type": "Expression"
+											}
+										}
+									],
+									"storeSettings": {
+										"type": "AzureBlobStorageReadSettings",
+										"recursive": false,
+										"enablePartitionDiscovery": false
+									},
+									"formatSettings": {
+										"type": "DelimitedTextReadSettings"
+									}
+								},
+								"sink": {
+									"type": "ParquetSink",
+									"storeSettings": {
+										"type": "AzureBlobFSWriteSettings"
+									},
+									"formatSettings": {
+										"type": "ParquetWriteSettings"
+									}
+								},
+								"enableStaging": false,
+								"translator": {
+									"value": "@json(string(pipeline().parameters.column_mapping))",
+									"type": "Expression"
+								}
+							},
+							"inputs": [
+								{
+									"referenceName": "ds_blob_csv_azure_shir",
+									"type": "DatasetReference",
+									"parameters": {
+										"storage_account_uri": {
+											"value": "@pipeline().globalParameters.storage_account_data_factory_uri",
+											"type": "Expression"
+										},
+										"container_name": {
+											"value": "@pipeline().globalParameters.storage_container_data_factory",
+											"type": "Expression"
+										},
+										"datastore_name": {
+											"value": "@pipeline().parameters.datastore_name",
+											"type": "Expression"
+										},
+										"dataset_name": {
+											"value": "@pipeline().parameters.dataset_name",
+											"type": "Expression"
+										},
+										"file_name": {
+											"value": "@variables('file_name')",
+											"type": "Expression"
+										},
+										"column_delimiter": ",",
+										"encoding": "UTF-8",
+										"first_row_as_header": true
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "ds_adls_parquet_auto_resolve",
+									"type": "DatasetReference",
+									"parameters": {
+										"datastore_name": {
+											"value": "@pipeline().parameters.datastore_name",
+											"type": "Expression"
+										},
+										"dataset_name": {
+											"value": "@pipeline().parameters.dataset_name",
+											"type": "Expression"
+										},
+										"storage_account_uri": {
+											"value": "@pipeline().globalParameters.storage_account_datalake_uri",
+											"type": "Expression"
+										},
+										"container_name": {
+											"value": "@pipeline().globalParameters.storage_container_datalake",
+											"type": "Expression"
+										},
+										"file_name": {
+											"value": "@toLower(replace(\n    variables('file_name'), \n    '.csv', \n    ''\n))",
+											"type": "Expression"
+										}
+									}
+								}
+							]
+						}
+					]
+				}
+			}
+		],
+		"parameters": {
+			"file_name_template": {
+				"type": "string",
+				"defaultValue": "MV_NIBC_DOV_{yyyymmdd}.csv"
+			},
+			"datastore_name": {
+				"type": "string",
+				"defaultValue": "moneyview"
+			},
+			"dataset_name": {
+				"type": "string",
+				"defaultValue": "mv_nibc_dov"
+			},
+			"column_mapping": {
+				"type": "string",
+				"defaultValue": {
+					"type": "TabularTranslator",
+					"mappings": [
+						{
+							"source": {
+								"name": "Aanbieder"
+							},
+							"sink": {
+								"name": "Aanbieder"
+							}
+						},
+						{
+							"source": {
+								"name": "Product"
+							},
+							"sink": {
+								"name": "Product"
+							}
+						},
+						{
+							"source": {
+								"name": "Rente EUR 500"
+							},
+							"sink": {
+								"name": "Rente_EUR_500"
+							}
+						},
+						{
+							"source": {
+								"name": "Rente EUR 1.000"
+							},
+							"sink": {
+								"name": "Rente_EUR_1.000"
+							}
+						},
+						{
+							"source": {
+								"name": "Rente EUR 2.000"
+							},
+							"sink": {
+								"name": "Rente_EUR_2.000"
+							}
+						},
+						{
+							"source": {
+								"name": "Rente EUR 5.000"
+							},
+							"sink": {
+								"name": "Rente_EUR_5.000"
+							}
+						},
+						{
+							"source": {
+								"name": "Rente EUR 10.000"
+							},
+							"sink": {
+								"name": "Rente_EUR_10.000"
+							}
+						},
+						{
+							"source": {
+								"name": "Rente EUR 20.000"
+							},
+							"sink": {
+								"name": "Rente_EUR_20.000"
+							}
+						},
+						{
+							"source": {
+								"name": "Rente EUR 50.000"
+							},
+							"sink": {
+								"name": "Rente_EUR_50.000"
+							}
+						},
+						{
+							"source": {
+								"name": "Rente EUR 100.000"
+							},
+							"sink": {
+								"name": "Rente_EUR_100.000"
+							}
+						},
+						{
+							"source": {
+								"name": "Rente EUR 200.000"
+							},
+							"sink": {
+								"name": "Rente_EUR_200.000"
+							}
+						},
+						{
+							"source": {
+								"name": "Rente EUR 500.000"
+							},
+							"sink": {
+								"name": "Rente_EUR_500.000"
+							}
+						},
+						{
+							"source": {
+								"name": "Rente EUR 1.000.000"
+							},
+							"sink": {
+								"name": "Rente_EUR_1.000.000"
+							}
+						},
+						{
+							"source": {
+								"name": "Rente EUR 25.000"
+							},
+							"sink": {
+								"name": "Rente_EUR_25.000"
+							}
+						},
+						{
+							"source": {
+								"name": "Bonusopslag"
+							},
+							"sink": {
+								"name": "Bonusopslag"
+							}
+						},
+						{
+							"source": {
+								"name": "Laatste rentewijziging"
+							},
+							"sink": {
+								"name": "Laatste_rentewijziging"
+							}
+						},
+						{
+							"source": {
+								"name": "AanbiederId"
+							},
+							"sink": {
+								"name": "AanbiederId"
+							}
+						},
+						{
+							"source": {
+								"name": "ProductId"
+							},
+							"sink": {
+								"name": "ProductId"
+							}
+						},
+						{
+							"source": {
+								"name": "ANSProductId"
+							},
+							"sink": {
+								"name": "ANSProductId"
+							}
+						},
+						{
+							"source": {
+								"name": "ANSAanbiederId"
+							},
+							"sink": {
+								"name": "ANSAanbiederId"
+							}
+						},
+						{
+							"source": {
+								"name": "_input_file_name"
+							},
+							"sink": {
+								"name": "_input_file_name"
+							}
+						},
+						{
+							"source": {
+								"name": "_input_file_date"
+							},
+							"sink": {
+								"name": "_input_file_date"
+							}
+						}
+					]
+				}
+			},
+			"start_date": {
+				"type": "string",
+				"defaultValue": "2024-04-30"
+			},
+			"end_date": {
+				"type": "string",
+				"defaultValue": "2024-11-19"
+			}
+		},
+		"variables": {
+			"file_name": {
+				"type": "String"
+			},
+			"file_date": {
+				"type": "String"
+			},
+			"delta_days": {
+				"type": "Integer"
+			}
+		},
+		"folder": {
+			"name": "cloud"
+		},
+		"annotations": []
+	}
+}
