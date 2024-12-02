@@ -1,0 +1,37 @@
+{
+	"name": "ds_anonymous_http_binary_cloud",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "ls_anonymous_http_cloud",
+			"type": "LinkedServiceReference",
+			"parameters": {
+				"base_url": {
+					"value": "@dataset().base_url",
+					"type": "Expression"
+				}
+			}
+		},
+		"parameters": {
+			"base_url": {
+				"type": "string"
+			},
+			"relative_url": {
+				"type": "string"
+			}
+		},
+		"folder": {
+			"name": "cloud"
+		},
+		"annotations": [],
+		"type": "Binary",
+		"typeProperties": {
+			"location": {
+				"type": "HttpServerLocation",
+				"relativeUrl": {
+					"value": "@dataset().relative_url",
+					"type": "Expression"
+				}
+			}
+		}
+	}
+}

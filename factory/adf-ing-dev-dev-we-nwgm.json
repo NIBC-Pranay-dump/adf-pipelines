@@ -1,0 +1,37 @@
+{
+	"name": "adf-ing-dev-dev-we-nwgm",
+	"properties": {
+		"globalParameters": {
+			"key_vault_uri": {
+				"type": "String",
+				"value": "https://kv-ing-dev-dev-we-nwgm.vault.azure.net/"
+			},
+			"storage_account_backup_uri": {
+				"type": "String",
+				"value": "https://stbackupdevwenwgm.dfs.core.windows.net/"
+			},
+			"storage_account_data_factory_uri": {
+				"type": "String",
+				"value": "https://stingdevdevwenwgm.blob.core.windows.net/"
+			},
+			"storage_account_datalake_uri": {
+				"type": "String",
+				"value": "https://stdatalakedevwenwgm.dfs.core.windows.net/"
+			},
+			"storage_container_data_factory": {
+				"type": "String",
+				"value": "internal"
+			},
+			"storage_container_datalake": {
+				"type": "String",
+				"value": "ingestion-dev"
+			}
+		}
+	},
+	"location": "westeurope",
+	"identity": {
+		"type": "SystemAssigned",
+		"principalId": "c12594f7-e60d-4307-aa29-285de27e1d9a",
+		"tenantId": "8614d95f-762b-4789-a741-2589e3d0b08b"
+	}
+}
