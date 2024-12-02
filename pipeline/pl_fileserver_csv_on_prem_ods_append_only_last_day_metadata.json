@@ -1,0 +1,644 @@
+{
+	"name": "pl_fileserver_csv_on_prem_ods_append_only_last_day_metadata",
+	"properties": {
+		"description": "ADF pipeline to copy files from an ODS file server and test completeness based on metadata for append only dataset of last day",
+		"activities": [
+			{
+				"name": "Has Data",
+				"description": "We check if the lookup found any data",
+				"type": "IfCondition",
+				"dependsOn": [
+					{
+						"activity": "Sum all record counts",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					},
+					{
+						"activity": "Include functional date in file pattern",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@greater(variables('total_record_count'), 0)",
+						"type": "Expression"
+					},
+					"ifTrueActivities": [
+						{
+							"name": "Copy csv data",
+							"description": "Copy csv data from file server",
+							"type": "Copy",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "DelimitedTextSource",
+									"additionalColumns": [
+										{
+											"name": "_adf_ingestion_file",
+											"value": {
+												"value": "@concat(pipeline().parameters.dataset_name, '_', variables('functional_date'))",
+												"type": "Expression"
+											}
+										}
+									],
+									"storeSettings": {
+										"type": "FileServerReadSettings",
+										"recursive": false,
+										"wildcardFileName": {
+											"value": "@variables('file_pattern_specified')",
+											"type": "Expression"
+										},
+										"enablePartitionDiscovery": false
+									},
+									"formatSettings": {
+										"type": "DelimitedTextReadSettings",
+										"skipLineCount": {
+											"value": "@pipeline().parameters.skip_line_count",
+											"type": "Expression"
+										}
+									}
+								},
+								"sink": {
+									"type": "ParquetSink",
+									"storeSettings": {
+										"type": "AzureBlobFSWriteSettings",
+										"copyBehavior": "MergeFiles"
+									},
+									"formatSettings": {
+										"type": "ParquetWriteSettings"
+									}
+								},
+								"enableStaging": false,
+								"translator": {
+									"type": "TabularTranslator",
+									"typeConversion": true,
+									"typeConversionSettings": {
+										"allowDataTruncation": true,
+										"treatBooleanAsNumber": false
+									}
+								}
+							},
+							"inputs": [
+								{
+									"referenceName": "ds_fileserver_csv_directory_on_prem",
+									"type": "DatasetReference",
+									"parameters": {
+										"user_name": {
+											"value": "@pipeline().parameters.fileserver_user_name",
+											"type": "Expression"
+										},
+										"host_name": {
+											"value": "@pipeline().parameters.fileserver_host_name",
+											"type": "Expression"
+										},
+										"key_vault_uri": {
+											"value": "@pipeline().globalParameters.key_vault_uri",
+											"type": "Expression"
+										},
+										"fileserver_password_secret_name": {
+											"value": "@pipeline().parameters.keyvault_secret_name",
+											"type": "Expression"
+										},
+										"directory": {
+											"value": "@pipeline().parameters.fileserver_directory",
+											"type": "Expression"
+										},
+										"column_delimiter": {
+											"value": "@pipeline().parameters.column_delimiter",
+											"type": "Expression"
+										}
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "ds_adls_parquet_auto_resolve",
+									"type": "DatasetReference",
+									"parameters": {
+										"datastore_name": {
+											"value": "@pipeline().parameters.datastore_name",
+											"type": "Expression"
+										},
+										"dataset_name": {
+											"value": "@pipeline().parameters.dataset_name",
+											"type": "Expression"
+										},
+										"storage_account_uri": {
+											"value": "@pipeline().globalParameters.storage_account_datalake_uri",
+											"type": "Expression"
+										},
+										"container_name": {
+											"value": "@pipeline().globalParameters.storage_container_datalake",
+											"type": "Expression"
+										},
+										"file_name": {
+											"value": "@concat(pipeline().parameters.dataset_name, '_', variables('functional_date'))",
+											"type": "Expression"
+										}
+									}
+								}
+							]
+						},
+						{
+							"name": "delete csv file",
+							"description": "Delete the csv file in fileserver after copying",
+							"type": "Delete",
+							"state": "Inactive",
+							"onInactiveMarkAs": "Succeeded",
+							"dependsOn": [
+								{
+									"activity": "verify row count",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"enableLogging": false,
+								"storeSettings": {
+									"type": "FileServerReadSettings",
+									"recursive": true,
+									"wildcardFileName": {
+										"value": "@pipeline().parameters.source_file_name_pattern",
+										"type": "Expression"
+									},
+									"enablePartitionDiscovery": false
+								}
+							}
+						},
+						{
+							"name": "verify row count",
+							"type": "SetVariable",
+							"dependsOn": [
+								{
+									"activity": "Copy csv data",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "row_count_match",
+								"value": {
+									"value": "@equals(int(variables('total_record_count')), int(activity('Copy csv data').output.rowsCopied))",
+									"type": "Expression"
+								}
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "Check row count matches",
+				"description": "Check that the actual row count matches the expected row count as seen in metadata",
+				"type": "IfCondition",
+				"dependsOn": [
+					{
+						"activity": "Has Data",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@variables('row_count_match')",
+						"type": "Expression"
+					},
+					"ifFalseActivities": [
+						{
+							"name": "Expected row count does not match actual",
+							"description": "The actual row count of the stored files doesn't match the actual row count as seen in the metadata",
+							"type": "Fail",
+							"dependsOn": [],
+							"userProperties": [],
+							"typeProperties": {
+								"message": {
+									"value": "@concat('Row count mismatch: Expected ', variables('total_record_count'), ' rows, but found ', activity('Copy csv data').output.rowsCopied)",
+									"type": "Expression"
+								},
+								"errorCode": "ROW_COUNT_MISMATCH"
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "Get each file name",
+				"description": "Retrieve each name of the file of the dataset to iterate over",
+				"type": "GetMetadata",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"dataset": {
+						"referenceName": "ds_fileserver_csv_directory_on_prem",
+						"type": "DatasetReference",
+						"parameters": {
+							"user_name": {
+								"value": "@pipeline().parameters.fileserver_user_name",
+								"type": "Expression"
+							},
+							"host_name": {
+								"value": "@pipeline().parameters.fileserver_host_name",
+								"type": "Expression"
+							},
+							"key_vault_uri": {
+								"value": "@pipeline().globalParameters.key_vault_uri",
+								"type": "Expression"
+							},
+							"fileserver_password_secret_name": {
+								"value": "@pipeline().parameters.keyvault_secret_name",
+								"type": "Expression"
+							},
+							"directory": {
+								"value": "@pipeline().parameters.fileserver_directory",
+								"type": "Expression"
+							},
+							"column_delimiter": {
+								"value": "@pipeline().parameters.column_delimiter",
+								"type": "Expression"
+							}
+						}
+					},
+					"fieldList": [
+						"childItems"
+					],
+					"storeSettings": {
+						"type": "FileServerReadSettings",
+						"recursive": true,
+						"enablePartitionDiscovery": false
+					},
+					"formatSettings": {
+						"type": "DelimitedTextReadSettings",
+						"skipLineCount": {
+							"value": "@pipeline().parameters.skip_line_count",
+							"type": "Expression"
+						}
+					}
+				}
+			},
+			{
+				"name": "Sum all record counts",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "Filter file names of pipeline",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('Filter file names of pipeline').output.value",
+						"type": "Expression"
+					},
+					"isSequential": true,
+					"activities": [
+						{
+							"name": "Extract temp count",
+							"description": "Variables in ADF cannot be self referencing, hence, if you want to add to a variable, first you need to create a second variable which stores the sum, and later, set the initial variable to the sum",
+							"type": "SetVariable",
+							"dependsOn": [
+								{
+									"activity": "Check single file metadata",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "partial_count",
+								"value": {
+									"value": "@add(variables('total_record_count'), int(activity('Check single file metadata').output.firstRow.RecordCount))",
+									"type": "Expression"
+								}
+							}
+						},
+						{
+							"name": "Check single file metadata",
+							"type": "Lookup",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "DelimitedTextSource",
+									"storeSettings": {
+										"type": "FileServerReadSettings",
+										"recursive": true,
+										"enablePartitionDiscovery": false
+									},
+									"formatSettings": {
+										"type": "DelimitedTextReadSettings"
+									}
+								},
+								"dataset": {
+									"referenceName": "ds_fileserver_csv_file_on_prem",
+									"type": "DatasetReference",
+									"parameters": {
+										"host_name": {
+											"value": "@pipeline().parameters.fileserver_host_name",
+											"type": "Expression"
+										},
+										"user_name": {
+											"value": "@pipeline().parameters.fileserver_user_name",
+											"type": "Expression"
+										},
+										"key_vault_uri": {
+											"value": "@pipeline().globalParameters.key_vault_uri",
+											"type": "Expression"
+										},
+										"fileserver_password_secret_name": {
+											"value": "@pipeline().parameters.keyvault_secret_name",
+											"type": "Expression"
+										},
+										"directory": {
+											"value": "@pipeline().parameters.fileserver_directory",
+											"type": "Expression"
+										},
+										"file_name": {
+											"value": "@item().name",
+											"type": "Expression"
+										},
+										"column_delimiter": {
+											"value": "@pipeline().parameters.metadata_column_delimiter",
+											"type": "Expression"
+										}
+									}
+								}
+							}
+						},
+						{
+							"name": "Update total count",
+							"type": "SetVariable",
+							"dependsOn": [
+								{
+									"activity": "Extract temp count",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "total_record_count",
+								"value": {
+									"value": "@variables('partial_count')",
+									"type": "Expression"
+								}
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "Filter file names of pipeline",
+				"description": "The ODS dataset stores all of the datasets in one directory which is listed in the Get Metadata activity. This step will filter out the files which do not belong to the pipeline run",
+				"type": "Filter",
+				"dependsOn": [
+					{
+						"activity": "Get each file name",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					},
+					{
+						"activity": "Get file name",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					},
+					{
+						"activity": "Use trigger date to set functional date",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('Get each file name').output.childItems",
+						"type": "Expression"
+					},
+					"condition": {
+						"value": "@and(startsWith(item().name, variables('expected_file_name')), endswith(item().name, concat(variables('functional_date'), '.csv')))",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "Get file name",
+				"description": "Remove the wildcard character from the file name given to the pipeline as parameter",
+				"type": "SetVariable",
+				"dependsOn": [],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "expected_file_name",
+					"value": {
+						"value": "@first(split(pipeline().parameters.source_file_name_pattern, '*'))",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "Set trigger date",
+				"description": "Use pipeline trigger time, unless a value is provided in the trigger_date parameter. The date is expected to be in a yyyyMMdd format",
+				"type": "SetVariable",
+				"dependsOn": [],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "trigger_date",
+					"value": {
+						"value": "@if(empty(pipeline().parameters.trigger_date), formatDateTime(pipeline().TriggerTime, 'yyyyMMdd'), pipeline().parameters.trigger_date)",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "Use trigger date to set functional date",
+				"description": "Based on current date or provided parameter value, set functional date",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "Set trigger date",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "functional_date",
+					"value": {
+						"value": "@addDays(\n    concat(\n        substring(variables('trigger_date'), 0, 4),\n        '-',\n        substring(variables('trigger_date'), 4, 2),\n        '-',\n        substring(variables('trigger_date'), 6, 2)\n    ),\n    -1,\n    'yyyyMMdd'\n)",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "Include functional date in file pattern",
+				"description": "Fill functional date placeholder with variable value",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "Use trigger date to set functional date",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "file_pattern_specified",
+					"value": {
+						"value": "@replace(\n    pipeline().parameters.source_file_name_pattern,\n    '{functional_date}',\n    variables('functional_date')\n)",
+						"type": "Expression"
+					}
+				}
+			}
+		],
+		"parameters": {
+			"keyvault_secret_name": {
+				"type": "string",
+				"defaultValue": "fileserver-credentials-ods"
+			},
+			"datastore_name": {
+				"type": "string",
+				"defaultValue": "ods_mortgages"
+			},
+			"dataset_name": {
+				"type": "string",
+				"defaultValue": "hds_t_brdg_loan_property"
+			},
+			"environment": {
+				"type": "string",
+				"defaultValue": "dev"
+			},
+			"source_file_name_pattern": {
+				"type": "string",
+				"defaultValue": "hds_t_brdg_loan_property_file*{functional_date}.csv"
+			},
+			"fileserver_user_name": {
+				"type": "string",
+				"defaultValue": "PRD\\SRV_AA_DEV"
+			},
+			"fileserver_host_name": {
+				"type": "string",
+				"defaultValue": "\\\\SVNIBCFILD101\\e$"
+			},
+			"fileserver_directory": {
+				"type": "string",
+				"defaultValue": "CDP\\Retail_ODS\\hds_mortgages"
+			},
+			"column_delimiter": {
+				"type": "string",
+				"defaultValue": "|&|"
+			},
+			"skip_line_count": {
+				"type": "int",
+				"defaultValue": 2
+			},
+			"metadata_column_delimiter": {
+				"type": "string",
+				"defaultValue": ","
+			},
+			"trigger_date": {
+				"type": "string"
+			}
+		},
+		"variables": {
+			"row_count_match": {
+				"type": "Boolean",
+				"defaultValue": true
+			},
+			"total_record_count": {
+				"type": "Integer",
+				"defaultValue": 0
+			},
+			"partial_count": {
+				"type": "Integer",
+				"defaultValue": 0
+			},
+			"expected_file_name": {
+				"type": "String"
+			},
+			"trigger_date": {
+				"type": "String"
+			},
+			"functional_date": {
+				"type": "String"
+			},
+			"file_pattern_specified": {
+				"type": "String"
+			}
+		},
+		"annotations": []
+	}
+}
