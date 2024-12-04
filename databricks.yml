@@ -1,0 +1,68 @@
+# This file defines a "Databricks Asset Bundle"
+# It specifies which files get copied to Databricks
+# and can be used to create jobs
+
+# For more information on asset bundles, see:
+# https://docs.databricks.com/en/dev-tools/bundles/index.html
+
+bundle:
+  name: adf-notebooks
+
+include: []
+
+variables: {}
+
+workspace:
+  # This is where files will be stored in the workspace
+  root_path: /Workspace/adf-pipelines/${bundle.target}
+
+targets: 
+  dev:
+    mode: development
+    workspace:
+      # CDP preprd workspace
+      host: "https://adb-1053042427915632.12.azuredatabricks.net"
+      # For development, we put code in the shared folder, so people can see it
+      root_path: /Workspace/Shared/adf-pipelines/${workspace.current_user.short_name}/${bundle.target}
+    permissions:
+      # ID for Service Principal adf-ing-cdp-preprd-dev-we-ojsu
+      - service_principal_name: "fed59cc0-20f1-465a-ba54-c3b3646ffd85"
+        level: CAN_MANAGE
+
+  tst:
+    mode: production
+    workspace:
+      # CDP preprd workspace
+      host: "https://adb-1053042427915632.12.azuredatabricks.net"
+    permissions:
+      # ID for Service Principal adf-ing-cdp-preprd-tst-we-ojsu
+      - service_principal_name: "67d33cb2-1dc9-426a-bdda-fee18a7984d9"
+        level: CAN_MANAGE
+
+  acp:
+    mode: production
+    workspace:
+      # CDP preprd workspace
+      host: "https://adb-1053042427915632.12.azuredatabricks.net"
+    permissions:
+      # ID for Service Principal adf-ing-cdp-preprd-acp-we-ojsu
+      - service_principal_name: "23f7c524-2398-487a-947d-dbe8d2956ba5"
+        level: CAN_MANAGE
+
+  prd:
+    mode: production
+    workspace:
+      # CDP prd workspace
+      host: "https://adb-6545544933368564.4.azuredatabricks.net"
+    permissions:
+      # ID for Service Principal adf-ing-cdp-preprd-prd-we-ojsu
+      - service_principal_name: "58273cac-6cea-41f5-8ec4-7b070fe9c3ed"
+        level: CAN_MANAGE
+
+# Only sync the databricks_notebooks folder to Databricks
+sync:
+  include:
+    - databricks_notebooks/**
+  exclude:
+    - "**/*"
+    - "!databricks_notebooks/**"

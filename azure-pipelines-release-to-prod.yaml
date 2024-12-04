@@ -15,6 +15,10 @@ trigger:
     include:
     - '*'
 
+variables:
+  - name: dbx_cli_version
+    value: '0.230.0'
+
 stages:
 - template: azure_devops/templates/build-stage.yaml
   parameters:
@@ -40,3 +44,13 @@ stages:
       service_connection: sscn-cdp-prd-we-001
       depends_on: Build
       shared_ir_resource_id: /subscriptions/50c97cee-4d5e-44b3-ba85-6b12b2634abe/resourcegroups/rg-ingestion-cdp-prd-we-kutk/providers/Microsoft.DataFactory/factories/adf-ingestion-cdp-prd-we-kutk/integrationruntimes/prd
+  
+  - template: templates/stages/deploy-databricks-asset-bundle.yaml@templateRepo
+    parameters:
+      stage_name: DeployDatabricksAssetBundle_acp
+      dependsOn: Build
+      agent_pool_name: cdp-runners-prd
+      service_connection: scn-sub-cdp-preprd-we-001
+      dbx_env: acp
+      dbx_cli_version: $(dbx_cli_version)
+      skip_apply: false
