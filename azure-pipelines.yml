@@ -69,7 +69,7 @@ stages:
       env: tst      
       instance_name: ojsu
       service_connection: scn-sub-cdp-preprd-we-001
-      depends_on:
+      dependsOn:
         - CDPPreProd_dev
         - DeployDatabricksAssetBundle_dev
       shared_ir_resource_id: /subscriptions/d12cd7ca-ec96-4566-8890-89f3194d1169/resourcegroups/rg-ingestion-cdp-preprd-we-ojsu/providers/Microsoft.DataFactory/factories/adf-ingestion-cdp-preprd-we-ojsu/integrationruntimes/tst
@@ -94,7 +94,7 @@ stages:
       env: acp      
       instance_name: ojsu
       service_connection: scn-sub-cdp-preprd-we-001
-      depends_on: 
+      dependsOn: 
         - CDPPreProd_tst
         - DeployDatabricksAssetBundle_tst
       shared_ir_resource_id: /subscriptions/d12cd7ca-ec96-4566-8890-89f3194d1169/resourcegroups/rg-ingestion-cdp-preprd-we-ojsu/providers/Microsoft.DataFactory/factories/adf-ingestion-cdp-preprd-we-ojsu/integrationruntimes/acp
