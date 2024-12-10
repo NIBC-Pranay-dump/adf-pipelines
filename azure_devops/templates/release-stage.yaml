@@ -25,7 +25,7 @@ stages:
     data_factory_name: adf-ing-${{ parameters.env_path }}-${{ parameters.env }}-we-${{ parameters.instance_name }}
     data_factory_resource_group_name: rg-ingestion-${{ parameters.env_path }}-we-${{ parameters.instance_name }}
 
-  dependsOn: ${{ parameters.depends_on }}
+  dependsOn: ${{ parameters.dependsOn }}
   jobs:
   - job: ADF_${{ parameters.name }}
     displayName: ADF ${{ parameters.name }}
