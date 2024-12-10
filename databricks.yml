@@ -8,9 +8,16 @@
 bundle:
   name: adf-notebooks
 
-include: []
+include:
+  - databricks_jobs/unity_backup_job.yaml
 
-variables: {}
+variables: 
+  service_principal_id:
+    description: ID of the ADF service principal that should have access to our job
+    type: string
+  cluster_id:
+    description: ID for cluster to run the job on.
+    type: string
 
 workspace:
   # This is where files will be stored in the workspace
@@ -24,9 +31,17 @@ targets:
       host: "https://adb-1053042427915632.12.azuredatabricks.net"
       # For development, we put code in the shared folder, so people can see it
       root_path: /Workspace/Shared/adf-pipelines/${workspace.current_user.short_name}/${bundle.target}
+    variables:
+      cluster_id: "1220-112536-2dhkacra"
+      # ID for the spn-dbt-databricks
+      service_principal_id: "2198662a-dc4e-43b0-b943-cf8822942fe5"
     permissions:
-      # ID for Service Principal adf-ing-cdp-preprd-dev-we-ojsu
+      # ID for Service Principal adf-ing-cdp-preprd-dev-we-ojsu needed to run the custom moneyview notebook
+      # since the notebook does not have a job associated to it.
       - service_principal_name: "fed59cc0-20f1-465a-ba54-c3b3646ffd85"
+        level: CAN_MANAGE
+      # ID for the spn-dbt-databricks service principal needed to run the unity backup job
+      - service_principal_name: "2198662a-dc4e-43b0-b943-cf8822942fe5"
         level: CAN_MANAGE
 
   tst:
@@ -34,9 +49,17 @@ targets:
     workspace:
       # CDP preprd workspace
       host: "https://adb-1053042427915632.12.azuredatabricks.net"
+    variables:
+      cluster_id: "1220-112536-2dhkacra"
+      # ID for the spn-dbt-databricks
+      service_principal_id: "2198662a-dc4e-43b0-b943-cf8822942fe5"
     permissions:
-      # ID for Service Principal adf-ing-cdp-preprd-tst-we-ojsu
+      # ID for Service Principal adf-ing-cdp-preprd-tst-we-ojsu needed to run the custom moneyview notebook
+      # since the notebook does not have a job associated to it.
       - service_principal_name: "67d33cb2-1dc9-426a-bdda-fee18a7984d9"
+        level: CAN_MANAGE
+      # ID for the spn-dbt-databricks service principal needed to run the unity backup job
+      - service_principal_name: "2198662a-dc4e-43b0-b943-cf8822942fe5"
         level: CAN_MANAGE
 
   acp:
@@ -44,9 +67,17 @@ targets:
     workspace:
       # CDP preprd workspace
       host: "https://adb-1053042427915632.12.azuredatabricks.net"
+    variables:
+      cluster_id: "1220-112536-2dhkacra"
+      # ID for the spn-dbt-databricks
+      service_principal_id: "2198662a-dc4e-43b0-b943-cf8822942fe5"
     permissions:
-      # ID for Service Principal adf-ing-cdp-preprd-acp-we-ojsu
+      # ID for Service Principal adf-ing-cdp-preprd-acp-we-ojsu needed to run the custom moneyview notebook
+      # since the notebook does not have a job associated to it.
       - service_principal_name: "23f7c524-2398-487a-947d-dbe8d2956ba5"
+        level: CAN_MANAGE
+      # ID for the spn-dbt-databricks service principal needed to run the unity backup job
+      - service_principal_name: "2198662a-dc4e-43b0-b943-cf8822942fe5"
         level: CAN_MANAGE
 
   prd:
@@ -54,9 +85,16 @@ targets:
     workspace:
       # CDP prd workspace
       host: "https://adb-6545544933368564.4.azuredatabricks.net"
+    variables:
+      cluster_id: "1219-115818-pb4nlwc5"
+      # ID for the spn-prod-dbt-databricks
+      service_principal_id: "bdabf07b-13c0-41fc-aa50-c409936d6dd8"
     permissions:
       # ID for Service Principal adf-ing-cdp-preprd-prd-we-ojsu
       - service_principal_name: "58273cac-6cea-41f5-8ec4-7b070fe9c3ed"
+        level: CAN_MANAGE
+      # ID for the spn-prod-dbt-databricks service principal needed to run the unity backup job
+      - service_principal_name: "bdabf07b-13c0-41fc-aa50-c409936d6dd8"
         level: CAN_MANAGE
 
 # Only sync the databricks_notebooks folder to Databricks

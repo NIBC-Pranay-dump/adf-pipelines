@@ -23,11 +23,11 @@
 						"type": "Expression"
 					},
 					"connectVia": {
-						"referenceName": "self-hosted-runtime",
+						"referenceName": "cloud",
 						"type": "IntegrationRuntimeReference"
 					},
 					"body": {
-						"value": "@concat('{\"job_id\":',pipeline().parameters.job_id,'}')",
+						"value": "@concat('{\"job_id\":', pipeline().parameters.job_id, ',\"job_parameters\":', pipeline().parameters.job_parameters, '}')",
 						"type": "Expression"
 					},
 					"authentication": {
@@ -73,7 +73,7 @@
 									"type": "Expression"
 								},
 								"connectVia": {
-									"referenceName": "self-hosted-runtime",
+									"referenceName": "cloud",
 									"type": "IntegrationRuntimeReference"
 								},
 								"authentication": {
@@ -155,7 +155,7 @@
 							"userProperties": [],
 							"typeProperties": {
 								"message": {
-									"value": "@string(activity('Check Job Run API').output.state.result_state)",
+									"value": "@concat(\n    'Job failed with state: ',\n    string(activity('Check Job Run API').output.state.result_state), '\\n',\n    'See job run here: ',\n    string(activity('Check Job Run API').output.run_page_url)\n)",
 									"type": "Expression"
 								},
 								"errorCode": "500"
@@ -192,15 +192,22 @@
 		"parameters": {
 			"job_id": {
 				"type": "string",
-				"defaultValue": "396570710626532"
+				"defaultValue": "321661410506962"
 			},
 			"workspace_url": {
 				"type": "string",
-				"defaultValue": "https://adb-7348359736582708.8.azuredatabricks.net"
+				"defaultValue": "https://adb-1053042427915632.12.azuredatabricks.net"
 			},
 			"wait_seconds_between_polls": {
 				"type": "int",
 				"defaultValue": 5
+			},
+			"job_parameters": {
+				"type": "string",
+				"defaultValue": {
+					"catalog_name": "cdp_transformation_dev",
+					"backup_location": "abfss: //daily-dev@stbackupcdppreprdweojsu.dfs.core.windows.net"
+				}
 			}
 		},
 		"variables": {

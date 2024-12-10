@@ -111,6 +111,6 @@ def main(catalog_name: str, backup_to_location_path: str) -> None:
 
 if __name__ == "__main__":
     catalog_name = dbutils.widgets.get("catalog_name")
-    backup_to_location_path = dbutils.widgets.get("backup_to_location_path")
+    backup_to_location_path = dbutils.widgets.get("backup_location")
 
     main(catalog_name=catalog_name, backup_to_location_path=backup_to_location_path)

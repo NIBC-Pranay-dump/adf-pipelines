@@ -1,0 +1,23 @@
+# This file contains the definition of a job on Databricks
+# This job will be triggered from ADF
+
+resources:
+  jobs:
+    backup_unity_catalog:
+      name: Backup Unity Catalog to external Location
+
+      run_as: 
+        # This is the service principal that will run the job
+        service_principal_name: "${var.service_principal_id}"
+
+      tasks:
+        - task_key: backup-unity-catalog
+          # We cannot use job clusters, because job clusters cannot use tables with column masking applied
+          existing_cluster_id: "${var.cluster_id}"
+          notebook_task:
+              notebook_path: ../databricks_notebooks/backup_databricks_table_notebook.py
+  
+      permissions:
+        # Asset bundles called this service principal name, but we need a service principal id
+        - service_principal_name: "${var.service_principal_id}"
+          level: CAN_MANAGE_RUN
