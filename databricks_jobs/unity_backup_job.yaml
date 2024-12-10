@@ -4,7 +4,7 @@
 resources:
   jobs:
     backup_unity_catalog:
-      name: Backup Unity Catalog to external Location
+      name: "Backup Unity Catalog to external Location - ${bundle.target}"
 
       run_as: 
         # This is the service principal that will run the job
