@@ -28,14 +28,13 @@ trigger:
       - /**/*.md
 
 stages:
-- ${{ if or(eq(variables['Build.SourceBranch'], 'refs/heads/main'), eq(variables['Build.Reason'], 'PullRequest'), eq(variables['Build.Reason'], 'Manual')) }}:
-  - template: azure_devops/templates/build-stage.yaml
-    parameters:
-      name: Build
-      service_connection: scn-sub-cdp-preprd-we-001
-      env_path: cdp-preprd
-      env: dev
-      instance_name: ojsu
+- template: azure_devops/templates/build-stage.yaml
+  parameters:
+    name: Build
+    service_connection: scn-sub-cdp-preprd-we-001
+    env_path: cdp-preprd
+    env: dev
+    instance_name: ojsu
 
 - ${{ if or(eq(variables['Build.SourceBranch'], 'refs/heads/main'), eq(variables['Build.Reason'], 'Manual')) }}:
   - template: azure_devops/templates/release-stage.yaml
@@ -45,7 +44,8 @@ stages:
       env: dev      
       instance_name: ojsu
       service_connection: scn-sub-cdp-preprd-we-001
-      depends_on: Build
+      dependsOn: 
+        - Build
       shared_ir_resource_id: /subscriptions/d12cd7ca-ec96-4566-8890-89f3194d1169/resourceGroups/rg-ingestion-cdp-preprd-we-ojsu/providers/Microsoft.DataFactory/factories/adf-ingestion-cdp-preprd-we-ojsu/integrationruntimes/dev
 
 # Validate the bundle without applying it for the pull requests
@@ -61,6 +61,7 @@ stages:
       skip_apply: ${{ parameters.skipApply }}
   
 
+# Tst stage
 - ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/main') }}:
   - template: azure_devops/templates/release-stage.yaml
     parameters:
@@ -84,8 +85,9 @@ stages:
       service_connection: scn-sub-cdp-preprd-we-001
       dbx_env: tst
       dbx_cli_version: $(dbx_cli_version)
-      skip_apply: ${{ parameters.skipApply }}
+      skip_apply: false
 
+# Acp stage
 - ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/main') }}:
   - template: azure_devops/templates/release-stage.yaml
     parameters:
@@ -109,4 +111,4 @@ stages:
       service_connection: scn-sub-cdp-preprd-we-001
       dbx_env: acp
       dbx_cli_version: $(dbx_cli_version)
-      skip_apply: ${{ parameters.skipApply }}
+      skip_apply: false

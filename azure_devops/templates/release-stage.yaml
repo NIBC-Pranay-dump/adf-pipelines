@@ -10,8 +10,9 @@ parameters:
     type: string
   - name: env
     type: string  
-  - name: depends_on
-    type: string
+  - name: dependsOn
+    type: object
+    default: []
   - name: service_connection
     type: string
   - name: shared_ir_resource_id
