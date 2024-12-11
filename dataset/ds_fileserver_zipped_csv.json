@@ -1,0 +1,71 @@
+{
+	"name": "ds_fileserver_zipped_csv",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "ls_fileserver_on_prem",
+			"type": "LinkedServiceReference",
+			"parameters": {
+				"key_vault_uri": {
+					"value": "@dataset().key_vault_uri",
+					"type": "Expression"
+				},
+				"fileserver_password_secret_name": {
+					"value": "@dataset().fileserver_password_secret_name",
+					"type": "Expression"
+				},
+				"host_name": {
+					"value": "@dataset().host_name",
+					"type": "Expression"
+				},
+				"user_name": {
+					"value": "@dataset().user_name",
+					"type": "Expression"
+				}
+			}
+		},
+		"parameters": {
+			"user_name": {
+				"type": "string"
+			},
+			"host_name": {
+				"type": "string"
+			},
+			"key_vault_uri": {
+				"type": "string"
+			},
+			"fileserver_password_secret_name": {
+				"type": "string"
+			},
+			"directory": {
+				"type": "string"
+			},
+			"column_delimiter": {
+				"type": "string"
+			}
+		},
+		"folder": {
+			"name": "auto_resolve"
+		},
+		"annotations": [],
+		"type": "DelimitedText",
+		"typeProperties": {
+			"location": {
+				"type": "FileServerLocation",
+				"folderPath": {
+					"value": "@dataset().directory",
+					"type": "Expression"
+				}
+			},
+			"columnDelimiter": {
+				"value": "@dataset().column_delimiter",
+				"type": "Expression"
+			},
+			"compressionCodec": "ZipDeflate",
+			"compressionLevel": "Optimal",
+			"escapeChar": "\\",
+			"firstRowAsHeader": true,
+			"quoteChar": "\""
+		},
+		"schema": []
+	}
+}
