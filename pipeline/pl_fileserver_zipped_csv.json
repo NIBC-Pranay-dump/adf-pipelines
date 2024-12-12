@@ -254,7 +254,7 @@
 											"type": "Expression"
 										},
 										"storage_account_uri": {
-											"value": "@pipeline().globalParameters.storage_account_data_factory_uri",
+											"value": "@pipeline().globalParameters.storage_account_datalake_uri",
 											"type": "Expression"
 										},
 										"container_name": {
