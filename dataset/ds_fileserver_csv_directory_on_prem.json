@@ -60,7 +60,8 @@
 				"value": "@dataset().column_delimiter",
 				"type": "Expression"
 			},
-			"escapeChar": "\\",
+			"rowDelimiter": "\r",
+			"escapeChar": "\"",
 			"firstRowAsHeader": true,
 			"quoteChar": "\""
 		},
