@@ -7,7 +7,14 @@
 				"name": "copy REST API dataset",
 				"description": "Copies the REST API dataset to datalake.",
 				"type": "Copy",
-				"dependsOn": [],
+				"dependsOn": [
+					{
+						"activity": "Get access token",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
 				"policy": {
 					"timeout": "0.12:00:00",
 					"retry": 0,
@@ -22,6 +29,12 @@
 						"httpRequestTimeout": "00:01:40",
 						"requestInterval": "00.00:00:00.010",
 						"requestMethod": "GET",
+						"additionalHeaders": {
+							"Authorization": {
+								"value": "@concat('Bearer ', activity('Get access token').output['access_token'])",
+								"type": "Expression"
+							}
+						},
 						"paginationRules": {
 							"supportRFC5988": "true"
 						}
@@ -36,11 +49,15 @@
 							"type": "ParquetWriteSettings"
 						}
 					},
-					"enableStaging": false
+					"enableStaging": false,
+					"translator": {
+						"value": "@json(string(pipeline().parameters.column_mapping))",
+						"type": "Expression"
+					}
 				},
 				"inputs": [
 					{
-						"referenceName": "ds_rest_api_with_auth_headers_cloud",
+						"referenceName": "ds_rest_api_cloud",
 						"type": "DatasetReference",
 						"parameters": {
 							"relative_url": {
@@ -49,14 +66,6 @@
 							},
 							"base_url": {
 								"value": "@pipeline().parameters.base_url",
-								"type": "Expression"
-							},
-							"key_vault_uri": {
-								"value": "@pipeline().globalParameters.key_vault_uri",
-								"type": "Expression"
-							},
-							"key_vault_secret_name": {
-								"value": "@pipeline().parameters.key_vault_secret_name",
 								"type": "Expression"
 							}
 						}
@@ -90,12 +99,65 @@
 						}
 					}
 				]
+			},
+			{
+				"name": "Get access token",
+				"type": "WebActivity",
+				"dependsOn": [
+					{
+						"activity": "Get secret",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"method": "POST",
+					"headers": {
+						"Content-Type": "application/x-www-form-urlencoded"
+					},
+					"url": "https://login.microsoftonline.com/8614d95f-762b-4789-a741-2589e3d0b08b/oauth2/v2.0/token",
+					"body": {
+						"value": "@concat('client_id=', pipeline().parameters.microsoft_entra_cid, '&scope=', pipeline().parameters.microsoft_entra_scope, '&client_secret=', activity('Get secret').output.pipelineReturnValue.keyvault_secret_value, '&grant_type=client_credentials')",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "Get secret",
+				"type": "ExecutePipeline",
+				"dependsOn": [],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "pl_util_get_keyvault_secret",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true,
+					"parameters": {
+						"keyvault_secret_name": {
+							"value": "@pipeline().parameters.key_vault_secret_name",
+							"type": "Expression"
+						}
+					}
+				}
 			}
 		],
 		"parameters": {
 			"datastore_name": {
 				"type": "string",
-				"defaultValue": "statline"
+				"defaultValue": "cbs"
 			},
 			"dataset_name": {
 				"type": "string",
@@ -112,6 +174,17 @@
 			"key_vault_secret_name": {
 				"type": "string",
 				"defaultValue": "apim-authorization-access-token"
+			},
+			"microsoft_entra_cid": {
+				"type": "string",
+				"defaultValue": "a1bb61c1-d7c6-468b-9e6a-720dcd63ce91"
+			},
+			"microsoft_entra_scope": {
+				"type": "string",
+				"defaultValue": "0c28ca60-24cd-45bd-95f1-01fdaee9c41c/.default"
+			},
+			"column_mapping": {
+				"type": "string"
 			}
 		},
 		"annotations": []

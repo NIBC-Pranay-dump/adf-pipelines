@@ -1,20 +1,12 @@
 {
-	"name": "ds_rest_api_with_auth_headers_cloud",
+	"name": "ds_rest_api_cloud",
 	"properties": {
 		"linkedServiceName": {
-			"referenceName": "ls_api_with_auth_header_cloud",
+			"referenceName": "ls_api_cloud",
 			"type": "LinkedServiceReference",
 			"parameters": {
 				"base_url": {
 					"value": "@dataset().base_url",
-					"type": "Expression"
-				},
-				"key_vault_uri": {
-					"value": "@dataset().key_vault_uri",
-					"type": "Expression"
-				},
-				"key_vault_secret": {
-					"value": "@dataset().key_vault_secret_name",
 					"type": "Expression"
 				}
 			}
@@ -25,16 +17,10 @@
 			},
 			"base_url": {
 				"type": "string"
-			},
-			"key_vault_uri": {
-				"type": "string"
-			},
-			"key_vault_secret_name": {
-				"type": "string"
 			}
 		},
 		"folder": {
-			"name": "azure_shir"
+			"name": "cloud"
 		},
 		"annotations": [],
 		"type": "RestResource",
