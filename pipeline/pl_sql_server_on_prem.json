@@ -45,7 +45,7 @@
 						"type": "DatasetReference",
 						"parameters": {
 							"schema_name": {
-								"value": "@pipeline().parameters.datastore_name",
+								"value": "@pipeline().parameters.schema_name",
 								"type": "Expression"
 							},
 							"table_name": {
@@ -96,7 +96,7 @@
 		"parameters": {
 			"datastore_name": {
 				"type": "string",
-				"defaultValue": "psa"
+				"defaultValue": "edw"
 			},
 			"dataset_name": {
 				"type": "string",
@@ -105,6 +105,10 @@
 			"connection_string_secret_name": {
 				"type": "string",
 				"defaultValue": "sql-connection-string-edw-dev"
+			},
+			"schema_name": {
+				"type": "string",
+				"defaultValue": "psa"
 			}
 		},
 		"folder": {
