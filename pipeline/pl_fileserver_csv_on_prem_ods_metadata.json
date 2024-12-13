@@ -492,7 +492,7 @@
 			},
 			"dataset_name": {
 				"type": "string",
-				"defaultValue": "hds_t_loan"
+				"defaultValue": "hds_t_offer"
 			},
 			"environment": {
 				"type": "string",
@@ -500,7 +500,7 @@
 			},
 			"source_file_name_pattern": {
 				"type": "string",
-				"defaultValue": "hds_t_loan_file*"
+				"defaultValue": "hds_t_offer_file*"
 			},
 			"fileserver_user_name": {
 				"type": "string",
