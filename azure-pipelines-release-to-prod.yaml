@@ -47,10 +47,10 @@ stages:
   
   - template: templates/stages/deploy-databricks-asset-bundle.yaml@templateRepo
     parameters:
-      stage_name: DeployDatabricksAssetBundle_acp
+      stage_name: DeployDatabricksAssetBundle_prd
       dependsOn: approve_release_to_production
       agent_pool_name: cdp-runners-prd
-      service_connection: scn-sub-cdp-preprd-we-001
-      dbx_env: acp
+      service_connection: scn-cdp-prd-we-001
+      dbx_env: prd
       dbx_cli_version: $(dbx_cli_version)
       skip_apply: false
