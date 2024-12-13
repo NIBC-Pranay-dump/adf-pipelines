@@ -61,7 +61,7 @@
 				"type": "Expression"
 			},
 			"rowDelimiter": {
-				"value": "'\r,\n'",
+				"value": "\r\n",
 				"type": "Expression"
 			},
 			"escapeChar": "\\",
