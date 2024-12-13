@@ -1,5 +1,5 @@
 {
-	"name": "pl_fileserver_zipped_csv",
+	"name": "pl_fileserver_zipped_csv_bagpro",
 	"properties": {
 		"activities": [
 			{
@@ -176,6 +176,15 @@
 							"typeProperties": {
 								"source": {
 									"type": "DelimitedTextSource",
+									"additionalColumns": [
+										{
+											"name": "bag_file_date",
+											"value": {
+												"value": "@variables('file_date')",
+												"type": "Expression"
+											}
+										}
+									],
 									"storeSettings": {
 										"type": "FileServerReadSettings",
 										"recursive": true,
