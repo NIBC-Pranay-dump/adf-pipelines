@@ -44,7 +44,7 @@
 			}
 		},
 		"folder": {
-			"name": "auto_resolve"
+			"name": "on_prem"
 		},
 		"annotations": [],
 		"type": "DelimitedText",
