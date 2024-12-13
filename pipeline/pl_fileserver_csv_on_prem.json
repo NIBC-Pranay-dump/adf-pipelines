@@ -264,7 +264,7 @@
 		"parameters": {
 			"keyvault_secret_name": {
 				"type": "string",
-				"defaultValue": "fileserver-credentials-ods-dev"
+				"defaultValue": "fileserver-credentials-ods"
 			},
 			"datastore_name": {
 				"type": "string",
@@ -272,11 +272,11 @@
 			},
 			"dataset_name": {
 				"type": "string",
-				"defaultValue": "hds_t_cbs_kadaster_index"
+				"defaultValue": "ab_t_qu_campaign_report"
 			},
 			"source_file_name_pattern": {
 				"type": "string",
-				"defaultValue": "hds_t_cbs_kadaster_index_file*"
+				"defaultValue": "ab_t_qu_campaign_report_file*"
 			},
 			"fileserver_user_name": {
 				"type": "string",

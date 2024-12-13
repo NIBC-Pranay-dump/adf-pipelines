@@ -262,7 +262,7 @@
 											"type": "Expression"
 										},
 										"file_name": {
-											"value": "@variables('file_name')",
+											"value": "@pipeline().parameters.dataset_name",
 											"type": "Expression"
 										}
 									}
@@ -311,8 +311,7 @@
 				"defaultValue": 0
 			},
 			"trigger_date_yyyyMMdd": {
-				"type": "string",
-				"defaultValue": "20240826"
+				"type": "string"
 			}
 		},
 		"variables": {
