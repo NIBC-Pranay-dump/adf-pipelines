@@ -202,7 +202,7 @@
 								"type": "Expression"
 							},
 							"file_name": {
-								"value": "@pipeline().parameters.dataset_name",
+								"value": "@replace(variables('file_name'),'.xml','')",
 								"type": "Expression"
 							}
 						}
