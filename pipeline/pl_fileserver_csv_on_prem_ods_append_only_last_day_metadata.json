@@ -639,6 +639,9 @@
 				"type": "String"
 			}
 		},
+		"folder": {
+			"name": "on_prem"
+		},
 		"annotations": []
 	}
 }

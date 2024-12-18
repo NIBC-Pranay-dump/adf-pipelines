@@ -220,10 +220,6 @@
 				"type": "string",
 				"defaultValue": "246750"
 			},
-			"project_id": {
-				"type": "string",
-				"defaultValue": "7328"
-			},
 			"account_id": {
 				"type": "string",
 				"defaultValue": "261"
