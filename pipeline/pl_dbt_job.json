@@ -1,0 +1,257 @@
+{
+	"name": "pl_dbt_job",
+	"properties": {
+		"description": "Run a dbt Job. Based on example described here: https://techcommunity.microsoft.com/t5/analytics-on-azure-blog/leverage-azure-databricks-jobs-orchestration-from-azure-data/ba-p/3123862",
+		"activities": [
+			{
+				"name": "Kick Off Job through API",
+				"description": "Call API to start dbt Job",
+				"type": "WebActivity",
+				"dependsOn": [
+					{
+						"activity": "Get dbt API key",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"method": "POST",
+					"headers": {
+						"Authorization": {
+							"value": "@concat('Bearer ', activity('Get dbt API key').output.pipelineReturnValue.keyvault_secret_value)",
+							"type": "Expression"
+						},
+						"Content-Type": "application/json"
+					},
+					"url": {
+						"value": "@concat('https://emea.dbt.com/api/v2/accounts/', pipeline().parameters.account_id, '/jobs/', pipeline().parameters.job_id,'/run/')",
+						"type": "Expression"
+					},
+					"body": {
+						"cause": "ADF-triggered job"
+					}
+				}
+			},
+			{
+				"name": "Poll Until Job Completes",
+				"type": "Until",
+				"dependsOn": [
+					{
+						"activity": "Set run_id",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@not(equals(variables('job_status'),'Running'))",
+						"type": "Expression"
+					},
+					"activities": [
+						{
+							"name": "Check Job Run API",
+							"type": "WebActivity",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"method": "GET",
+								"headers": {
+									"Authorization": {
+										"value": "@concat('Bearer ', activity('Get dbt API key').output.pipelineReturnValue.keyvault_secret_value)",
+										"type": "Expression"
+									},
+									"Accept": "application/json"
+								},
+								"url": {
+									"value": "@concat('https://emea.dbt.com/api/v2/accounts/', pipeline().parameters.account_id,'/runs/', variables('run_id'), '/')",
+									"type": "Expression"
+								}
+							}
+						},
+						{
+							"name": "Set Job Status",
+							"type": "SetVariable",
+							"dependsOn": [
+								{
+									"activity": "Check Job Run API",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "job_status",
+								"value": {
+									"value": "@if(\n    or(\n        or(\n            equals(activity('Check Job Run API').output.data.status, '1'), \n            equals(activity('Check Job Run API').output.data.status, '2')\n        ), \n        equals(activity('Check Job Run API').output.data.status, '3')\n        ),\n    'Running',\n    string(activity('Check Job Run API').output.data.status)\n)",
+									"type": "Expression"
+								}
+							}
+						},
+						{
+							"name": "Wait to Recheck API",
+							"type": "Wait",
+							"dependsOn": [
+								{
+									"activity": "Set Job Status",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"userProperties": [],
+							"typeProperties": {
+								"waitTimeInSeconds": {
+									"value": "@pipeline().parameters.wait_seconds_between_polls",
+									"type": "Expression"
+								}
+							}
+						}
+					],
+					"timeout": "0.12:00:00"
+				}
+			},
+			{
+				"name": "Job State Check",
+				"description": "See if job has run successfully or not",
+				"type": "IfCondition",
+				"dependsOn": [
+					{
+						"activity": "Poll Until Job Completes",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@equals(string(activity('Check Job Run API').output.data.status),'10')",
+						"type": "Expression"
+					},
+					"ifFalseActivities": [
+						{
+							"name": "Fail",
+							"type": "Fail",
+							"dependsOn": [],
+							"userProperties": [],
+							"typeProperties": {
+								"message": {
+									"value": "@concat(\n    'Job failed with state: ',\n    string(activity('Check Job Run API').output.data.status_humanized), '\\n',\n    'See job run here: ',\n    string(activity('Check Job Run API').output.data.href)\n)",
+									"type": "Expression"
+								},
+								"errorCode": "500"
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "Set run_id",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "Kick Off Job through API",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "run_id",
+					"value": {
+						"value": "@activity('Kick Off Job through API').output.data.id",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "Get dbt API key",
+				"type": "ExecutePipeline",
+				"dependsOn": [],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "pl_util_get_keyvault_secret",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true,
+					"parameters": {
+						"keyvault_secret_name": {
+							"value": "@pipeline().parameters.api_key_secret_name",
+							"type": "Expression"
+						}
+					}
+				}
+			}
+		],
+		"parameters": {
+			"job_id": {
+				"type": "string",
+				"defaultValue": "246750"
+			},
+			"project_id": {
+				"type": "string",
+				"defaultValue": "7328"
+			},
+			"account_id": {
+				"type": "string",
+				"defaultValue": "261"
+			},
+			"api_key_secret_name": {
+				"type": "string",
+				"defaultValue": "adf-dbt-job-api-key"
+			},
+			"wait_seconds_between_polls": {
+				"type": "int",
+				"defaultValue": 15
+			}
+		},
+		"variables": {
+			"job_status": {
+				"type": "String",
+				"defaultValue": "Running"
+			},
+			"run_id": {
+				"type": "Integer"
+			},
+			"cause": {
+				"type": "String",
+				"defaultValue": "ADF-triggered job"
+			}
+		},
+		"annotations": [],
+		"lastPublishTime": "2023-04-03T13:21:37Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}
