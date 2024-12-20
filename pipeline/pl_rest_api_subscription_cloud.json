@@ -381,7 +381,7 @@
 						"type": "Expression"
 					},
 					"body": {
-						"value": "@concat('ServiceBus-Authorization=Bearer ', activity('Get Service Bus token').output['access_token'],'&Authorization=Bearer ', activity('Get PIM token').output['access_token'],'&Topic=',pipeline().parameters.service_bus_topic,'&Subscription=',pipeline().parameters.service_bus_topic_subscription)",
+						"value": "@concat(\n    'ServiceBus-Authorization=Bearer ', \n        activity('Get Service Bus token').output['access_token'],\n    '&Topic=',\n        pipeline().parameters.service_bus_topic,\n    '&Subscription=',\n        pipeline().parameters.service_bus_topic_subscription\n)",
 						"type": "Expression"
 					}
 				}
