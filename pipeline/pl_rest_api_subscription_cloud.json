@@ -374,28 +374,14 @@
 				"typeProperties": {
 					"method": "POST",
 					"headers": {
-						"Content-Type": "application/x-www-form-urlencoded",
-						"ServiceBus-Authorization": {
-							"value": "@concat('Bearer ', activity('Get Service Bus token').output['access_token'])",
-							"type": "Expression"
-						},
-						"Authorization": {
-							"value": "@concat('Bearer ', activity('Get PIM token').output['access_token'])",
-							"type": "Expression"
-						},
-						"Topic": {
-							"value": "@pipeline().parameters.service_bus_topic",
-							"type": "Expression"
-						},
-						"Subscription": "@pipeline().parameters.service_bus_topic_subscription",
-						"Content-Length": "0"
+						"Content-Type": "application/x-www-form-urlencoded"
 					},
 					"url": {
 						"value": "@concat(pipeline().parameters.base_url,pipeline().parameters.relative_url,'receive-message')",
 						"type": "Expression"
 					},
 					"body": {
-						"value": "leeg",
+						"value": "@concat('ServiceBus-Authorization=Bearer ', activity('Get Service Bus token').output['access_token'],'&Authorization=Bearer ', activity('Get PIM token').output['access_token'],'&Topic=',pipeline().parameters.service_bus_topic,'&Subscription=',pipeline().parameters.service_bus_topic_subscription)",
 						"type": "Expression"
 					}
 				}
