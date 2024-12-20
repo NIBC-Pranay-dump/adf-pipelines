@@ -9,7 +9,7 @@
 				"type": "Copy",
 				"dependsOn": [
 					{
-						"activity": "reference link",
+						"activity": "content length",
 						"dependencyConditions": [
 							"Succeeded"
 						]
@@ -387,7 +387,7 @@
 				}
 			},
 			{
-				"name": "reference link",
+				"name": "content length",
 				"type": "SetVariable",
 				"dependsOn": [
 					{
@@ -403,9 +403,9 @@
 				},
 				"userProperties": [],
 				"typeProperties": {
-					"variableName": "reference _link",
+					"variableName": "content_length",
 					"value": {
-						"value": "@activity('Get reference link from Service Bus').output['access_token']\n\n",
+						"value": "@activity('Get reference link from Service Bus').output['ADFWebActivityResponseHeaders']['Content-Length']\n\n",
 						"type": "Expression"
 					}
 				}
@@ -488,7 +488,7 @@
 			},
 			"token_scope_storage": {
 				"type": "string",
-				"defaultValue": "https://storage.azure.com/.defaul"
+				"defaultValue": "https://storage.azure.com/.default"
 			},
 			"service_bus_topic": {
 				"type": "string",
@@ -500,11 +500,11 @@
 			}
 		},
 		"variables": {
-			"scope": {
-				"type": "String"
+			"status_code": {
+				"type": "Integer"
 			},
-			"PIM_access_token": {
-				"type": "String"
+			"content_length": {
+				"type": "Integer"
 			}
 		},
 		"folder": {
