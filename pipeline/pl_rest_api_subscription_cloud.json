@@ -101,7 +101,7 @@
 				]
 			},
 			{
-				"name": "Get access token",
+				"name": "Get PIM token",
 				"description": "Fetches an authentication token from Microsoft Entra Privileged Identity Management. This token is used in subsequent API calls.",
 				"type": "WebActivity",
 				"dependsOn": [
@@ -357,7 +357,7 @@
 				"type": "WebActivity",
 				"dependsOn": [
 					{
-						"activity": "access token",
+						"activity": "Get Service Bus token",
 						"dependencyConditions": [
 							"Succeeded"
 						]
@@ -375,16 +375,12 @@
 					"method": "POST",
 					"headers": {
 						"Content-Type": "application/x-www-form-urlencoded",
-						"Topic": {
-							"value": "@pipeline().parameters.service_bus_topic",
-							"type": "Expression"
-						},
-						"Subscription": {
-							"value": "@pipeline().parameters.service_bus_topic_subscription",
+						"ServiceBus-Authorization": {
+							"value": "@concat('Bearer ', activity('Get Service Bus token').output['access_token'])",
 							"type": "Expression"
 						},
 						"Authorization": {
-							"value": "@concat('Bearer ', variables('access_token'))",
+							"value": "@concat('Bearer ', activity('Get PIM token').output['access_token'])",
 							"type": "Expression"
 						}
 					},
@@ -393,30 +389,9 @@
 						"type": "Expression"
 					},
 					"body": {
-						"value": "@concat('client_id=', pipeline().parameters.microsoft_entra_cid, '&scope=', pipeline().parameters.microsoft_entra_scope, '&client_secret=', activity('Get secret').output.pipelineReturnValue.keyvault_secret_value, '&grant_type=client_credentials')",
+						"value": "@concat('Topic=', pipeline().parameters.service_bus_topic, '&Subscription=', pipeline().parameters.token_scope_service_bus)",
 						"type": "Expression"
 					}
-				}
-			},
-			{
-				"name": "access token",
-				"type": "SetVariable",
-				"dependsOn": [
-					{
-						"activity": "Get access token",
-						"dependencyConditions": [
-							"Succeeded"
-						]
-					}
-				],
-				"policy": {
-					"secureOutput": false,
-					"secureInput": false
-				},
-				"userProperties": [],
-				"typeProperties": {
-					"variableName": "access_token",
-					"value": "@activity('Get access token').output['access_token']"
 				}
 			},
 			{
@@ -439,6 +414,41 @@
 					"variableName": "reference _link",
 					"value": {
 						"value": "@activity('Get reference link from Service Bus').output['access_token']\n\n",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "Get Service Bus token",
+				"description": "Fetches an authentication token from Microsoft Entra Privileged Identity Management. This token is used in subsequent API calls.",
+				"type": "WebActivity",
+				"dependsOn": [
+					{
+						"activity": "Get PIM token",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"method": "POST",
+					"headers": {
+						"Content-Type": "application/x-www-form-urlencoded"
+					},
+					"url": {
+						"value": "@pipeline().parameters.token_url",
+						"type": "Expression"
+					},
+					"body": {
+						"value": "@concat('client_id=', pipeline().parameters.microsoft_entra_cid, '&scope=', pipeline().parameters.token_scope_service_bus, '&client_secret=', activity('Get secret').output.pipelineReturnValue.keyvault_secret_value, '&grant_type=client_credentials')",
 						"type": "Expression"
 					}
 				}
@@ -498,10 +508,10 @@
 			}
 		},
 		"variables": {
-			"access_token": {
+			"scope": {
 				"type": "String"
 			},
-			"reference _link": {
+			"PIM_access_token": {
 				"type": "String"
 			}
 		},
