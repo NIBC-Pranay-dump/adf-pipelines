@@ -382,14 +382,19 @@
 						"Authorization": {
 							"value": "@concat('Bearer ', activity('Get PIM token').output['access_token'])",
 							"type": "Expression"
-						}
+						},
+						"Topic": {
+							"value": "@pipeline().parameters.service_bus_topic",
+							"type": "Expression"
+						},
+						"Subscription": "@pipeline().parameters.service_bus_topic_subscription"
 					},
 					"url": {
 						"value": "@concat(pipeline().parameters.base_url,pipeline().parameters.relative_url,'receive-message')",
 						"type": "Expression"
 					},
 					"body": {
-						"value": "@concat('Topic=', pipeline().parameters.service_bus_topic, '&Subscription=', pipeline().parameters.token_scope_service_bus)",
+						"value": "empty",
 						"type": "Expression"
 					}
 				}
