@@ -387,16 +387,14 @@
 							"value": "@pipeline().parameters.service_bus_topic",
 							"type": "Expression"
 						},
-						"Subscription": "@pipeline().parameters.service_bus_topic_subscription"
+						"Subscription": "@pipeline().parameters.service_bus_topic_subscription",
+						"Content-Length": "0"
 					},
 					"url": {
 						"value": "@concat(pipeline().parameters.base_url,pipeline().parameters.relative_url,'receive-message')",
 						"type": "Expression"
 					},
-					"body": {
-						"value": "@concat('topic=', pipeline().parameters.service_bus_topic)",
-						"type": "Expression"
-					}
+					"body": "@concat('client_id=', pipeline().parameters.microsoft_entra_cid, '&scope=', variables('scope'), '&client_secret=', activity('Get secret').output.pipelineReturnValue.keyvault_secret_value, '&grant_type=client_credentials')"
 				}
 			},
 			{
