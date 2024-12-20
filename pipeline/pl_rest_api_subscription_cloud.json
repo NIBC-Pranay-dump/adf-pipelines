@@ -394,7 +394,10 @@
 						"value": "@concat(pipeline().parameters.base_url,pipeline().parameters.relative_url,'receive-message')",
 						"type": "Expression"
 					},
-					"body": "@concat('client_id=', pipeline().parameters.microsoft_entra_cid, '&scope=', variables('scope'), '&client_secret=', activity('Get secret').output.pipelineReturnValue.keyvault_secret_value, '&grant_type=client_credentials')"
+					"body": {
+						"value": "leeg",
+						"type": "Expression"
+					}
 				}
 			},
 			{
