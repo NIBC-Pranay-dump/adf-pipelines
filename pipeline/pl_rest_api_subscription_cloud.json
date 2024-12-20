@@ -9,7 +9,7 @@
 				"type": "Copy",
 				"dependsOn": [
 					{
-						"activity": "Get reference link from Service Bus",
+						"activity": "reference link",
 						"dependencyConditions": [
 							"Succeeded"
 						]
@@ -357,7 +357,7 @@
 				"type": "WebActivity",
 				"dependsOn": [
 					{
-						"activity": "Get access token",
+						"activity": "access token",
 						"dependencyConditions": [
 							"Succeeded"
 						]
@@ -374,7 +374,19 @@
 				"typeProperties": {
 					"method": "POST",
 					"headers": {
-						"Content-Type": "application/x-www-form-urlencoded"
+						"Content-Type": "application/x-www-form-urlencoded",
+						"Topic": {
+							"value": "@pipeline().parameters.service_bus_topic",
+							"type": "Expression"
+						},
+						"Subscription": {
+							"value": "@pipeline().parameters.service_bus_topic_subscription",
+							"type": "Expression"
+						},
+						"Authorization": {
+							"value": "@concat('Bearer ', variables('access_token'))",
+							"type": "Expression"
+						}
 					},
 					"url": {
 						"value": "@concat(pipeline().parameters.base_url,pipeline().parameters.relative_url,'receive-message')",
@@ -382,6 +394,51 @@
 					},
 					"body": {
 						"value": "@concat('client_id=', pipeline().parameters.microsoft_entra_cid, '&scope=', pipeline().parameters.microsoft_entra_scope, '&client_secret=', activity('Get secret').output.pipelineReturnValue.keyvault_secret_value, '&grant_type=client_credentials')",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "access token",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "Get access token",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "access_token",
+					"value": "@activity('Get access token').output['access_token']"
+				}
+			},
+			{
+				"name": "reference link",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "Get reference link from Service Bus",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "reference _link",
+					"value": {
+						"value": "@activity('Get reference link from Service Bus').output['access_token']\n\n",
 						"type": "Expression"
 					}
 				}
@@ -430,6 +487,22 @@
 			"token_scope_storage": {
 				"type": "string",
 				"defaultValue": "https://storage.azure.com/.defaul"
+			},
+			"service_bus_topic": {
+				"type": "string",
+				"defaultValue": "ods-savings"
+			},
+			"service_bus_topic_subscription": {
+				"type": "string",
+				"defaultValue": "cdp"
+			}
+		},
+		"variables": {
+			"access_token": {
+				"type": "String"
+			},
+			"reference _link": {
+				"type": "String"
 			}
 		},
 		"folder": {
