@@ -465,7 +465,7 @@
 			},
 			"relative_url": {
 				"type": "string",
-				"defaultValue": "internal/consumer/1.0/"
+				"defaultValue": "/internal/consumer/1.0/"
 			},
 			"base_url": {
 				"type": "string",
