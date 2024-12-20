@@ -377,7 +377,7 @@
 						"Content-Type": "application/x-www-form-urlencoded"
 					},
 					"url": {
-						"value": "@concat(pipeline().parameters.base_url,pipeline().parameters.relative_url)",
+						"value": "@concat(pipeline().parameters.base_url,pipeline().parameters.relative_url,'receive-message')",
 						"type": "Expression"
 					},
 					"body": {
