@@ -9,7 +9,7 @@
 				"type": "Copy",
 				"dependsOn": [
 					{
-						"activity": "content length",
+						"activity": "filename",
 						"dependencyConditions": [
 							"Succeeded"
 						]
@@ -28,10 +28,11 @@
 						"type": "RestSource",
 						"httpRequestTimeout": "00:01:40",
 						"requestInterval": "00.00:00:00.010",
-						"requestMethod": "GET",
+						"requestMethod": "POST",
+						"requestBody": "@concat(\n    'Authorization=Bearer ', \n        activity('Get PIM token').output['access_token'],        \n    '&Storage-Authorization=Bearer ', \n        activity('Get Storage token').output['access_token'],\n    '&Content-Type=application/json'\n\n)",
 						"additionalHeaders": {
-							"Authorization": {
-								"value": "@concat('Bearer ', activity('Get access token').output['access_token'])",
+							"Content-Type": {
+								"value": "@concat('Bearer ', activity('Get PIM token').output['access_token'])",
 								"type": "Expression"
 							}
 						},
@@ -93,7 +94,7 @@
 								"type": "Expression"
 							},
 							"file_name": {
-								"value": "@pipeline().parameters.dataset_name",
+								"value": "@variables('filename')",
 								"type": "Expression"
 							}
 						}
@@ -357,7 +358,7 @@
 				"type": "WebActivity",
 				"dependsOn": [
 					{
-						"activity": "Get Service Bus token",
+						"activity": "Get Storage token",
 						"dependencyConditions": [
 							"Succeeded"
 						]
@@ -382,30 +383,6 @@
 					},
 					"body": {
 						"value": "@concat(\n    'Authorization=Bearer ', \n        activity('Get PIM token').output['access_token'],        \n    '&ServiceBus-Authorization=Bearer ', \n        activity('Get Service Bus token').output['access_token'],\n    '&Topic=',\n        pipeline().parameters.service_bus_topic,\n    '&Subscription=',\n        pipeline().parameters.service_bus_topic_subscription\n)",
-						"type": "Expression"
-					}
-				}
-			},
-			{
-				"name": "content length",
-				"type": "SetVariable",
-				"dependsOn": [
-					{
-						"activity": "Get reference link from Service Bus",
-						"dependencyConditions": [
-							"Succeeded"
-						]
-					}
-				],
-				"policy": {
-					"secureOutput": false,
-					"secureInput": false
-				},
-				"userProperties": [],
-				"typeProperties": {
-					"variableName": "content_length",
-					"value": {
-						"value": "@activity('Get reference link from Service Bus').output['ADFWebActivityResponseHeaders']['Content-Length']\n\n",
 						"type": "Expression"
 					}
 				}
@@ -441,6 +418,89 @@
 					},
 					"body": {
 						"value": "@concat('client_id=', pipeline().parameters.microsoft_entra_cid, '&scope=', pipeline().parameters.token_scope_service_bus, '&client_secret=', activity('Get secret').output.pipelineReturnValue.keyvault_secret_value, '&grant_type=client_credentials')",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "status code",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "Get reference link from Service Bus",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "status_code",
+					"value": {
+						"value": "@activity('Get reference link from Service Bus').output['status_code']",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "filename",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "status code",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "filename",
+					"value": {
+						"value": "@activity('Get reference link from Service Bus').output['headers']['File-Name']",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "Get Storage token",
+				"description": "Fetches an authentication token from Microsoft Entra Privileged Identity Management. This token is used in subsequent API calls.",
+				"type": "WebActivity",
+				"dependsOn": [
+					{
+						"activity": "Get Service Bus token",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"method": "POST",
+					"headers": {
+						"Content-Type": "application/x-www-form-urlencoded"
+					},
+					"url": {
+						"value": "@pipeline().parameters.token_url",
+						"type": "Expression"
+					},
+					"body": {
+						"value": "@concat('client_id=', pipeline().parameters.microsoft_entra_cid, '&scope=', pipeline().parameters.token_scope_storage, '&client_secret=', activity('Get secret').output.pipelineReturnValue.keyvault_secret_value, '&grant_type=client_credentials')",
 						"type": "Expression"
 					}
 				}
@@ -501,10 +561,10 @@
 		},
 		"variables": {
 			"status_code": {
-				"type": "Integer"
+				"type": "String"
 			},
-			"content_length": {
-				"type": "Integer"
+			"filename": {
+				"type": "String"
 			}
 		},
 		"folder": {
