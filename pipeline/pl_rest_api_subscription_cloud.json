@@ -130,7 +130,7 @@
 						"type": "Expression"
 					},
 					"body": {
-						"value": "@concat('client_id=', pipeline().parameters.microsoft_entra_cid, '&scope=', pipeline().parameters.microsoft_entra_scope, '&client_secret=', activity('Get secret').output.pipelineReturnValue.keyvault_secret_value, '&grant_type=client_credentials')",
+						"value": "@concat('client_id=', pipeline().parameters.microsoft_entra_cid, '&scope=', concat(pipeline().parameters.base_url,'/.default'), '&client_secret=', activity('Get secret').output.pipelineReturnValue.keyvault_secret_value, '&grant_type=client_credentials')",
 						"type": "Expression"
 					}
 				}
@@ -393,10 +393,7 @@
 						"value": "@concat(pipeline().parameters.base_url,pipeline().parameters.relative_url,'receive-message')",
 						"type": "Expression"
 					},
-					"body": {
-						"value": "empty",
-						"type": "Expression"
-					}
+					"body": "@concat('client_id=', pipeline().parameters.microsoft_entra_cid, '&scope=', variables('scope'), '&client_secret=', activity('Get secret').output.pipelineReturnValue.keyvault_secret_value, '&grant_type=client_credentials')"
 				}
 			},
 			{
