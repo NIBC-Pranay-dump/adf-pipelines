@@ -1,6 +1,594 @@
 {
 	"name": "pl_rest_api_subscription_cloud",
 	"properties": {
+		"description": "Use this pipeline to connect the the API managed services REST API",
+		"activities": [
+			{
+				"name": "copy REST API dataset",
+				"description": "Copies the REST API dataset to datalake.",
+				"type": "Copy",
+				"dependsOn": [
+					{
+						"activity": "filename",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "RestSource",
+						"httpRequestTimeout": "00:01:40",
+						"requestInterval": "00.00:00:00.010",
+						"requestMethod": "POST",
+						"requestBody": {
+							"value": "@concat(\n    'Authorization=Bearer ', \n        activity('Get PIM token').output['access_token'],        \n    '&Storage-Authorization=Bearer ', \n        activity('Get Storage token').output['access_token'],\n    '&Content-Type=application/json'\n\n)",
+							"type": "Expression"
+						},
+						"additionalHeaders": {
+							"Content-Type": {
+								"value": "@concat('Bearer ', activity('Get PIM token').output['access_token'])",
+								"type": "Expression"
+							}
+						},
+						"paginationRules": {
+							"supportRFC5988": "true"
+						}
+					},
+					"sink": {
+						"type": "ParquetSink",
+						"storeSettings": {
+							"type": "AzureBlobFSWriteSettings",
+							"copyBehavior": "FlattenHierarchy"
+						},
+						"formatSettings": {
+							"type": "ParquetWriteSettings"
+						}
+					},
+					"enableStaging": false,
+					"translator": {
+						"value": "@json(string(pipeline().parameters.column_mapping))",
+						"type": "Expression"
+					}
+				},
+				"inputs": [
+					{
+						"referenceName": "ds_rest_api_cloud",
+						"type": "DatasetReference",
+						"parameters": {
+							"relative_url": {
+								"value": "@pipeline().parameters.relative_url",
+								"type": "Expression"
+							},
+							"base_url": {
+								"value": "@pipeline().parameters.base_url",
+								"type": "Expression"
+							}
+						}
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "ds_adls_parquet_auto_resolve",
+						"type": "DatasetReference",
+						"parameters": {
+							"datastore_name": {
+								"value": "@pipeline().parameters.datastore_name",
+								"type": "Expression"
+							},
+							"dataset_name": {
+								"value": "@pipeline().parameters.dataset_name",
+								"type": "Expression"
+							},
+							"storage_account_uri": {
+								"value": "@pipeline().globalParameters.storage_account_datalake_uri",
+								"type": "Expression"
+							},
+							"container_name": {
+								"value": "@pipeline().globalParameters.storage_container_datalake",
+								"type": "Expression"
+							},
+							"file_name": {
+								"value": "@variables('filename')",
+								"type": "Expression"
+							}
+						}
+					}
+				]
+			},
+			{
+				"name": "Get PIM token",
+				"description": "Fetches an authentication token from Microsoft Entra Privileged Identity Management. This token is used in subsequent API calls.",
+				"type": "WebActivity",
+				"dependsOn": [
+					{
+						"activity": "Get secret",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"method": "POST",
+					"headers": {
+						"Content-Type": "application/x-www-form-urlencoded"
+					},
+					"url": {
+						"value": "@pipeline().parameters.token_url",
+						"type": "Expression"
+					},
+					"body": {
+						"value": "@concat('client_id=', pipeline().parameters.microsoft_entra_cid, '&scope=', pipeline().parameters.microsoft_entra_scope, '&client_secret=', activity('Get secret').output.pipelineReturnValue.keyvault_secret_value, '&grant_type=client_credentials')",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "Get secret",
+				"type": "ExecutePipeline",
+				"dependsOn": [],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "pl_util_get_keyvault_secret",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true,
+					"parameters": {
+						"keyvault_secret_name": {
+							"value": "@pipeline().parameters.key_vault_secret_name",
+							"type": "Expression"
+						}
+					}
+				}
+			},
+			{
+				"name": "copy REST API dataset part 1",
+				"description": "Copies the REST API dataset to datalake.",
+				"type": "Copy",
+				"dependsOn": [
+					{
+						"activity": "copy REST API dataset",
+						"dependencyConditions": [
+							"Failed"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "RestSource",
+						"httpRequestTimeout": "00:01:40",
+						"requestInterval": "00.00:00:00.010",
+						"requestMethod": "GET",
+						"additionalHeaders": {
+							"Authorization": {
+								"value": "@concat('Bearer ', activity('Get access token').output['access_token'])",
+								"type": "Expression"
+							}
+						},
+						"paginationRules": {
+							"supportRFC5988": "true"
+						}
+					},
+					"sink": {
+						"type": "ParquetSink",
+						"storeSettings": {
+							"type": "AzureBlobFSWriteSettings",
+							"copyBehavior": "FlattenHierarchy"
+						},
+						"formatSettings": {
+							"type": "ParquetWriteSettings"
+						}
+					},
+					"enableStaging": false,
+					"translator": {
+						"value": "@json(string(pipeline().parameters.column_mapping))",
+						"type": "Expression"
+					}
+				},
+				"inputs": [
+					{
+						"referenceName": "ds_rest_api_cloud",
+						"type": "DatasetReference",
+						"parameters": {
+							"relative_url": {
+								"value": "@concat(pipeline().parameters.relative_url,'?$top=9999')",
+								"type": "Expression"
+							},
+							"base_url": {
+								"value": "@pipeline().parameters.base_url",
+								"type": "Expression"
+							}
+						}
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "ds_adls_parquet_auto_resolve",
+						"type": "DatasetReference",
+						"parameters": {
+							"datastore_name": {
+								"value": "@pipeline().parameters.datastore_name",
+								"type": "Expression"
+							},
+							"dataset_name": {
+								"value": "@pipeline().parameters.dataset_name",
+								"type": "Expression"
+							},
+							"storage_account_uri": {
+								"value": "@pipeline().globalParameters.storage_account_datalake_uri",
+								"type": "Expression"
+							},
+							"container_name": {
+								"value": "@pipeline().globalParameters.storage_container_datalake",
+								"type": "Expression"
+							},
+							"file_name": {
+								"value": "@pipeline().parameters.dataset_name",
+								"type": "Expression"
+							}
+						}
+					}
+				]
+			},
+			{
+				"name": "copy REST API dataset part 2",
+				"description": "Copies the REST API dataset to datalake.",
+				"type": "Copy",
+				"dependsOn": [
+					{
+						"activity": "copy REST API dataset",
+						"dependencyConditions": [
+							"Failed"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "RestSource",
+						"httpRequestTimeout": "00:01:40",
+						"requestInterval": "00.00:00:00.010",
+						"requestMethod": "GET",
+						"additionalHeaders": {
+							"Authorization": {
+								"value": "@concat('Bearer ', activity('Get access token').output['access_token'])",
+								"type": "Expression"
+							}
+						},
+						"paginationRules": {
+							"supportRFC5988": "true"
+						}
+					},
+					"sink": {
+						"type": "ParquetSink",
+						"storeSettings": {
+							"type": "AzureBlobFSWriteSettings",
+							"copyBehavior": "FlattenHierarchy"
+						},
+						"formatSettings": {
+							"type": "ParquetWriteSettings"
+						}
+					},
+					"enableStaging": false,
+					"translator": {
+						"value": "@json(string(pipeline().parameters.column_mapping))",
+						"type": "Expression"
+					}
+				},
+				"inputs": [
+					{
+						"referenceName": "ds_rest_api_cloud",
+						"type": "DatasetReference",
+						"parameters": {
+							"relative_url": {
+								"value": "@concat(pipeline().parameters.relative_url,'?$skip=9999')",
+								"type": "Expression"
+							},
+							"base_url": {
+								"value": "@pipeline().parameters.base_url",
+								"type": "Expression"
+							}
+						}
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "ds_adls_parquet_auto_resolve",
+						"type": "DatasetReference",
+						"parameters": {
+							"datastore_name": {
+								"value": "@pipeline().parameters.datastore_name",
+								"type": "Expression"
+							},
+							"dataset_name": {
+								"value": "@pipeline().parameters.dataset_name",
+								"type": "Expression"
+							},
+							"storage_account_uri": {
+								"value": "@pipeline().globalParameters.storage_account_datalake_uri",
+								"type": "Expression"
+							},
+							"container_name": {
+								"value": "@pipeline().globalParameters.storage_container_datalake",
+								"type": "Expression"
+							},
+							"file_name": {
+								"value": "@concat(pipeline().parameters.dataset_name,'_2')",
+								"type": "Expression"
+							}
+						}
+					}
+				]
+			},
+			{
+				"name": "Get reference link from Service Bus",
+				"description": "Fetches a reference link from the Service Bus to download a file from the Storage Account",
+				"type": "WebActivity",
+				"dependsOn": [
+					{
+						"activity": "Get Storage token",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"method": "POST",
+					"headers": {
+						"Authorization": {
+							"value": "@concat('Bearer ', \n        activity('Get PIM token').output['access_token']\n)",
+							"type": "Expression"
+						},
+						"ServiceBus-Authorization": {
+							"value": "@concat('Bearer ', \n        activity('Get Service Bus token').output['access_token']\n)",
+							"type": "Expression"
+						},
+						"Topic": {
+							"value": "@pipeline().parameters.service_bus_topic",
+							"type": "Expression"
+						},
+						"Subscription": {
+							"value": "@pipeline().parameters.service_bus_topic_subscription",
+							"type": "Expression"
+						}
+					},
+					"url": {
+						"value": "@concat(pipeline().parameters.base_url,pipeline().parameters.relative_url,'receive-message')",
+						"type": "Expression"
+					},
+					"connectVia": {
+						"referenceName": "cloud",
+						"type": "IntegrationRuntimeReference"
+					},
+					"body": "dummy"
+				}
+			},
+			{
+				"name": "Get Service Bus token",
+				"description": "Fetches an authentication token from Microsoft Entra Privileged Identity Management. This token is used in subsequent API calls.",
+				"type": "WebActivity",
+				"dependsOn": [
+					{
+						"activity": "Get PIM token",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"method": "POST",
+					"headers": {
+						"Content-Type": "application/x-www-form-urlencoded"
+					},
+					"url": {
+						"value": "@pipeline().parameters.token_url",
+						"type": "Expression"
+					},
+					"body": {
+						"value": "@concat('client_id=', pipeline().parameters.microsoft_entra_cid, '&scope=', pipeline().parameters.token_scope_service_bus, '&client_secret=', activity('Get secret').output.pipelineReturnValue.keyvault_secret_value, '&grant_type=client_credentials')",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "status code",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "Get reference link from Service Bus",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "status_code",
+					"value": {
+						"value": "@activity('Get reference link from Service Bus').output['status_code']",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "filename",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "status code",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "filename",
+					"value": {
+						"value": "@activity('Get reference link from Service Bus').output['headers']['File-Name']",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "Get Storage token",
+				"description": "Fetches an authentication token from Microsoft Entra Privileged Identity Management. This token is used in subsequent API calls.",
+				"type": "WebActivity",
+				"dependsOn": [
+					{
+						"activity": "Get Service Bus token",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"method": "POST",
+					"headers": {
+						"Content-Type": "application/x-www-form-urlencoded"
+					},
+					"url": {
+						"value": "@pipeline().parameters.token_url",
+						"type": "Expression"
+					},
+					"body": {
+						"value": "@concat('client_id=', pipeline().parameters.microsoft_entra_cid, '&scope=', pipeline().parameters.token_scope_storage, '&client_secret=', activity('Get secret').output.pipelineReturnValue.keyvault_secret_value, '&grant_type=client_credentials')",
+						"type": "Expression"
+					}
+				}
+			}
+		],
+		"parameters": {
+			"datastore_name": {
+				"type": "string",
+				"defaultValue": "cbs"
+			},
+			"dataset_name": {
+				"type": "string",
+				"defaultValue": "cbs_kwb_2024_85984NED"
+			},
+			"relative_url": {
+				"type": "string",
+				"defaultValue": "/internal/consumer/1.0/"
+			},
+			"base_url": {
+				"type": "string",
+				"defaultValue": "https://apim.dev.cloud.nibc.com"
+			},
+			"key_vault_secret_name": {
+				"type": "string",
+				"defaultValue": "apim-authorization-access-token"
+			},
+			"microsoft_entra_cid": {
+				"type": "string",
+				"defaultValue": "a1bb61c1-d7c6-468b-9e6a-720dcd63ce91"
+			},
+			"microsoft_entra_scope": {
+				"type": "string",
+				"defaultValue": "https://apim.dev.cloud.nibc.com/.default"
+			},
+			"column_mapping": {
+				"type": "string"
+			},
+			"token_url": {
+				"type": "string",
+				"defaultValue": "https://login.microsoftonline.com/8614d95f-762b-4789-a741-2589e3d0b08b/oauth2/v2.0/token"
+			},
+			"token_scope_service_bus": {
+				"type": "string",
+				"defaultValue": "https://servicebus.azure.net/.default"
+			},
+			"token_scope_storage": {
+				"type": "string",
+				"defaultValue": "https://storage.azure.com/.default"
+			},
+			"service_bus_topic": {
+				"type": "string",
+				"defaultValue": "ods-savings"
+			},
+			"service_bus_topic_subscription": {
+				"type": "string",
+				"defaultValue": "cdp"
+			}
+		},
+		"variables": {
+			"status_code": {
+				"type": "String"
+			},
+			"filename": {
+				"type": "String"
+			}
+		},
+		"folder": {
+			"name": "cloud"
+		},
 		"annotations": []
 	}
 }
