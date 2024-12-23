@@ -325,10 +325,19 @@
 						"httpRequestTimeout": "00:01:40",
 						"requestInterval": "00.00:00:00.010",
 						"requestMethod": "POST",
-						"requestBody": "@variables('reference_link')",
+						"requestBody": {
+							"value": "@concat('{\"referenceLink\": \"',variables('reference_link'),'}')",
+							"type": "Expression"
+						},
 						"additionalHeaders": {
-							"Authorization": "@concat('Bearer ', activity('Get PIM token').output['access_token'])",
-							"Storage-Authorization": "@concat('Bearer ', activity('Get Storage token').output['access_token'])",
+							"Authorization": {
+								"value": "@concat('Bearer ', activity('Get PIM token').output['access_token'])",
+								"type": "Expression"
+							},
+							"Storage-Authorization": {
+								"value": "@concat('Bearer ', activity('Get Storage token').output['access_token'])",
+								"type": "Expression"
+							},
 							"Content-Type": "application/json"
 						},
 						"paginationRules": {
@@ -513,6 +522,15 @@
 				"type": "String"
 			},
 			"download_timestamp": {
+				"type": "String"
+			},
+			"test": {
+				"type": "String"
+			},
+			"test2": {
+				"type": "Array"
+			},
+			"test3": {
 				"type": "String"
 			}
 		},
