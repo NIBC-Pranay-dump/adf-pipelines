@@ -61,57 +61,6 @@
 				}
 			},
 			{
-				"name": "Get reference link from Service Bus",
-				"description": "Fetches a reference link from the Service Bus to download a file from the Storage Account",
-				"type": "WebActivity",
-				"dependsOn": [
-					{
-						"activity": "Get Storage token",
-						"dependencyConditions": [
-							"Succeeded"
-						]
-					}
-				],
-				"policy": {
-					"timeout": "0.12:00:00",
-					"retry": 0,
-					"retryIntervalInSeconds": 30,
-					"secureOutput": false,
-					"secureInput": false
-				},
-				"userProperties": [],
-				"typeProperties": {
-					"method": "POST",
-					"headers": {
-						"Authorization": {
-							"value": "@concat('Bearer ', \n        activity('Get PIM token').output['access_token']\n)",
-							"type": "Expression"
-						},
-						"ServiceBus-Authorization": {
-							"value": "@concat('Bearer ', \n        activity('Get Service Bus token').output['access_token']\n)",
-							"type": "Expression"
-						},
-						"Topic": {
-							"value": "@pipeline().parameters.service_bus_topic",
-							"type": "Expression"
-						},
-						"Subscription": {
-							"value": "@pipeline().parameters.service_bus_topic_subscription",
-							"type": "Expression"
-						}
-					},
-					"url": {
-						"value": "@concat(pipeline().parameters.base_url,pipeline().parameters.relative_url,'receive-message')",
-						"type": "Expression"
-					},
-					"connectVia": {
-						"referenceName": "cloud",
-						"type": "IntegrationRuntimeReference"
-					},
-					"body": "dummy"
-				}
-			},
-			{
 				"name": "Get Service Bus token",
 				"description": "Fetches an authentication token from Microsoft Entra Privileged Identity Management. This token is used in subsequent API calls.",
 				"type": "WebActivity",
@@ -186,7 +135,7 @@
 				"type": "Until",
 				"dependsOn": [
 					{
-						"activity": "Get reference link from Service Bus",
+						"activity": "Set content-length  as 100",
 						"dependencyConditions": [
 							"Succeeded"
 						]
@@ -195,14 +144,21 @@
 				"userProperties": [],
 				"typeProperties": {
 					"expression": {
-						"value": "@greater(activity('Get reference link from Service Bus').output['ADFWebActivityResponseHeaders']['Content-Length'], 0)",
+						"value": "@greater(variables('content-length'), 0)",
 						"type": "Expression"
 					},
 					"activities": [
 						{
 							"name": "filename",
 							"type": "SetVariable",
-							"dependsOn": [],
+							"dependsOn": [
+								{
+									"activity": "content-length",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
 							"policy": {
 								"secureOutput": false,
 								"secureInput": false
@@ -469,9 +425,95 @@
 									}
 								}
 							]
+						},
+						{
+							"name": "Get reference link from Service Bus",
+							"description": "Fetches a reference link from the Service Bus to download a file from the Storage Account",
+							"type": "WebActivity",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"method": "POST",
+								"headers": {
+									"Authorization": {
+										"value": "@concat('Bearer ', \n        activity('Get PIM token').output['access_token']\n)",
+										"type": "Expression"
+									},
+									"ServiceBus-Authorization": {
+										"value": "@concat('Bearer ', \n        activity('Get Service Bus token').output['access_token']\n)",
+										"type": "Expression"
+									},
+									"Topic": {
+										"value": "@pipeline().parameters.service_bus_topic",
+										"type": "Expression"
+									},
+									"Subscription": {
+										"value": "@pipeline().parameters.service_bus_topic_subscription",
+										"type": "Expression"
+									}
+								},
+								"url": {
+									"value": "@concat(pipeline().parameters.base_url,pipeline().parameters.relative_url,'receive-message')",
+									"type": "Expression"
+								},
+								"connectVia": {
+									"referenceName": "cloud",
+									"type": "IntegrationRuntimeReference"
+								},
+								"body": "dummy"
+							}
+						},
+						{
+							"name": "content-length",
+							"type": "SetVariable",
+							"dependsOn": [
+								{
+									"activity": "Get reference link from Service Bus",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "content-length",
+								"value": "@activity('Get reference link from Service Bus').output['ADFWebActivityResponseHeaders']['Content-Length']"
+							}
 						}
 					],
 					"timeout": "0.12:00:00"
+				}
+			},
+			{
+				"name": "Set content-length  as 100",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "Get Storage token",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "content-length",
+					"value": 100
 				}
 			}
 		],
@@ -533,6 +575,9 @@
 			},
 			"download_timestamp": {
 				"type": "String"
+			},
+			"content-length": {
+				"type": "Integer"
 			}
 		},
 		"folder": {
