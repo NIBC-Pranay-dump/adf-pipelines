@@ -378,7 +378,17 @@
 				"typeProperties": {
 					"method": "POST",
 					"headers": {
-						"Content-Type": "application/x-www-form-urlencoded"
+						"Content-Length": "0",
+						"Authorization": {
+							"value": "@concat('Bearer ', \n        activity('Get PIM token').output['access_token']\n)",
+							"type": "Expression"
+						},
+						"ServiceBus-Authorization": {
+							"value": "@concat('Bearer ', \n        activity('Get Service Bus token').output['access_token']\n)",
+							"type": "Expression"
+						},
+						"Topic": "@pipeline().parameters.service_bus_topic",
+						"Subscription": "@pipeline().parameters.service_bus_topic_subscription"
 					},
 					"url": {
 						"value": "@concat(pipeline().parameters.base_url,pipeline().parameters.relative_url,'receive-message')",
@@ -389,7 +399,7 @@
 						"type": "IntegrationRuntimeReference"
 					},
 					"body": {
-						"value": "@concat(\n    'Authorization=Bearer ', \n        activity('Get PIM token').output['access_token'],        \n    '&ServiceBus-Authorization=Bearer ', \n        activity('Get Service Bus token').output['access_token'],\n    '&Topic=',\n        pipeline().parameters.service_bus_topic,\n    '&Subscription=',\n        pipeline().parameters.service_bus_topic_subscription\n)",
+						"value": "dummy",
 						"type": "Expression"
 					}
 				}
@@ -508,6 +518,40 @@
 					},
 					"body": {
 						"value": "@concat('client_id=', pipeline().parameters.microsoft_entra_cid, '&scope=', pipeline().parameters.token_scope_storage, '&client_secret=', activity('Get secret').output.pipelineReturnValue.keyvault_secret_value, '&grant_type=client_credentials')",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "Get reference link from Service Bus_copy1",
+				"description": "Fetches a reference link from the Service Bus to download a file from the Storage Account",
+				"type": "WebActivity",
+				"state": "Inactive",
+				"onInactiveMarkAs": "Succeeded",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"method": "POST",
+					"headers": {
+						"Content-Type": "application/x-www-form-urlencoded"
+					},
+					"url": {
+						"value": "@concat(pipeline().parameters.base_url,pipeline().parameters.relative_url,'receive-message')",
+						"type": "Expression"
+					},
+					"connectVia": {
+						"referenceName": "cloud",
+						"type": "IntegrationRuntimeReference"
+					},
+					"body": {
+						"value": "@concat(\n    'Authorization=Bearer ', \n        activity('Get PIM token').output['access_token'],        \n    '&ServiceBus-Authorization=Bearer ', \n        activity('Get Service Bus token').output['access_token'],\n    '&Topic=',\n        pipeline().parameters.service_bus_topic,\n    '&Subscription=',\n        pipeline().parameters.service_bus_topic_subscription\n)",
 						"type": "Expression"
 					}
 				}
