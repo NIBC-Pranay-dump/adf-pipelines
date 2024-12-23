@@ -488,7 +488,10 @@
 							"userProperties": [],
 							"typeProperties": {
 								"variableName": "content-length",
-								"value": "@activity('Get reference link from Service Bus').output['ADFWebActivityResponseHeaders']['Content-Length']"
+								"value": {
+									"value": "@int(activity('Get reference link from Service Bus').output['ADFWebActivityResponseHeaders']['Content-Length'])",
+									"type": "Expression"
+								}
 							}
 						}
 					],
