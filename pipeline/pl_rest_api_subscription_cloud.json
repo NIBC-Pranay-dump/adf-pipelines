@@ -326,7 +326,7 @@
 						"requestInterval": "00.00:00:00.010",
 						"requestMethod": "POST",
 						"requestBody": {
-							"value": "@activity('Get reference link from Service Bus').output",
+							"value": "@concat('{\n\t\"referenceLink\": \"',variables('reference_link'),'\"}')",
 							"type": "Expression"
 						},
 						"additionalHeaders": {
@@ -522,15 +522,6 @@
 				"type": "String"
 			},
 			"download_timestamp": {
-				"type": "String"
-			},
-			"test": {
-				"type": "String"
-			},
-			"test2": {
-				"type": "Array"
-			},
-			"test3": {
 				"type": "String"
 			}
 		},
