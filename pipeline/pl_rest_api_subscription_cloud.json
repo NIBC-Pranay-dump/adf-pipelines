@@ -390,6 +390,36 @@
 				"typeProperties": {
 					"source": {
 						"type": "DelimitedTextSource",
+						"additionalColumns": [
+							{
+								"name": "filename",
+								"value": {
+									"value": "@variables('filename')",
+									"type": "Expression"
+								}
+							},
+							{
+								"name": "dataname",
+								"value": {
+									"value": "@variables('dataname')",
+									"type": "Expression"
+								}
+							},
+							{
+								"name": "reference_link",
+								"value": {
+									"value": "@variables('reference_link')",
+									"type": "Expression"
+								}
+							},
+							{
+								"name": "download_timestamp",
+								"value": {
+									"value": "@variables('download_timestamp')",
+									"type": "Expression"
+								}
+							}
+						],
 						"storeSettings": {
 							"type": "AzureBlobStorageReadSettings",
 							"recursive": true,
@@ -443,7 +473,10 @@
 							"dataset_name": "@variables('dataname')",
 							"storage_account_uri": "@pipeline().globalParameters.storage_account_datalake_uri",
 							"container_name": "@pipeline().globalParameters.storage_container_datalake",
-							"file_name": "@concat(variables('dataname'),'.csv')"
+							"file_name": {
+								"value": "@variables('dataname')",
+								"type": "Expression"
+							}
 						}
 					}
 				]
