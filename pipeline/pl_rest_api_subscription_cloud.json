@@ -378,7 +378,6 @@
 				"typeProperties": {
 					"method": "POST",
 					"headers": {
-						"Content-Length": "0",
 						"Authorization": {
 							"value": "@concat('Bearer ', \n        activity('Get PIM token').output['access_token']\n)",
 							"type": "Expression"
