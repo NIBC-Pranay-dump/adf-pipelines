@@ -91,8 +91,14 @@
 							"value": "@concat('Bearer ', \n        activity('Get Service Bus token').output['access_token']\n)",
 							"type": "Expression"
 						},
-						"Topic": "@pipeline().parameters.service_bus_topic",
-						"Subscription": "@pipeline().parameters.service_bus_topic_subscription"
+						"Topic": {
+							"value": "@pipeline().parameters.service_bus_topic",
+							"type": "Expression"
+						},
+						"Subscription": {
+							"value": "@pipeline().parameters.service_bus_topic_subscription",
+							"type": "Expression"
+						}
 					},
 					"url": {
 						"value": "@concat(pipeline().parameters.base_url,pipeline().parameters.relative_url,'receive-message')",
@@ -101,8 +107,7 @@
 					"connectVia": {
 						"referenceName": "cloud",
 						"type": "IntegrationRuntimeReference"
-					},
-					"body": "dummy"
+					}
 				}
 			},
 			{
