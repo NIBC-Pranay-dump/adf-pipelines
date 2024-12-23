@@ -384,6 +384,10 @@
 						"value": "@concat(pipeline().parameters.base_url,pipeline().parameters.relative_url,'receive-message')",
 						"type": "Expression"
 					},
+					"connectVia": {
+						"referenceName": "cloud",
+						"type": "IntegrationRuntimeReference"
+					},
 					"body": {
 						"value": "@concat(\n    'Authorization=Bearer ', \n        activity('Get PIM token').output['access_token'],        \n    '&ServiceBus-Authorization=Bearer ', \n        activity('Get Service Bus token').output['access_token'],\n    '&Topic=',\n        pipeline().parameters.service_bus_topic,\n    '&Subscription=',\n        pipeline().parameters.service_bus_topic_subscription\n)",
 						"type": "Expression"
