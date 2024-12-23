@@ -522,36 +522,6 @@
 						"type": "Expression"
 					}
 				}
-			},
-			{
-				"name": "Set variable1",
-				"type": "SetVariable",
-				"dependsOn": [
-					{
-						"activity": "Get reference link from Service Bus",
-						"dependencyConditions": [
-							"Succeeded"
-						]
-					}
-				],
-				"policy": {
-					"secureOutput": false,
-					"secureInput": false
-				},
-				"userProperties": [],
-				"typeProperties": {
-					"variableName": "pipelineReturnValue",
-					"value": [
-						{
-							"key": "test",
-							"value": {
-								"type": "Object",
-								"content": "@activity('Get reference link from Service Bus').output"
-							}
-						}
-					],
-					"setSystemVariable": true
-				}
 			}
 		],
 		"parameters": {
