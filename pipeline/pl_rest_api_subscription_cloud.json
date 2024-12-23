@@ -184,8 +184,6 @@
 			{
 				"name": "content-length gt 0",
 				"type": "Until",
-				"state": "Inactive",
-				"onInactiveMarkAs": "Succeeded",
 				"dependsOn": [
 					{
 						"activity": "Get reference link from Service Bus",
@@ -200,286 +198,281 @@
 						"value": "@greater(activity('Get reference link from Service Bus').output['ADFWebActivityResponseHeaders']['Content-Length'], 0)",
 						"type": "Expression"
 					},
+					"activities": [
+						{
+							"name": "filename",
+							"type": "SetVariable",
+							"dependsOn": [],
+							"policy": {
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "filename",
+								"value": {
+									"value": "@activity('Get reference link from Service Bus').output['ADFWebActivityResponseHeaders']['File-Name']",
+									"type": "Expression"
+								}
+							}
+						},
+						{
+							"name": "dataname",
+							"type": "SetVariable",
+							"dependsOn": [
+								{
+									"activity": "filename",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "dataname",
+								"value": {
+									"value": "@activity('Get reference link from Service Bus').output['ADFWebActivityResponseHeaders']['Data-Name']",
+									"type": "Expression"
+								}
+							}
+						},
+						{
+							"name": "reference_link",
+							"type": "SetVariable",
+							"dependsOn": [
+								{
+									"activity": "dataname",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "reference_link",
+								"value": {
+									"value": "@activity('Get reference link from Service Bus').output['referenceLink']",
+									"type": "Expression"
+								}
+							}
+						},
+						{
+							"name": "set download timestamp",
+							"description": "Set download timestamp in west europe timezone",
+							"type": "SetVariable",
+							"dependsOn": [
+								{
+									"activity": "reference_link",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "download_timestamp",
+								"value": {
+									"value": "@formatDateTime(convertTimeZone(pipeline().TriggerTime,'UTC','W. Europe Standard Time'), 'yyyyMMdd_HHmmss')",
+									"type": "Expression"
+								}
+							}
+						},
+						{
+							"name": "Copy HTTP to CSV",
+							"type": "Copy",
+							"dependsOn": [
+								{
+									"activity": "set download timestamp",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "BinarySource",
+									"storeSettings": {
+										"type": "HttpReadSettings",
+										"requestMethod": "POST",
+										"additionalHeaders": {
+											"value": "Authorization: Bearer @{activity('Get PIM token').output['access_token']}\nStorage-Authorization: Bearer @{activity('Get Storage token').output['access_token']}\nContent-Type: application/json\n",
+											"type": "Expression"
+										},
+										"requestBody": "@concat('{\"referenceLink\": \"',variables('reference_link'),'\"}')",
+										"requestTimeout": ""
+									},
+									"formatSettings": {
+										"type": "BinaryReadSettings"
+									}
+								},
+								"sink": {
+									"type": "BinarySink",
+									"storeSettings": {
+										"type": "AzureBlobStorageWriteSettings"
+									}
+								},
+								"enableStaging": false
+							},
+							"inputs": [
+								{
+									"referenceName": "ds_anonymous_http_binary_cloud",
+									"type": "DatasetReference",
+									"parameters": {
+										"base_url": "@pipeline().parameters.base_url",
+										"relative_url": "@concat(pipeline().parameters.relative_url,'receive-blob')"
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "ds_blob_binary_azure_shir",
+									"type": "DatasetReference",
+									"parameters": {
+										"storage_account_uri": "@pipeline().globalParameters.storage_account_data_factory_uri",
+										"container_name": "@pipeline().globalParameters.storage_container_data_factory",
+										"datastore_name": "@pipeline().parameters.datastore_name",
+										"dataset_name": "@variables('dataname')",
+										"file_name": "@concat(variables('dataname'),'.csv')"
+									}
+								}
+							]
+						},
+						{
+							"name": "Copy CSV to parquet",
+							"type": "Copy",
+							"dependsOn": [
+								{
+									"activity": "Copy HTTP to CSV",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "DelimitedTextSource",
+									"additionalColumns": [
+										{
+											"name": "filename",
+											"value": {
+												"value": "@variables('filename')",
+												"type": "Expression"
+											}
+										},
+										{
+											"name": "dataname",
+											"value": {
+												"value": "@variables('dataname')",
+												"type": "Expression"
+											}
+										},
+										{
+											"name": "reference_link",
+											"value": {
+												"value": "@variables('reference_link')",
+												"type": "Expression"
+											}
+										},
+										{
+											"name": "download_timestamp",
+											"value": {
+												"value": "@variables('download_timestamp')",
+												"type": "Expression"
+											}
+										}
+									],
+									"storeSettings": {
+										"type": "AzureBlobStorageReadSettings",
+										"recursive": true,
+										"enablePartitionDiscovery": false
+									},
+									"formatSettings": {
+										"type": "DelimitedTextReadSettings"
+									}
+								},
+								"sink": {
+									"type": "ParquetSink",
+									"storeSettings": {
+										"type": "AzureBlobFSWriteSettings"
+									},
+									"formatSettings": {
+										"type": "ParquetWriteSettings"
+									}
+								},
+								"enableStaging": false,
+								"translator": {
+									"type": "TabularTranslator",
+									"typeConversion": true,
+									"typeConversionSettings": {
+										"allowDataTruncation": true,
+										"treatBooleanAsNumber": false
+									}
+								}
+							},
+							"inputs": [
+								{
+									"referenceName": "ds_blob_csv_azure_shir",
+									"type": "DatasetReference",
+									"parameters": {
+										"storage_account_uri": "@pipeline().globalParameters.storage_account_data_factory_uri",
+										"container_name": "@pipeline().globalParameters.storage_container_data_factory",
+										"datastore_name": "@pipeline().parameters.datastore_name",
+										"dataset_name": "@variables('dataname')",
+										"file_name": "@concat(variables('dataname'),'.csv')",
+										"column_delimiter": ",",
+										"encoding": "UTF-8",
+										"first_row_as_header": false
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "ds_adls_parquet_auto_resolve",
+									"type": "DatasetReference",
+									"parameters": {
+										"datastore_name": "@pipeline().parameters.datastore_name",
+										"dataset_name": "@variables('dataname')",
+										"storage_account_uri": "@pipeline().globalParameters.storage_account_datalake_uri",
+										"container_name": "@pipeline().globalParameters.storage_container_datalake",
+										"file_name": {
+											"value": "@variables('dataname')",
+											"type": "Expression"
+										}
+									}
+								}
+							]
+						}
+					],
 					"timeout": "0.12:00:00"
 				}
-			},
-			{
-				"name": "filename",
-				"type": "SetVariable",
-				"dependsOn": [
-					{
-						"activity": "Get reference link from Service Bus",
-						"dependencyConditions": [
-							"Succeeded"
-						]
-					}
-				],
-				"policy": {
-					"secureOutput": false,
-					"secureInput": false
-				},
-				"userProperties": [],
-				"typeProperties": {
-					"variableName": "filename",
-					"value": {
-						"value": "@activity('Get reference link from Service Bus').output['ADFWebActivityResponseHeaders']['File-Name']",
-						"type": "Expression"
-					}
-				}
-			},
-			{
-				"name": "dataname",
-				"type": "SetVariable",
-				"dependsOn": [
-					{
-						"activity": "filename",
-						"dependencyConditions": [
-							"Succeeded"
-						]
-					}
-				],
-				"policy": {
-					"secureOutput": false,
-					"secureInput": false
-				},
-				"userProperties": [],
-				"typeProperties": {
-					"variableName": "dataname",
-					"value": {
-						"value": "@activity('Get reference link from Service Bus').output['ADFWebActivityResponseHeaders']['Data-Name']",
-						"type": "Expression"
-					}
-				}
-			},
-			{
-				"name": "reference_link",
-				"type": "SetVariable",
-				"dependsOn": [
-					{
-						"activity": "dataname",
-						"dependencyConditions": [
-							"Succeeded"
-						]
-					}
-				],
-				"policy": {
-					"secureOutput": false,
-					"secureInput": false
-				},
-				"userProperties": [],
-				"typeProperties": {
-					"variableName": "reference_link",
-					"value": {
-						"value": "@activity('Get reference link from Service Bus').output['referenceLink']",
-						"type": "Expression"
-					}
-				}
-			},
-			{
-				"name": "set download timestamp",
-				"description": "Set download timestamp in west europe timezone",
-				"type": "SetVariable",
-				"dependsOn": [
-					{
-						"activity": "reference_link",
-						"dependencyConditions": [
-							"Succeeded"
-						]
-					}
-				],
-				"policy": {
-					"secureOutput": false,
-					"secureInput": false
-				},
-				"userProperties": [],
-				"typeProperties": {
-					"variableName": "download_timestamp",
-					"value": {
-						"value": "@formatDateTime(convertTimeZone(pipeline().TriggerTime,'UTC','W. Europe Standard Time'), 'yyyyMMdd_HHmmss')",
-						"type": "Expression"
-					}
-				}
-			},
-			{
-				"name": "Copy HTTP to CSV",
-				"type": "Copy",
-				"dependsOn": [
-					{
-						"activity": "set download timestamp",
-						"dependencyConditions": [
-							"Succeeded"
-						]
-					}
-				],
-				"policy": {
-					"timeout": "0.12:00:00",
-					"retry": 0,
-					"retryIntervalInSeconds": 30,
-					"secureOutput": false,
-					"secureInput": false
-				},
-				"userProperties": [],
-				"typeProperties": {
-					"source": {
-						"type": "BinarySource",
-						"storeSettings": {
-							"type": "HttpReadSettings",
-							"requestMethod": "POST",
-							"additionalHeaders": {
-								"value": "Authorization: Bearer @{activity('Get PIM token').output['access_token']}\nStorage-Authorization: Bearer @{activity('Get Storage token').output['access_token']}\nContent-Type: application/json\n",
-								"type": "Expression"
-							},
-							"requestBody": "@concat('{\"referenceLink\": \"',variables('reference_link'),'\"}')",
-							"requestTimeout": ""
-						},
-						"formatSettings": {
-							"type": "BinaryReadSettings"
-						}
-					},
-					"sink": {
-						"type": "BinarySink",
-						"storeSettings": {
-							"type": "AzureBlobStorageWriteSettings"
-						}
-					},
-					"enableStaging": false
-				},
-				"inputs": [
-					{
-						"referenceName": "ds_anonymous_http_binary_cloud",
-						"type": "DatasetReference",
-						"parameters": {
-							"base_url": "@pipeline().parameters.base_url",
-							"relative_url": "@concat(pipeline().parameters.relative_url,'receive-blob')"
-						}
-					}
-				],
-				"outputs": [
-					{
-						"referenceName": "ds_blob_binary_azure_shir",
-						"type": "DatasetReference",
-						"parameters": {
-							"storage_account_uri": "@pipeline().globalParameters.storage_account_data_factory_uri",
-							"container_name": "@pipeline().globalParameters.storage_container_data_factory",
-							"datastore_name": "@pipeline().parameters.datastore_name",
-							"dataset_name": "@variables('dataname')",
-							"file_name": "@concat(variables('dataname'),'.csv')"
-						}
-					}
-				]
-			},
-			{
-				"name": "Copy CSV to parquet",
-				"type": "Copy",
-				"dependsOn": [
-					{
-						"activity": "Copy HTTP to CSV",
-						"dependencyConditions": [
-							"Succeeded"
-						]
-					}
-				],
-				"policy": {
-					"timeout": "0.12:00:00",
-					"retry": 0,
-					"retryIntervalInSeconds": 30,
-					"secureOutput": false,
-					"secureInput": false
-				},
-				"userProperties": [],
-				"typeProperties": {
-					"source": {
-						"type": "DelimitedTextSource",
-						"additionalColumns": [
-							{
-								"name": "filename",
-								"value": {
-									"value": "@variables('filename')",
-									"type": "Expression"
-								}
-							},
-							{
-								"name": "dataname",
-								"value": {
-									"value": "@variables('dataname')",
-									"type": "Expression"
-								}
-							},
-							{
-								"name": "reference_link",
-								"value": {
-									"value": "@variables('reference_link')",
-									"type": "Expression"
-								}
-							},
-							{
-								"name": "download_timestamp",
-								"value": {
-									"value": "@variables('download_timestamp')",
-									"type": "Expression"
-								}
-							}
-						],
-						"storeSettings": {
-							"type": "AzureBlobStorageReadSettings",
-							"recursive": true,
-							"enablePartitionDiscovery": false
-						},
-						"formatSettings": {
-							"type": "DelimitedTextReadSettings"
-						}
-					},
-					"sink": {
-						"type": "ParquetSink",
-						"storeSettings": {
-							"type": "AzureBlobFSWriteSettings"
-						},
-						"formatSettings": {
-							"type": "ParquetWriteSettings"
-						}
-					},
-					"enableStaging": false,
-					"translator": {
-						"type": "TabularTranslator",
-						"typeConversion": true,
-						"typeConversionSettings": {
-							"allowDataTruncation": true,
-							"treatBooleanAsNumber": false
-						}
-					}
-				},
-				"inputs": [
-					{
-						"referenceName": "ds_blob_csv_azure_shir",
-						"type": "DatasetReference",
-						"parameters": {
-							"storage_account_uri": "@pipeline().globalParameters.storage_account_data_factory_uri",
-							"container_name": "@pipeline().globalParameters.storage_container_data_factory",
-							"datastore_name": "@pipeline().parameters.datastore_name",
-							"dataset_name": "@variables('dataname')",
-							"file_name": "@concat(variables('dataname'),'.csv')",
-							"column_delimiter": ",",
-							"encoding": "UTF-8",
-							"first_row_as_header": false
-						}
-					}
-				],
-				"outputs": [
-					{
-						"referenceName": "ds_adls_parquet_auto_resolve",
-						"type": "DatasetReference",
-						"parameters": {
-							"datastore_name": "@pipeline().parameters.datastore_name",
-							"dataset_name": "@variables('dataname')",
-							"storage_account_uri": "@pipeline().globalParameters.storage_account_datalake_uri",
-							"container_name": "@pipeline().globalParameters.storage_container_datalake",
-							"file_name": {
-								"value": "@variables('dataname')",
-								"type": "Expression"
-							}
-						}
-					}
-				]
 			}
 		],
 		"parameters": {
