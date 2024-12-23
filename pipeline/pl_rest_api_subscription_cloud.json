@@ -182,7 +182,7 @@
 				}
 			},
 			{
-				"name": "Until content-length greater than 0",
+				"name": "content-length gt 0",
 				"type": "Until",
 				"dependsOn": [
 					{
@@ -622,9 +622,6 @@
 			}
 		},
 		"variables": {
-			"status_code": {
-				"type": "String"
-			},
 			"filename": {
 				"type": "String"
 			},
