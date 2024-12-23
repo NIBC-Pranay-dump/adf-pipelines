@@ -147,54 +147,6 @@
 				}
 			},
 			{
-				"name": "status code",
-				"type": "SetVariable",
-				"dependsOn": [
-					{
-						"activity": "Get reference link from Service Bus",
-						"dependencyConditions": [
-							"Succeeded"
-						]
-					}
-				],
-				"policy": {
-					"secureOutput": false,
-					"secureInput": false
-				},
-				"userProperties": [],
-				"typeProperties": {
-					"variableName": "status_code",
-					"value": {
-						"value": "@activity('Get reference link from Service Bus').output.errors[0].message",
-						"type": "Expression"
-					}
-				}
-			},
-			{
-				"name": "filename",
-				"type": "SetVariable",
-				"dependsOn": [
-					{
-						"activity": "Get reference link from Service Bus",
-						"dependencyConditions": [
-							"Succeeded"
-						]
-					}
-				],
-				"policy": {
-					"secureOutput": false,
-					"secureInput": false
-				},
-				"userProperties": [],
-				"typeProperties": {
-					"variableName": "filename",
-					"value": {
-						"value": "@activity('Get reference link from Service Bus').output['ADFWebActivityResponseHeaders']['File-Name']",
-						"type": "Expression"
-					}
-				}
-			},
-			{
 				"name": "Get Storage token",
 				"description": "Fetches an authentication token from Microsoft Entra Privileged Identity Management. This token is used in subsequent API calls.",
 				"type": "WebActivity",
@@ -230,7 +182,7 @@
 				}
 			},
 			{
-				"name": "Until1",
+				"name": "Until content-length greater than 0",
 				"type": "Until",
 				"dependsOn": [
 					{
@@ -242,6 +194,10 @@
 				],
 				"userProperties": [],
 				"typeProperties": {
+					"expression": {
+						"value": "@activity('Get reference link from Service Bus').output['ADFWebActivityResponseHeaders']['Content-Length']",
+						"type": "Expression"
+					},
 					"activities": [
 						{
 							"name": "copy REST API dataset",
