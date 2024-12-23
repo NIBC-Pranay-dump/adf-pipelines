@@ -301,7 +301,7 @@
 				}
 			},
 			{
-				"name": "Copy REST to CSV",
+				"name": "Copy HTTP to CSV",
 				"type": "Copy",
 				"dependsOn": [
 					{
@@ -326,7 +326,7 @@
 							"type": "HttpReadSettings",
 							"requestMethod": "POST",
 							"additionalHeaders": {
-								"value": "Authorization: @concat('Bearer ', activity('Get PIM token').output['access_token']),\nStorage-Authorization: @concat('Bearer ', activity('Get Storage token').output['access_token']),\nContent-Type: application/json",
+								"value": "@concat('Authorization: Bearer ', activity('Get PIM token').output['access_token'],\n', Storage-Authorization: Bearer ', activity('Get Storage token').output['access_token'],\n', Content-Type: application/json')",
 								"type": "Expression"
 							},
 							"requestBody": "@concat('{\"referenceLink\": \"',variables('reference_link'),'\"}')",
@@ -373,7 +373,7 @@
 				"type": "Copy",
 				"dependsOn": [
 					{
-						"activity": "Copy REST to CSV",
+						"activity": "Copy HTTP to CSV",
 						"dependencyConditions": [
 							"Succeeded"
 						]
