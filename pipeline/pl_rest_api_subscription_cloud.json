@@ -131,7 +131,7 @@
 				}
 			},
 			{
-				"name": "content-length gt 0",
+				"name": "content-length is 0",
 				"type": "Until",
 				"dependsOn": [
 					{
@@ -144,7 +144,7 @@
 				"userProperties": [],
 				"typeProperties": {
 					"expression": {
-						"value": "@greater(variables('content-length'), 0)",
+						"value": "@equals(variables('content-length'), 0)",
 						"type": "Expression"
 					},
 					"activities": [
