@@ -536,7 +536,7 @@
 			},
 			"microsoft_entra_scope": {
 				"type": "string",
-				"defaultValue": "0c28ca60-24cd-45bd-95f1-01fdaee9c41c/.default"
+				"defaultValue": "https://apim.dev.cloud.nibc.com/.default"
 			},
 			"column_mapping": {
 				"type": "string"
