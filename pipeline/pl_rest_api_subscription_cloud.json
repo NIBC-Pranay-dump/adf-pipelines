@@ -387,7 +387,8 @@
 							"type": "Expression"
 						},
 						"Topic": "@pipeline().parameters.service_bus_topic",
-						"Subscription": "@pipeline().parameters.service_bus_topic_subscription"
+						"Subscription": "@pipeline().parameters.service_bus_topic_subscription",
+						"Content-Length": "0"
 					},
 					"url": {
 						"value": "@concat(pipeline().parameters.base_url,pipeline().parameters.relative_url,'receive-message')",
