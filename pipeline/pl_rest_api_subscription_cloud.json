@@ -195,7 +195,7 @@
 				"userProperties": [],
 				"typeProperties": {
 					"expression": {
-						"value": "@activity('Get reference link from Service Bus').output['ADFWebActivityResponseHeaders']['Content-Length']",
+						"value": "@greater(activity('Get reference link from Service Bus').output['ADFWebActivityResponseHeaders']['Content-Length'], 0)",
 						"type": "Expression"
 					},
 					"activities": [
@@ -203,7 +203,14 @@
 							"name": "copy REST API dataset",
 							"description": "Copies the REST API dataset to datalake.",
 							"type": "Copy",
-							"dependsOn": [],
+							"dependsOn": [
+								{
+									"activity": "reference_link",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
 							"policy": {
 								"timeout": "0.12:00:00",
 								"retry": 0,
@@ -297,6 +304,8 @@
 							"name": "copy REST API dataset part 1",
 							"description": "Copies the REST API dataset to datalake.",
 							"type": "Copy",
+							"state": "Inactive",
+							"onInactiveMarkAs": "Succeeded",
 							"dependsOn": [
 								{
 									"activity": "copy REST API dataset",
@@ -394,6 +403,8 @@
 							"name": "copy REST API dataset part 2",
 							"description": "Copies the REST API dataset to datalake.",
 							"type": "Copy",
+							"state": "Inactive",
+							"onInactiveMarkAs": "Succeeded",
 							"dependsOn": [
 								{
 									"activity": "copy REST API dataset",
@@ -486,6 +497,71 @@
 									}
 								}
 							]
+						},
+						{
+							"name": "filename",
+							"type": "SetVariable",
+							"dependsOn": [],
+							"policy": {
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "filename",
+								"value": {
+									"value": "@activity('Get reference link from Service Bus').output['ADFWebActivityResponseHeaders']['File-Name']",
+									"type": "Expression"
+								}
+							}
+						},
+						{
+							"name": "dataname",
+							"type": "SetVariable",
+							"dependsOn": [
+								{
+									"activity": "filename",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "dataname",
+								"value": {
+									"value": "@activity('Get reference link from Service Bus').output['ADFWebActivityResponseHeaders']['Data-Name']",
+									"type": "Expression"
+								}
+							}
+						},
+						{
+							"name": "reference_link",
+							"type": "SetVariable",
+							"dependsOn": [
+								{
+									"activity": "dataname",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "reference_link",
+								"value": {
+									"value": "@activity('Get reference link from Service Bus').output['referenceLink']",
+									"type": "Expression"
+								}
+							}
 						}
 					],
 					"timeout": "0.12:00:00"
@@ -550,6 +626,12 @@
 				"type": "String"
 			},
 			"filename": {
+				"type": "String"
+			},
+			"dataname": {
+				"type": "String"
+			},
+			"reference_link": {
 				"type": "String"
 			}
 		},
