@@ -430,7 +430,7 @@
 							"file_name": "@concat(variables('dataname'),'.csv')",
 							"column_delimiter": ",",
 							"encoding": "UTF-8",
-							"first_row_as_header": true
+							"first_row_as_header": false
 						}
 					}
 				],
