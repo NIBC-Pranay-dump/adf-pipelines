@@ -186,7 +186,7 @@
 				"type": "Until",
 				"dependsOn": [
 					{
-						"activity": "Get reference link from Service Bus",
+						"activity": "Set variable stop",
 						"dependencyConditions": [
 							"Succeeded"
 						]
@@ -195,7 +195,7 @@
 				"userProperties": [],
 				"typeProperties": {
 					"expression": {
-						"value": "@greater(activity('Get reference link from Service Bus').output['ADFWebActivityResponseHeaders']['Content-Length'], 0)",
+						"value": "@equals(variables('stop'),'yes')",
 						"type": "Expression"
 					},
 					"activities": [
@@ -242,9 +242,14 @@
 									}
 								},
 								"sink": {
-									"type": "BinarySink",
+									"type": "DelimitedTextSink",
 									"storeSettings": {
 										"type": "AzureBlobStorageWriteSettings"
+									},
+									"formatSettings": {
+										"type": "DelimitedTextWriteSettings",
+										"quoteAllText": true,
+										"fileExtension": ".txt"
 									}
 								},
 								"enableStaging": false
@@ -267,20 +272,12 @@
 							],
 							"outputs": [
 								{
-									"referenceName": "ds_blob_binary_cloud",
+									"referenceName": "ds_blob_csv_azure_shir",
 									"type": "DatasetReference",
 									"parameters": {
-										"storage_account_uri": "@pipeline().globalParameters.storage_account_data_factory_uri",
-										"container_name": "@pipeline().globalParameters.storage_container_data_factory",
-										"datastore_name": "@pipeline().parameters.datastore_name",
-										"dataset_name": {
-											"value": "@variables('dataname')",
-											"type": "Expression"
-										},
-										"file_name": {
-											"value": "@concat(variables('dataname'),'.csv')",
-											"type": "Expression"
-										}
+										"column_delimiter": ",",
+										"encoding": "UTF-8",
+										"first_row_as_header": true
 									}
 								}
 							]
@@ -500,9 +497,51 @@
 									"type": "Expression"
 								}
 							}
+						},
+						{
+							"name": "Set variable stop_copy1",
+							"type": "SetVariable",
+							"dependsOn": [
+								{
+									"activity": "convert CSV to parquet",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "stop",
+								"value": "yes"
+							}
 						}
 					],
 					"timeout": "0.12:00:00"
+				}
+			},
+			{
+				"name": "Set variable stop",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "Get reference link from Service Bus",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "stop",
+					"value": "no"
 				}
 			}
 		],
@@ -563,6 +602,9 @@
 				"type": "String"
 			},
 			"download_timestamp": {
+				"type": "String"
+			},
+			"stop": {
 				"type": "String"
 			}
 		},
