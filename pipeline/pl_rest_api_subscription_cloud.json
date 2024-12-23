@@ -9,7 +9,7 @@
 				"type": "Copy",
 				"dependsOn": [
 					{
-						"activity": "filename",
+						"activity": "status code",
 						"dependencyConditions": [
 							"Succeeded"
 						]
@@ -446,7 +446,7 @@
 				"type": "SetVariable",
 				"dependsOn": [
 					{
-						"activity": "Get reference link from Service Bus",
+						"activity": "filename",
 						"dependencyConditions": [
 							"Succeeded"
 						]
@@ -470,7 +470,7 @@
 				"type": "SetVariable",
 				"dependsOn": [
 					{
-						"activity": "status code",
+						"activity": "Get reference link from Service Bus",
 						"dependencyConditions": [
 							"Succeeded"
 						]
