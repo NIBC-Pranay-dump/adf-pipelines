@@ -483,7 +483,7 @@
 				"typeProperties": {
 					"variableName": "filename",
 					"value": {
-						"value": "@activity('Get reference link from Service Bus').output['headers']['File-Name']",
+						"value": "@activity('Get reference link from Service Bus').output['ADFWebActivityResponseHeaders']['File-Name']",
 						"type": "Expression"
 					}
 				}
