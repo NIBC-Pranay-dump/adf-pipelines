@@ -326,7 +326,7 @@
 							"type": "HttpReadSettings",
 							"requestMethod": "POST",
 							"additionalHeaders": {
-								"value": "@concat('Authorization: Bearer ', activity('Get PIM token').output['access_token'],\n', Storage-Authorization: Bearer ', activity('Get Storage token').output['access_token'],\n', Content-Type: application/json')",
+								"value": "Authorization: Bearer @{activity('Get PIM token').output['access_token']}\nStorage-Authorization: Bearer @{activity('Get Storage token').output['access_token']}\nContent-Type: application/json\n",
 								"type": "Expression"
 							},
 							"requestBody": "@concat('{\"referenceLink\": \"',variables('reference_link'),'\"}')",
