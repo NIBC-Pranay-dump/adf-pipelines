@@ -397,10 +397,6 @@
 					"connectVia": {
 						"referenceName": "cloud",
 						"type": "IntegrationRuntimeReference"
-					},
-					"body": {
-						"value": "dummy",
-						"type": "Expression"
 					}
 				}
 			},
