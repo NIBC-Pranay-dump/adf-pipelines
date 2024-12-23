@@ -147,35 +147,11 @@
 				}
 			},
 			{
-				"name": "status code",
-				"type": "SetVariable",
-				"dependsOn": [
-					{
-						"activity": "Get reference link from Service Bus",
-						"dependencyConditions": [
-							"Succeeded"
-						]
-					}
-				],
-				"policy": {
-					"secureOutput": false,
-					"secureInput": false
-				},
-				"userProperties": [],
-				"typeProperties": {
-					"variableName": "status_code",
-					"value": {
-						"value": "@activity('Get reference link from Service Bus').output['status_code']",
-						"type": "Expression"
-					}
-				}
-			},
-			{
 				"name": "filename",
 				"type": "SetVariable",
 				"dependsOn": [
 					{
-						"activity": "status code",
+						"activity": "Get reference link from Service Bus",
 						"dependencyConditions": [
 							"Succeeded"
 						]
@@ -225,40 +201,6 @@
 					},
 					"body": {
 						"value": "@concat('client_id=', pipeline().parameters.microsoft_entra_cid, '&scope=', pipeline().parameters.token_scope_storage, '&client_secret=', activity('Get secret').output.pipelineReturnValue.keyvault_secret_value, '&grant_type=client_credentials')",
-						"type": "Expression"
-					}
-				}
-			},
-			{
-				"name": "Get reference link from Service Bus_copy1",
-				"description": "Fetches a reference link from the Service Bus to download a file from the Storage Account",
-				"type": "WebActivity",
-				"state": "Inactive",
-				"onInactiveMarkAs": "Succeeded",
-				"dependsOn": [],
-				"policy": {
-					"timeout": "0.12:00:00",
-					"retry": 0,
-					"retryIntervalInSeconds": 30,
-					"secureOutput": false,
-					"secureInput": false
-				},
-				"userProperties": [],
-				"typeProperties": {
-					"method": "POST",
-					"headers": {
-						"Content-Type": "application/x-www-form-urlencoded"
-					},
-					"url": {
-						"value": "@concat(pipeline().parameters.base_url,pipeline().parameters.relative_url,'receive-message')",
-						"type": "Expression"
-					},
-					"connectVia": {
-						"referenceName": "cloud",
-						"type": "IntegrationRuntimeReference"
-					},
-					"body": {
-						"value": "@concat(\n    'Authorization=Bearer ', \n        activity('Get PIM token').output['access_token'],        \n    '&ServiceBus-Authorization=Bearer ', \n        activity('Get Service Bus token').output['access_token'],\n    '&Topic=',\n        pipeline().parameters.service_bus_topic,\n    '&Subscription=',\n        pipeline().parameters.service_bus_topic_subscription\n)",
 						"type": "Expression"
 					}
 				}
