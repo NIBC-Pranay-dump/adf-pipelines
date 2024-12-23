@@ -7,14 +7,9 @@
 				"name": "copy REST API dataset",
 				"description": "Copies the REST API dataset to datalake.",
 				"type": "Copy",
-				"dependsOn": [
-					{
-						"activity": "status code",
-						"dependencyConditions": [
-							"Succeeded"
-						]
-					}
-				],
+				"state": "Inactive",
+				"onInactiveMarkAs": "Failed",
+				"dependsOn": [],
 				"policy": {
 					"timeout": "0.12:00:00",
 					"retry": 0,
@@ -165,6 +160,8 @@
 				"name": "copy REST API dataset part 1",
 				"description": "Copies the REST API dataset to datalake.",
 				"type": "Copy",
+				"state": "Inactive",
+				"onInactiveMarkAs": "Succeeded",
 				"dependsOn": [
 					{
 						"activity": "copy REST API dataset",
@@ -262,6 +259,8 @@
 				"name": "copy REST API dataset part 2",
 				"description": "Copies the REST API dataset to datalake.",
 				"type": "Copy",
+				"state": "Inactive",
+				"onInactiveMarkAs": "Succeeded",
 				"dependsOn": [
 					{
 						"activity": "copy REST API dataset",
@@ -446,7 +445,7 @@
 				"type": "SetVariable",
 				"dependsOn": [
 					{
-						"activity": "filename",
+						"activity": "Get reference link from Service Bus",
 						"dependencyConditions": [
 							"Succeeded"
 						]
@@ -460,7 +459,7 @@
 				"typeProperties": {
 					"variableName": "status_code",
 					"value": {
-						"value": "@activity('Get reference link from Service Bus').output['status_code']",
+						"value": "@activity('Get reference link from Service Bus').output.statuscode",
 						"type": "Expression"
 					}
 				}
