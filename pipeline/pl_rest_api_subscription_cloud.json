@@ -135,7 +135,7 @@
 				"type": "Until",
 				"dependsOn": [
 					{
-						"activity": "Set content-length  as 100",
+						"activity": "content-length  is 100",
 						"dependencyConditions": [
 							"Succeeded"
 						]
@@ -496,7 +496,7 @@
 				}
 			},
 			{
-				"name": "Set content-length  as 100",
+				"name": "content-length  is 100",
 				"type": "SetVariable",
 				"dependsOn": [
 					{
