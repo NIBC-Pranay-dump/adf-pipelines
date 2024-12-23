@@ -29,7 +29,10 @@
 						"httpRequestTimeout": "00:01:40",
 						"requestInterval": "00.00:00:00.010",
 						"requestMethod": "POST",
-						"requestBody": "@concat(\n    'Authorization=Bearer ', \n        activity('Get PIM token').output['access_token'],        \n    '&Storage-Authorization=Bearer ', \n        activity('Get Storage token').output['access_token'],\n    '&Content-Type=application/json'\n\n)",
+						"requestBody": {
+							"value": "@concat(\n    'Authorization=Bearer ', \n        activity('Get PIM token').output['access_token'],        \n    '&Storage-Authorization=Bearer ', \n        activity('Get Storage token').output['access_token'],\n    '&Content-Type=application/json'\n\n)",
+							"type": "Expression"
+						},
 						"additionalHeaders": {
 							"Content-Type": {
 								"value": "@concat('Bearer ', activity('Get PIM token').output['access_token'])",
@@ -517,7 +520,7 @@
 			},
 			"relative_url": {
 				"type": "string",
-				"defaultValue": "/internal/consumer/1.0/"
+				"defaultValue": "/external/consumer/1.0/"
 			},
 			"base_url": {
 				"type": "string",
