@@ -321,65 +321,49 @@
 				"userProperties": [],
 				"typeProperties": {
 					"source": {
-						"type": "RestSource",
-						"httpRequestTimeout": "00:01:40",
-						"requestInterval": "00.00:00:00.010",
-						"requestMethod": "POST",
-						"requestBody": {
-							"value": "@concat('{\n\t\"referenceLink\": \"',variables('reference_link'),'\"}')",
-							"type": "Expression"
-						},
-						"additionalHeaders": {
-							"Authorization": {
-								"value": "@concat('Bearer ', activity('Get PIM token').output['access_token'])",
+						"type": "BinarySource",
+						"storeSettings": {
+							"type": "HttpReadSettings",
+							"requestMethod": "POST",
+							"additionalHeaders": {
+								"value": "Authorization: @concat('Bearer ', activity('Get PIM token').output['access_token']),\nStorage-Authorization: @concat('Bearer ', activity('Get Storage token').output['access_token']),\nContent-Type: application/json",
 								"type": "Expression"
 							},
-							"Storage-Authorization": {
-								"value": "@concat('Bearer ', activity('Get Storage token').output['access_token'])",
-								"type": "Expression"
-							},
-							"Content-Type": "application/json"
+							"requestBody": "@concat('{\"referenceLink\": \"',variables('reference_link'),'\"}')",
+							"requestTimeout": ""
 						},
-						"paginationRules": {
-							"supportRFC5988": "true"
+						"formatSettings": {
+							"type": "BinaryReadSettings"
 						}
 					},
 					"sink": {
-						"type": "DelimitedTextSink",
+						"type": "BinarySink",
 						"storeSettings": {
 							"type": "AzureBlobStorageWriteSettings"
-						},
-						"formatSettings": {
-							"type": "DelimitedTextWriteSettings",
-							"quoteAllText": true,
-							"fileExtension": ".txt"
 						}
 					},
 					"enableStaging": false
 				},
 				"inputs": [
 					{
-						"referenceName": "ds_rest_api_cloud",
+						"referenceName": "ds_anonymous_http_binary_cloud",
 						"type": "DatasetReference",
 						"parameters": {
-							"relative_url": "@concat(pipeline().parameters.relative_url,'receive-blob')",
-							"base_url": "@pipeline().parameters.base_url"
+							"base_url": "@pipeline().parameters.base_url",
+							"relative_url": "@concat(pipeline().parameters.relative_url,'receive-blob')"
 						}
 					}
 				],
 				"outputs": [
 					{
-						"referenceName": "ds_blob_csv_azure_shir",
+						"referenceName": "ds_blob_binary_azure_shir",
 						"type": "DatasetReference",
 						"parameters": {
 							"storage_account_uri": "@pipeline().globalParameters.storage_account_data_factory_uri",
 							"container_name": "@pipeline().globalParameters.storage_container_data_factory",
 							"datastore_name": "@pipeline().parameters.datastore_name",
 							"dataset_name": "@variables('dataname')",
-							"file_name": "@concat(variables('dataname'),'.csv')",
-							"column_delimiter": ",",
-							"encoding": "UTF-8",
-							"first_row_as_header": true
+							"file_name": "@concat(variables('dataname'),'.csv')"
 						}
 					}
 				]
