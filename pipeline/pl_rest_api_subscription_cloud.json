@@ -200,87 +200,6 @@
 					},
 					"activities": [
 						{
-							"name": "copy REST API dataset",
-							"description": "Copies the REST API dataset to datalake.",
-							"type": "Copy",
-							"dependsOn": [
-								{
-									"activity": "set download timestamp",
-									"dependencyConditions": [
-										"Succeeded"
-									]
-								}
-							],
-							"policy": {
-								"timeout": "0.12:00:00",
-								"retry": 0,
-								"retryIntervalInSeconds": 30,
-								"secureOutput": false,
-								"secureInput": false
-							},
-							"userProperties": [],
-							"typeProperties": {
-								"source": {
-									"type": "RestSource",
-									"httpRequestTimeout": "00:01:40",
-									"requestInterval": "00.00:00:00.010",
-									"requestMethod": "POST",
-									"requestBody": "@variables('reference_link')",
-									"additionalHeaders": {
-										"Authorization": "@concat('Bearer ', activity('Get PIM token').output['access_token'])",
-										"Storage-Authorization": "@concat('Bearer ', activity('Get Storage token').output['access_token'])",
-										"Content-Type": "application/json"
-									},
-									"paginationRules": {
-										"supportRFC5988": "true"
-									}
-								},
-								"sink": {
-									"type": "ParquetSink",
-									"storeSettings": {
-										"type": "AzureBlobFSWriteSettings"
-									},
-									"formatSettings": {
-										"type": "ParquetWriteSettings"
-									}
-								},
-								"enableStaging": false,
-								"translator": {
-									"type": "TabularTranslator",
-									"mapComplexValuesToString": true
-								}
-							},
-							"inputs": [
-								{
-									"referenceName": "ds_rest_api_cloud",
-									"type": "DatasetReference",
-									"parameters": {
-										"relative_url": "@concat(pipeline().parameters.relative_url,'receive-blob')",
-										"base_url": "@pipeline().parameters.base_url"
-									}
-								}
-							],
-							"outputs": [
-								{
-									"referenceName": "ds_adls_parquet_auto_resolve",
-									"type": "DatasetReference",
-									"parameters": {
-										"storage_account_uri": "@pipeline().globalParameters.storage_account_data_factory_uri",
-										"container_name": {
-											"value": "@pipeline().globalParameters.storage_container_datalake",
-											"type": "Expression"
-										},
-										"datastore_name": "@pipeline().parameters.datastore_name",
-										"dataset_name": "@variables('dataname')",
-										"file_name": "@concat(variables('dataname'),'.csv')",
-										"column_delimiter": ",",
-										"encoding": "UTF-8",
-										"first_row_as_header": true
-									}
-								}
-							]
-						},
-						{
 							"name": "filename",
 							"type": "SetVariable",
 							"dependsOn": [],
@@ -346,127 +265,6 @@
 							}
 						},
 						{
-							"name": "convert CSV to parquet",
-							"description": "Copy CSV data to a parquet file, adding the filename, dataname, download_timestamp and reference_link",
-							"type": "Copy",
-							"state": "Inactive",
-							"onInactiveMarkAs": "Succeeded",
-							"dependsOn": [],
-							"policy": {
-								"timeout": "0.12:00:00",
-								"retry": 0,
-								"retryIntervalInSeconds": 30,
-								"secureOutput": false,
-								"secureInput": false
-							},
-							"userProperties": [],
-							"typeProperties": {
-								"source": {
-									"type": "DelimitedTextSource",
-									"additionalColumns": [
-										{
-											"name": "filename",
-											"value": {
-												"value": "@variables('filename')",
-												"type": "Expression"
-											}
-										},
-										{
-											"name": "download_timestamp",
-											"value": {
-												"value": "@variables('download_timestamp')",
-												"type": "Expression"
-											}
-										},
-										{
-											"name": "dataname",
-											"value": {
-												"value": "@variables('dataname')",
-												"type": "Expression"
-											}
-										},
-										{
-											"name": "reference_link",
-											"value": {
-												"value": "@variables('reference_link')",
-												"type": "Expression"
-											}
-										}
-									],
-									"storeSettings": {
-										"type": "AzureBlobStorageReadSettings",
-										"recursive": false,
-										"enablePartitionDiscovery": false
-									},
-									"formatSettings": {
-										"type": "DelimitedTextReadSettings"
-									}
-								},
-								"sink": {
-									"type": "ParquetSink",
-									"storeSettings": {
-										"type": "AzureBlobFSWriteSettings"
-									},
-									"formatSettings": {
-										"type": "ParquetWriteSettings"
-									}
-								},
-								"enableStaging": false,
-								"translator": {
-									"type": "TabularTranslator",
-									"typeConversion": true,
-									"typeConversionSettings": {
-										"allowDataTruncation": false,
-										"treatBooleanAsNumber": false
-									}
-								}
-							},
-							"inputs": [
-								{
-									"referenceName": "ds_blob_csv_azure_shir",
-									"type": "DatasetReference",
-									"parameters": {
-										"storage_account_uri": "@pipeline().globalParameters.storage_account_data_factory_uri",
-										"container_name": "@pipeline().globalParameters.storage_container_data_factory",
-										"datastore_name": "@pipeline().parameters.datastore_name",
-										"dataset_name": "@variables('dataname')",
-										"file_name": "@concat(variables('dataname'),'.csv')",
-										"column_delimiter": ",",
-										"encoding": "UTF-8",
-										"first_row_as_header": true
-									}
-								}
-							],
-							"outputs": [
-								{
-									"referenceName": "ds_adls_parquet_auto_resolve",
-									"type": "DatasetReference",
-									"parameters": {
-										"datastore_name": {
-											"value": "@pipeline().parameters.datastore_name",
-											"type": "Expression"
-										},
-										"dataset_name": {
-											"value": "@variables('dataname')",
-											"type": "Expression"
-										},
-										"storage_account_uri": {
-											"value": "@pipeline().globalParameters.storage_account_datalake_uri",
-											"type": "Expression"
-										},
-										"container_name": {
-											"value": "@pipeline().globalParameters.storage_container_datalake",
-											"type": "Expression"
-										},
-										"file_name": {
-											"value": "@variables('dataname')",
-											"type": "Expression"
-										}
-									}
-								}
-							]
-						},
-						{
 							"name": "set download timestamp",
 							"description": "Set download timestamp in west europe timezone",
 							"type": "SetVariable",
@@ -496,7 +294,7 @@
 							"type": "SetVariable",
 							"dependsOn": [
 								{
-									"activity": "copy REST API dataset",
+									"activity": "Copy CSV to parquet",
 									"dependencyConditions": [
 										"Succeeded"
 									]
@@ -511,6 +309,161 @@
 								"variableName": "stop",
 								"value": "yes"
 							}
+						},
+						{
+							"name": "Copy REST to CSV",
+							"type": "Copy",
+							"dependsOn": [
+								{
+									"activity": "set download timestamp",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "RestSource",
+									"httpRequestTimeout": "00:01:40",
+									"requestInterval": "00.00:00:00.010",
+									"requestMethod": "POST",
+									"requestBody": "@variables('reference_link')",
+									"additionalHeaders": {
+										"Authorization": "@concat('Bearer ', activity('Get PIM token').output['access_token'])",
+										"Storage-Authorization": "@concat('Bearer ', activity('Get Storage token').output['access_token'])",
+										"Content-Type": "application/json"
+									},
+									"paginationRules": {
+										"supportRFC5988": "true"
+									}
+								},
+								"sink": {
+									"type": "DelimitedTextSink",
+									"storeSettings": {
+										"type": "AzureBlobStorageWriteSettings"
+									},
+									"formatSettings": {
+										"type": "DelimitedTextWriteSettings",
+										"quoteAllText": true,
+										"fileExtension": ".txt"
+									}
+								},
+								"enableStaging": false
+							},
+							"inputs": [
+								{
+									"referenceName": "ds_rest_api_cloud",
+									"type": "DatasetReference",
+									"parameters": {
+										"relative_url": "@concat(pipeline().parameters.relative_url,'receive-blob')",
+										"base_url": "@pipeline().parameters.base_url"
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "ds_blob_csv_azure_shir",
+									"type": "DatasetReference",
+									"parameters": {
+										"storage_account_uri": "@pipeline().globalParameters.storage_account_data_factory_uri",
+										"container_name": "@pipeline().globalParameters.storage_container_data_factory",
+										"datastore_name": "@pipeline().parameters.datastore_name",
+										"dataset_name": "@variables('dataname')",
+										"file_name": "@concat(variables('dataname'),'.csv')",
+										"column_delimiter": ",",
+										"encoding": "UTF-8",
+										"first_row_as_header": true
+									}
+								}
+							]
+						},
+						{
+							"name": "Copy CSV to parquet",
+							"type": "Copy",
+							"dependsOn": [
+								{
+									"activity": "Copy REST to CSV",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "DelimitedTextSource",
+									"storeSettings": {
+										"type": "AzureBlobStorageReadSettings",
+										"recursive": true,
+										"enablePartitionDiscovery": false
+									},
+									"formatSettings": {
+										"type": "DelimitedTextReadSettings"
+									}
+								},
+								"sink": {
+									"type": "ParquetSink",
+									"storeSettings": {
+										"type": "AzureBlobFSWriteSettings"
+									},
+									"formatSettings": {
+										"type": "ParquetWriteSettings"
+									}
+								},
+								"enableStaging": false,
+								"translator": {
+									"type": "TabularTranslator",
+									"typeConversion": true,
+									"typeConversionSettings": {
+										"allowDataTruncation": true,
+										"treatBooleanAsNumber": false
+									}
+								}
+							},
+							"inputs": [
+								{
+									"referenceName": "ds_blob_csv_azure_shir",
+									"type": "DatasetReference",
+									"parameters": {
+										"storage_account_uri": "@pipeline().globalParameters.storage_account_data_factory_uri",
+										"container_name": "@pipeline().globalParameters.storage_container_data_factory",
+										"datastore_name": "@pipeline().parameters.datastore_name",
+										"dataset_name": "@variables('dataname')",
+										"file_name": "@concat(variables('dataname'),'.csv')",
+										"column_delimiter": ",",
+										"encoding": "UTF-8",
+										"first_row_as_header": true
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "ds_adls_parquet_auto_resolve",
+									"type": "DatasetReference",
+									"parameters": {
+										"datastore_name": "@pipeline().parameters.datastore_name",
+										"dataset_name": "@variables('dataname')",
+										"storage_account_uri": "@pipeline().globalParameters.storage_account_datalake_uri",
+										"container_name": "@pipeline().globalParameters.storage_container_datalake",
+										"file_name": "@concat(variables('dataname'),'.csv')"
+									}
+								}
+							]
 						}
 					],
 					"timeout": "0.12:00:00"
