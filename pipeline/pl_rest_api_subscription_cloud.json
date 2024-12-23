@@ -459,7 +459,7 @@
 				"typeProperties": {
 					"variableName": "status_code",
 					"value": {
-						"value": "@activity('Get reference link from Service Bus').output.statuscode",
+						"value": "@activity('Get reference link from Service Bus').output.errors[0].message",
 						"type": "Expression"
 					}
 				}
@@ -521,6 +521,36 @@
 						"value": "@concat('client_id=', pipeline().parameters.microsoft_entra_cid, '&scope=', pipeline().parameters.token_scope_storage, '&client_secret=', activity('Get secret').output.pipelineReturnValue.keyvault_secret_value, '&grant_type=client_credentials')",
 						"type": "Expression"
 					}
+				}
+			},
+			{
+				"name": "Set variable1",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "Get reference link from Service Bus",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "pipelineReturnValue",
+					"value": [
+						{
+							"key": "test",
+							"value": {
+								"type": "Object",
+								"content": "@activity('Get reference link from Service Bus').output"
+							}
+						}
+					],
+					"setSystemVariable": true
 				}
 			}
 		],
