@@ -132,10 +132,11 @@
 			},
 			{
 				"name": "content-length is 0",
+				"description": "when no message are available the content-length will be 0",
 				"type": "Until",
 				"dependsOn": [
 					{
-						"activity": "content-length  is 100",
+						"activity": "Get Storage token",
 						"dependencyConditions": [
 							"Succeeded"
 						]
@@ -144,12 +145,235 @@
 				"userProperties": [],
 				"typeProperties": {
 					"expression": {
-						"value": "@equals(variables('content-length'), 0)",
+						"value": "@or(equals(variables('content-length'),0), equals(variables('counter'),2))",
 						"type": "Expression"
 					},
 					"activities": [
 						{
-							"name": "filename",
+							"name": "Get reference link from Service Bus",
+							"description": "Fetches a reference link from the Service Bus to download a file from the Storage Account",
+							"type": "WebActivity",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"method": "POST",
+								"headers": {
+									"Authorization": {
+										"value": "@concat('Bearer ', \n        activity('Get PIM token').output['access_token']\n)",
+										"type": "Expression"
+									},
+									"ServiceBus-Authorization": {
+										"value": "@concat('Bearer ', \n        activity('Get Service Bus token').output['access_token']\n)",
+										"type": "Expression"
+									},
+									"Topic": {
+										"value": "@pipeline().parameters.service_bus_topic",
+										"type": "Expression"
+									},
+									"Subscription": {
+										"value": "@pipeline().parameters.service_bus_topic_subscription",
+										"type": "Expression"
+									}
+								},
+								"url": {
+									"value": "@concat(pipeline().parameters.base_url,pipeline().parameters.relative_url,'receive-message')",
+									"type": "Expression"
+								},
+								"connectVia": {
+									"referenceName": "cloud",
+									"type": "IntegrationRuntimeReference"
+								},
+								"body": "dummy"
+							}
+						},
+						{
+							"name": "content-length",
+							"type": "SetVariable",
+							"dependsOn": [
+								{
+									"activity": "Get reference link from Service Bus",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "content-length",
+								"value": {
+									"value": "@int(activity('Get reference link from Service Bus').output['ADFWebActivityResponseHeaders']['Content-Length'])",
+									"type": "Expression"
+								}
+							}
+						},
+						{
+							"name": "content-length greater than 0",
+							"type": "IfCondition",
+							"dependsOn": [
+								{
+									"activity": "counter",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"userProperties": [],
+							"typeProperties": {
+								"expression": {
+									"value": "@greater(variables('content-length'),0)",
+									"type": "Expression"
+								},
+								"ifTrueActivities": [
+									{
+										"name": "filename",
+										"type": "SetVariable",
+										"dependsOn": [],
+										"policy": {
+											"secureOutput": false,
+											"secureInput": false
+										},
+										"userProperties": [],
+										"typeProperties": {
+											"variableName": "filename",
+											"value": {
+												"value": "@activity('Get reference link from Service Bus').output['ADFWebActivityResponseHeaders']['File-Name']",
+												"type": "Expression"
+											}
+										}
+									},
+									{
+										"name": "dataname",
+										"type": "SetVariable",
+										"dependsOn": [
+											{
+												"activity": "filename",
+												"dependencyConditions": [
+													"Succeeded"
+												]
+											}
+										],
+										"policy": {
+											"secureOutput": false,
+											"secureInput": false
+										},
+										"userProperties": [],
+										"typeProperties": {
+											"variableName": "dataname",
+											"value": {
+												"value": "@activity('Get reference link from Service Bus').output['ADFWebActivityResponseHeaders']['Data-Name']",
+												"type": "Expression"
+											}
+										}
+									},
+									{
+										"name": "reference_link",
+										"type": "SetVariable",
+										"dependsOn": [
+											{
+												"activity": "dataname",
+												"dependencyConditions": [
+													"Succeeded"
+												]
+											}
+										],
+										"policy": {
+											"secureOutput": false,
+											"secureInput": false
+										},
+										"userProperties": [],
+										"typeProperties": {
+											"variableName": "reference_link",
+											"value": {
+												"value": "@activity('Get reference link from Service Bus').output['referenceLink']",
+												"type": "Expression"
+											}
+										}
+									},
+									{
+										"name": "set download timestamp",
+										"description": "Set download timestamp in west europe timezone",
+										"type": "SetVariable",
+										"dependsOn": [
+											{
+												"activity": "reference_link",
+												"dependencyConditions": [
+													"Succeeded"
+												]
+											}
+										],
+										"policy": {
+											"secureOutput": false,
+											"secureInput": false
+										},
+										"userProperties": [],
+										"typeProperties": {
+											"variableName": "download_timestamp",
+											"value": {
+												"value": "@formatDateTime(convertTimeZone(pipeline().TriggerTime,'UTC','W. Europe Standard Time'), 'yyyyMMdd_HHmmss')",
+												"type": "Expression"
+											}
+										}
+									},
+									{
+										"name": "Append reference",
+										"type": "AppendVariable",
+										"dependsOn": [
+											{
+												"activity": "set download timestamp",
+												"dependencyConditions": [
+													"Succeeded"
+												]
+											}
+										],
+										"userProperties": [],
+										"typeProperties": {
+											"variableName": "references",
+											"value": {
+												"value": "@union([\n    variables('reference_link'),\n    variables('filename'),\n    variables('download_timestamp'),\n    variables('dataname'),\n    variables('content-length')\n])",
+												"type": "Expression"
+											}
+										}
+									}
+								]
+							}
+						},
+						{
+							"name": "counter",
+							"type": "SetVariable",
+							"dependsOn": [
+								{
+									"activity": "counter2",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "counter",
+								"value": {
+									"value": "@variables('counter2')",
+									"type": "Expression"
+								}
+							}
+						},
+						{
+							"name": "counter2",
 							"type": "SetVariable",
 							"dependsOn": [
 								{
@@ -165,92 +389,44 @@
 							},
 							"userProperties": [],
 							"typeProperties": {
-								"variableName": "filename",
+								"variableName": "counter2",
 								"value": {
-									"value": "@activity('Get reference link from Service Bus').output['ADFWebActivityResponseHeaders']['File-Name']",
+									"value": "@add(variables('counter'),1)",
 									"type": "Expression"
 								}
 							}
-						},
-						{
-							"name": "dataname",
-							"type": "SetVariable",
-							"dependsOn": [
-								{
-									"activity": "filename",
-									"dependencyConditions": [
-										"Succeeded"
-									]
-								}
-							],
-							"policy": {
-								"secureOutput": false,
-								"secureInput": false
-							},
-							"userProperties": [],
-							"typeProperties": {
-								"variableName": "dataname",
-								"value": {
-									"value": "@activity('Get reference link from Service Bus').output['ADFWebActivityResponseHeaders']['Data-Name']",
-									"type": "Expression"
-								}
-							}
-						},
-						{
-							"name": "reference_link",
-							"type": "SetVariable",
-							"dependsOn": [
-								{
-									"activity": "dataname",
-									"dependencyConditions": [
-										"Succeeded"
-									]
-								}
-							],
-							"policy": {
-								"secureOutput": false,
-								"secureInput": false
-							},
-							"userProperties": [],
-							"typeProperties": {
-								"variableName": "reference_link",
-								"value": {
-									"value": "@activity('Get reference link from Service Bus').output['referenceLink']",
-									"type": "Expression"
-								}
-							}
-						},
-						{
-							"name": "set download timestamp",
-							"description": "Set download timestamp in west europe timezone",
-							"type": "SetVariable",
-							"dependsOn": [
-								{
-									"activity": "reference_link",
-									"dependencyConditions": [
-										"Succeeded"
-									]
-								}
-							],
-							"policy": {
-								"secureOutput": false,
-								"secureInput": false
-							},
-							"userProperties": [],
-							"typeProperties": {
-								"variableName": "download_timestamp",
-								"value": {
-									"value": "@formatDateTime(convertTimeZone(pipeline().TriggerTime,'UTC','W. Europe Standard Time'), 'yyyyMMdd_HHmmss')",
-									"type": "Expression"
-								}
-							}
-						},
+						}
+					],
+					"timeout": "0.12:00:00"
+				}
+			},
+			{
+				"name": "ForEach reference",
+				"type": "ForEach",
+				"state": "Inactive",
+				"onInactiveMarkAs": "Succeeded",
+				"dependsOn": [
+					{
+						"activity": "content-length is 0",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@variables('references')",
+						"type": "Expression"
+					},
+					"isSequential": true,
+					"activities": [
 						{
 							"name": "Copy HTTP to CSV",
 							"type": "Copy",
 							"dependsOn": [
 								{
-									"activity": "set download timestamp",
+									"activity": "Set variable1",
 									"dependencyConditions": [
 										"Succeeded"
 									]
@@ -274,7 +450,10 @@
 											"value": "Authorization: Bearer @{activity('Get PIM token').output['access_token']}\nStorage-Authorization: Bearer @{activity('Get Storage token').output['access_token']}\nContent-Type: application/json\n",
 											"type": "Expression"
 										},
-										"requestBody": "@concat('{\"referenceLink\": \"',variables('reference_link'),'\"}')",
+										"requestBody": {
+											"value": "@concat('{\"referenceLink\": \"',variables('reference_link'),'\"}')",
+											"type": "Expression"
+										},
 										"requestTimeout": ""
 									},
 									"formatSettings": {
@@ -427,96 +606,23 @@
 							]
 						},
 						{
-							"name": "Get reference link from Service Bus",
-							"description": "Fetches a reference link from the Service Bus to download a file from the Storage Account",
-							"type": "WebActivity",
+							"name": "Set variable1",
+							"type": "SetVariable",
 							"dependsOn": [],
 							"policy": {
-								"timeout": "0.12:00:00",
-								"retry": 0,
-								"retryIntervalInSeconds": 30,
 								"secureOutput": false,
 								"secureInput": false
 							},
 							"userProperties": [],
 							"typeProperties": {
-								"method": "POST",
-								"headers": {
-									"Authorization": {
-										"value": "@concat('Bearer ', \n        activity('Get PIM token').output['access_token']\n)",
-										"type": "Expression"
-									},
-									"ServiceBus-Authorization": {
-										"value": "@concat('Bearer ', \n        activity('Get Service Bus token').output['access_token']\n)",
-										"type": "Expression"
-									},
-									"Topic": {
-										"value": "@pipeline().parameters.service_bus_topic",
-										"type": "Expression"
-									},
-									"Subscription": {
-										"value": "@pipeline().parameters.service_bus_topic_subscription",
-										"type": "Expression"
-									}
-								},
-								"url": {
-									"value": "@concat(pipeline().parameters.base_url,pipeline().parameters.relative_url,'receive-message')",
-									"type": "Expression"
-								},
-								"connectVia": {
-									"referenceName": "cloud",
-									"type": "IntegrationRuntimeReference"
-								},
-								"body": "dummy"
-							}
-						},
-						{
-							"name": "content-length",
-							"type": "SetVariable",
-							"dependsOn": [
-								{
-									"activity": "Get reference link from Service Bus",
-									"dependencyConditions": [
-										"Succeeded"
-									]
-								}
-							],
-							"policy": {
-								"secureOutput": false,
-								"secureInput": false
-							},
-							"userProperties": [],
-							"typeProperties": {
-								"variableName": "content-length",
+								"variableName": "reference_link",
 								"value": {
-									"value": "@int(activity('Get reference link from Service Bus').output['ADFWebActivityResponseHeaders']['Content-Length'])",
+									"value": "@item(['reference_link'])",
 									"type": "Expression"
 								}
 							}
 						}
-					],
-					"timeout": "0.12:00:00"
-				}
-			},
-			{
-				"name": "content-length  is 100",
-				"type": "SetVariable",
-				"dependsOn": [
-					{
-						"activity": "Get Storage token",
-						"dependencyConditions": [
-							"Succeeded"
-						]
-					}
-				],
-				"policy": {
-					"secureOutput": false,
-					"secureInput": false
-				},
-				"userProperties": [],
-				"typeProperties": {
-					"variableName": "content-length",
-					"value": 100
+					]
 				}
 			}
 		],
@@ -580,7 +686,19 @@
 				"type": "String"
 			},
 			"content-length": {
-				"type": "Integer"
+				"type": "Integer",
+				"defaultValue": 100
+			},
+			"counter": {
+				"type": "Integer",
+				"defaultValue": 0
+			},
+			"counter2": {
+				"type": "Integer",
+				"defaultValue": 0
+			},
+			"references": {
+				"type": "Array"
 			}
 		},
 		"folder": {
