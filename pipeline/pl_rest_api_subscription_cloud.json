@@ -132,7 +132,7 @@
 			},
 			{
 				"name": "content-length is 0",
-				"description": "when no message are available the content-length will be 0",
+				"description": "when no message are available the content-length will be 0. This iteration creates an array with all available references from service bus\n\nin case you want to kill the process after a couple of runs you can use following code:\n@or(equals(variables('content-length'),0), equals(length(variables('references')),2))\n\noterwise:\n@equals(variables('content-length'),0)",
 				"type": "Until",
 				"dependsOn": [
 					{
@@ -145,7 +145,7 @@
 				"userProperties": [],
 				"typeProperties": {
 					"expression": {
-						"value": "@or(equals(variables('content-length'),0), equals(variables('counter'),2))",
+						"value": "@equals(variables('content-length'),0)",
 						"type": "Expression"
 					},
 					"activities": [
@@ -219,10 +219,11 @@
 						},
 						{
 							"name": "content-length greater than 0",
+							"description": "when no message are available the content-length will be 0",
 							"type": "IfCondition",
 							"dependsOn": [
 								{
-									"activity": "counter",
+									"activity": "content-length",
 									"dependencyConditions": [
 										"Succeeded"
 									]
@@ -327,6 +328,7 @@
 									},
 									{
 										"name": "Append reference",
+										"description": "appends json (with filename, dataname, referencelink and download timestamp) to array",
 										"type": "AppendVariable",
 										"dependsOn": [
 											{
@@ -340,60 +342,12 @@
 										"typeProperties": {
 											"variableName": "references",
 											"value": {
-												"value": "@union([\n    variables('reference_link'),\n    variables('filename'),\n    variables('download_timestamp'),\n    variables('dataname'),\n    variables('content-length')\n])",
+												"value": "@json(concat('{\n    \"reference_link\":\"',variables('reference_link'),'\",\n    \"filename\":\"',variables('filename'),'\",\n    \"download_timestamp\":\"',variables('download_timestamp'),'\",\n    \"dataname\":\"',variables('dataname'),'\",\n    \"content-length\":',variables('content-length'),'\n}'))",
 												"type": "Expression"
 											}
 										}
 									}
 								]
-							}
-						},
-						{
-							"name": "counter",
-							"type": "SetVariable",
-							"dependsOn": [
-								{
-									"activity": "counter2",
-									"dependencyConditions": [
-										"Succeeded"
-									]
-								}
-							],
-							"policy": {
-								"secureOutput": false,
-								"secureInput": false
-							},
-							"userProperties": [],
-							"typeProperties": {
-								"variableName": "counter",
-								"value": {
-									"value": "@variables('counter2')",
-									"type": "Expression"
-								}
-							}
-						},
-						{
-							"name": "counter2",
-							"type": "SetVariable",
-							"dependsOn": [
-								{
-									"activity": "content-length",
-									"dependencyConditions": [
-										"Succeeded"
-									]
-								}
-							],
-							"policy": {
-								"secureOutput": false,
-								"secureInput": false
-							},
-							"userProperties": [],
-							"typeProperties": {
-								"variableName": "counter2",
-								"value": {
-									"value": "@add(variables('counter'),1)",
-									"type": "Expression"
-								}
 							}
 						}
 					],
@@ -402,10 +356,11 @@
 			},
 			{
 				"name": "ForEach reference",
+				"description": "store all the references as csv (ingestion) and parquet (datalake)",
 				"type": "ForEach",
 				"dependsOn": [
 					{
-						"activity": "content-length is 0",
+						"activity": "ALL REFERENCES COMBINED",
 						"dependencyConditions": [
 							"Succeeded"
 						]
@@ -421,9 +376,8 @@
 					"activities": [
 						{
 							"name": "Copy HTTP to CSV",
+							"description": "used HTTP instead of REST because REST expects json as a response",
 							"type": "Copy",
-							"state": "Inactive",
-							"onInactiveMarkAs": "Succeeded",
 							"dependsOn": [
 								{
 									"activity": "download timestamp 2",
@@ -495,8 +449,6 @@
 						{
 							"name": "Copy CSV to parquet",
 							"type": "Copy",
-							"state": "Inactive",
-							"onInactiveMarkAs": "Succeeded",
 							"dependsOn": [
 								{
 									"activity": "Copy HTTP to CSV",
@@ -619,7 +571,7 @@
 							"typeProperties": {
 								"variableName": "reference_link",
 								"value": {
-									"value": "@item.reference_link",
+									"value": "@item()['reference_link']",
 									"type": "Expression"
 								}
 							}
@@ -643,7 +595,7 @@
 							"typeProperties": {
 								"variableName": "filename",
 								"value": {
-									"value": "@item.filename",
+									"value": "@item()['filename']",
 									"type": "Expression"
 								}
 							}
@@ -667,7 +619,7 @@
 							"typeProperties": {
 								"variableName": "dataname",
 								"value": {
-									"value": "@item.dataname",
+									"value": "@item()['dataname']",
 									"type": "Expression"
 								}
 							}
@@ -690,10 +642,38 @@
 							"userProperties": [],
 							"typeProperties": {
 								"variableName": "download_timestamp",
-								"value": "@item.download_timestamp"
+								"value": {
+									"value": "@item()['download_timestamp']\n\n",
+									"type": "Expression"
+								}
 							}
 						}
 					]
+				}
+			},
+			{
+				"name": "ALL REFERENCES COMBINED",
+				"description": "this variable is just to easily lookup all the references",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "content-length is 0",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "foreach_array",
+					"value": {
+						"value": "@variables('references')",
+						"type": "Expression"
+					}
 				}
 			}
 		],
@@ -760,15 +740,10 @@
 				"type": "Integer",
 				"defaultValue": 100
 			},
-			"counter": {
-				"type": "Integer",
-				"defaultValue": 0
-			},
-			"counter2": {
-				"type": "Integer",
-				"defaultValue": 0
-			},
 			"references": {
+				"type": "Array"
+			},
+			"foreach_array": {
 				"type": "Array"
 			}
 		},
