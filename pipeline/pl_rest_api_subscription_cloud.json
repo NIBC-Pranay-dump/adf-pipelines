@@ -183,7 +183,7 @@
 									}
 								},
 								"url": {
-									"value": "@concat(pipeline().parameters.base_url,pipeline().parameters.relative_url,'receive-message')",
+									"value": "@concat(replace(pipeline().parameters.base_url,'<environment>',pipeline().parameters.environment),pipeline().parameters.relative_url,'receive-message')",
 									"type": "Expression"
 								},
 								"connectVia": {
@@ -427,7 +427,10 @@
 									"referenceName": "ds_anonymous_http_binary_cloud",
 									"type": "DatasetReference",
 									"parameters": {
-										"base_url": "@pipeline().parameters.base_url",
+										"base_url": {
+											"value": "@replace(pipeline().parameters.base_url,'<environment>',pipeline().parameters.environment)",
+											"type": "Expression"
+										},
 										"relative_url": "@concat(pipeline().parameters.relative_url,'receive-blob')"
 									}
 								}
@@ -688,7 +691,7 @@
 			},
 			"base_url": {
 				"type": "string",
-				"defaultValue": "https://apim.dev.cloud.nibc.com"
+				"defaultValue": "https://apim.<environment>.cloud.nibc.com"
 			},
 			"key_vault_secret_name": {
 				"type": "string",
@@ -721,6 +724,10 @@
 			"service_bus_topic_subscription": {
 				"type": "string",
 				"defaultValue": "cdp"
+			},
+			"environment": {
+				"type": "string",
+				"defaultValue": "dev"
 			}
 		},
 		"variables": {
