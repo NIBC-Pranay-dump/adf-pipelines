@@ -236,7 +236,7 @@
 								},
 								"ifTrueActivities": [
 									{
-										"name": "filename",
+										"name": "file name",
 										"type": "SetVariable",
 										"dependsOn": [],
 										"policy": {
@@ -253,11 +253,11 @@
 										}
 									},
 									{
-										"name": "dataname",
+										"name": "data name",
 										"type": "SetVariable",
 										"dependsOn": [
 											{
-												"activity": "filename",
+												"activity": "file name",
 												"dependencyConditions": [
 													"Succeeded"
 												]
@@ -277,11 +277,11 @@
 										}
 									},
 									{
-										"name": "reference_link",
+										"name": "reference ink",
 										"type": "SetVariable",
 										"dependsOn": [
 											{
-												"activity": "dataname",
+												"activity": "data name",
 												"dependencyConditions": [
 													"Succeeded"
 												]
@@ -301,12 +301,12 @@
 										}
 									},
 									{
-										"name": "set download timestamp",
+										"name": "download timestamp",
 										"description": "Set download timestamp in west europe timezone",
 										"type": "SetVariable",
 										"dependsOn": [
 											{
-												"activity": "reference_link",
+												"activity": "reference ink",
 												"dependencyConditions": [
 													"Succeeded"
 												]
@@ -330,7 +330,7 @@
 										"type": "AppendVariable",
 										"dependsOn": [
 											{
-												"activity": "set download timestamp",
+												"activity": "download timestamp",
 												"dependencyConditions": [
 													"Succeeded"
 												]
@@ -403,8 +403,6 @@
 			{
 				"name": "ForEach reference",
 				"type": "ForEach",
-				"state": "Inactive",
-				"onInactiveMarkAs": "Succeeded",
 				"dependsOn": [
 					{
 						"activity": "content-length is 0",
@@ -424,9 +422,11 @@
 						{
 							"name": "Copy HTTP to CSV",
 							"type": "Copy",
+							"state": "Inactive",
+							"onInactiveMarkAs": "Succeeded",
 							"dependsOn": [
 								{
-									"activity": "Set variable1",
+									"activity": "download timestamp 2",
 									"dependencyConditions": [
 										"Succeeded"
 									]
@@ -495,6 +495,8 @@
 						{
 							"name": "Copy CSV to parquet",
 							"type": "Copy",
+							"state": "Inactive",
+							"onInactiveMarkAs": "Succeeded",
 							"dependsOn": [
 								{
 									"activity": "Copy HTTP to CSV",
@@ -606,7 +608,7 @@
 							]
 						},
 						{
-							"name": "Set variable1",
+							"name": "reference link 2",
 							"type": "SetVariable",
 							"dependsOn": [],
 							"policy": {
@@ -617,9 +619,78 @@
 							"typeProperties": {
 								"variableName": "reference_link",
 								"value": {
-									"value": "@item(['reference_link'])",
+									"value": "@item.reference_link",
 									"type": "Expression"
 								}
+							}
+						},
+						{
+							"name": "file name 2",
+							"type": "SetVariable",
+							"dependsOn": [
+								{
+									"activity": "reference link 2",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "filename",
+								"value": {
+									"value": "@item.filename",
+									"type": "Expression"
+								}
+							}
+						},
+						{
+							"name": "data name 2",
+							"type": "SetVariable",
+							"dependsOn": [
+								{
+									"activity": "file name 2",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "dataname",
+								"value": {
+									"value": "@item.dataname",
+									"type": "Expression"
+								}
+							}
+						},
+						{
+							"name": "download timestamp 2",
+							"type": "SetVariable",
+							"dependsOn": [
+								{
+									"activity": "data name 2",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "download_timestamp",
+								"value": "@item.download_timestamp"
 							}
 						}
 					]
