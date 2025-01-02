@@ -1,0 +1,214 @@
+{
+	"name": "pl_basel_iv_orchestration",
+	"properties": {
+		"description": "The pipeline should be run to orchestrate a Basel IV refresh.",
+		"activities": [
+			{
+				"name": "Run model with databricks job",
+				"type": "ExecutePipeline",
+				"dependsOn": [
+					{
+						"activity": "Run dbt risk job",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "pl_databricks_job",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true,
+					"parameters": {
+						"job_id": {
+							"value": "@pipeline().parameters.dbx_job_id",
+							"type": "Expression"
+						},
+						"workspace_url": {
+							"value": "@pipeline().parameters.dbx_workspace_url",
+							"type": "Expression"
+						},
+						"job_parameters": {
+							"value": "@pipeline().parameters.dbx_job_params",
+							"type": "Expression"
+						}
+					}
+				}
+			},
+			{
+				"name": "Export model to AA server",
+				"type": "ExecutePipeline",
+				"dependsOn": [
+					{
+						"activity": "Run model with databricks job",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "pl_adls_fileserver_parquet_on_prem",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true,
+					"parameters": {
+						"adls_container": {
+							"value": "@pipeline().parameters.adls_container",
+							"type": "Expression"
+						},
+						"adls_folder_path": {
+							"value": "@pipeline().parameters.adls_folder_path",
+							"type": "Expression"
+						},
+						"fileserver_host_name": {
+							"value": "@pipeline().parameters.fileserver_host_name",
+							"type": "Expression"
+						},
+						"fileserver_user_name": {
+							"value": "@pipeline().parameters.fileserver_user_name",
+							"type": "Expression"
+						},
+						"fileserver_credentials_secret_name": {
+							"value": "@pipeline().parameters.fileserver_credentials_secret_name",
+							"type": "Expression"
+						},
+						"fileserver_directory": {
+							"value": "@pipeline().parameters.fileserver_directory",
+							"type": "Expression"
+						},
+						"sink_file_name": {
+							"value": "@pipeline().parameters.sink_file_name",
+							"type": "Expression"
+						},
+						"column_delimiter": "|&|"
+					}
+				}
+			},
+			{
+				"name": "Run dbt risk job",
+				"description": "A risk job might be triggered after the cdp job is done, however, to track the progress of this job, we need to trigger it from here.",
+				"type": "ExecutePipeline",
+				"dependsOn": [
+					{
+						"activity": "Run dbt cdp job",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "pl_dbt_job",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true,
+					"parameters": {
+						"job_id": {
+							"value": "@pipeline().parameters.dbt_risk_job_id",
+							"type": "Expression"
+						},
+						"account_id": {
+							"value": "@pipeline().parameters.dbt_account_id",
+							"type": "Expression"
+						},
+						"api_key_secret_name": {
+							"value": "@pipeline().parameters.dbt_api_token_secret_name",
+							"type": "Expression"
+						}
+					}
+				}
+			},
+			{
+				"name": "Run dbt cdp job",
+				"description": "",
+				"type": "ExecutePipeline",
+				"dependsOn": [],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "pl_dbt_job",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true,
+					"parameters": {
+						"job_id": {
+							"value": "@pipeline().parameters.dbt_cdp_job_id",
+							"type": "Expression"
+						},
+						"account_id": {
+							"value": "@pipeline().parameters.dbt_account_id",
+							"type": "Expression"
+						},
+						"api_key_secret_name": {
+							"value": "@pipeline().parameters.dbt_api_token_secret_name",
+							"type": "Expression"
+						}
+					}
+				}
+			}
+		],
+		"parameters": {
+			"dbt_api_token_secret_name": {
+				"type": "string",
+				"defaultValue": "adf-dbt-job-api-key"
+			},
+			"dbt_account_id": {
+				"type": "string"
+			},
+			"dbt_cdp_job_id": {
+				"type": "string"
+			},
+			"dbt_risk_job_id": {
+				"type": "string"
+			},
+			"dbx_workspace_url": {
+				"type": "string"
+			},
+			"dbx_job_id": {
+				"type": "string"
+			},
+			"dbx_job_params": {
+				"type": "string"
+			},
+			"adls_container": {
+				"type": "string"
+			},
+			"adls_folder_path": {
+				"type": "string"
+			},
+			"fileserver_host_name": {
+				"type": "string"
+			},
+			"fileserver_user_name": {
+				"type": "string"
+			},
+			"fileserver_credentials_secret_name": {
+				"type": "string"
+			},
+			"fileserver_directory": {
+				"type": "string"
+			},
+			"sink_file_name": {
+				"type": "string"
+			}
+		},
+		"annotations": []
+	}
+}
