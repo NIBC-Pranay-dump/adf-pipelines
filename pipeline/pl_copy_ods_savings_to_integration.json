@@ -44,17 +44,12 @@
 					"isSequential": true,
 					"activities": [
 						{
-							"name": "Copy csv data",
-							"description": "Copy csv data from file server",
+							"name": "Copy aa-fileserver to ingestion",
+							"description": "Copy csv-files from aa-fileserver data to ingestion as binary",
 							"type": "Copy",
-							"dependsOn": [
-								{
-									"activity": "extract dataset",
-									"dependencyConditions": [
-										"Succeeded"
-									]
-								}
-							],
+							"state": "Inactive",
+							"onInactiveMarkAs": "Succeeded",
+							"dependsOn": [],
 							"policy": {
 								"timeout": "0.12:00:00",
 								"retry": 0,
@@ -132,7 +127,7 @@
 											"type": "Expression"
 										},
 										"dataset_name": {
-											"value": "@variables('dataset')",
+											"value": "@variables('dataset_name')",
 											"type": "Expression"
 										},
 										"file_name": {
@@ -154,12 +149,130 @@
 							},
 							"userProperties": [],
 							"typeProperties": {
-								"variableName": "dataset",
+								"variableName": "dataset_name",
 								"value": {
 									"value": "@split(item(),'_file')[0]",
 									"type": "Expression"
 								}
 							}
+						},
+						{
+							"name": "Copy ingestion to datalake",
+							"description": "Copy ingestion csv-files to datalake as parquet ",
+							"type": "Copy",
+							"dependsOn": [
+								{
+									"activity": "extract dataset",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "DelimitedTextSource",
+									"storeSettings": {
+										"type": "AzureBlobStorageReadSettings",
+										"recursive": true,
+										"enablePartitionDiscovery": false
+									},
+									"formatSettings": {
+										"type": "DelimitedTextReadSettings",
+										"skipLineCount": {
+											"value": "@pipeline().parameters.skip_line_count",
+											"type": "Expression"
+										}
+									}
+								},
+								"sink": {
+									"type": "ParquetSink",
+									"storeSettings": {
+										"type": "AzureBlobFSWriteSettings"
+									},
+									"formatSettings": {
+										"type": "ParquetWriteSettings"
+									}
+								},
+								"enableStaging": false,
+								"translator": {
+									"type": "TabularTranslator",
+									"typeConversion": true,
+									"typeConversionSettings": {
+										"allowDataTruncation": true,
+										"treatBooleanAsNumber": false
+									}
+								}
+							},
+							"inputs": [
+								{
+									"referenceName": "ds_blob_csv_azure_shir",
+									"type": "DatasetReference",
+									"parameters": {
+										"storage_account_uri": {
+											"value": "@pipeline().globalParameters.storage_account_data_factory_uri",
+											"type": "Expression"
+										},
+										"container_name": {
+											"value": "@pipeline().globalParameters.storage_container_data_factory",
+											"type": "Expression"
+										},
+										"datastore_name": {
+											"value": "@pipeline().parameters.datastore_name",
+											"type": "Expression"
+										},
+										"dataset_name": {
+											"value": "@variables('dataset_name')",
+											"type": "Expression"
+										},
+										"file_name": {
+											"value": "@item()",
+											"type": "Expression"
+										},
+										"column_delimiter": {
+											"value": "@pipeline().parameters.column_delimiter",
+											"type": "Expression"
+										},
+										"encoding": "UTF-8",
+										"first_row_as_header": true
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "ds_adls_parquet_auto_resolve",
+									"type": "DatasetReference",
+									"parameters": {
+										"datastore_name": {
+											"value": "@pipeline().parameters.datastore_name",
+											"type": "Expression"
+										},
+										"dataset_name": {
+											"value": "@variables('dataset_name')",
+											"type": "Expression"
+										},
+										"storage_account_uri": {
+											"value": "@pipeline().globalParameters.storage_account_data_factory_uri",
+											"type": "Expression"
+										},
+										"container_name": {
+											"value": "@pipeline().globalParameters.storage_container_data_factory",
+											"type": "Expression"
+										},
+										"file_name": {
+											"value": "@item()",
+											"type": "Expression"
+										}
+									}
+								}
+							]
 						}
 					]
 				}
@@ -188,14 +301,18 @@
 			},
 			"column_delimiter": {
 				"type": "string",
-				"defaultValue": ","
+				"defaultValue": "|&|"
+			},
+			"skip_line_count": {
+				"type": "int",
+				"defaultValue": 2
 			}
 		},
 		"variables": {
 			"files": {
 				"type": "Array"
 			},
-			"dataset": {
+			"dataset_name": {
 				"type": "String"
 			}
 		},
