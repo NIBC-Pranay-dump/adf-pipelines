@@ -131,7 +131,7 @@
 											"type": "Expression"
 										},
 										"file_name": {
-											"value": "@item()",
+											"value": "@variables('file_name')",
 											"type": "Expression"
 										}
 									}
@@ -139,8 +139,8 @@
 							]
 						},
 						{
-							"name": "extract dataset",
-							"description": "extract dataset from filename",
+							"name": "dataset name",
+							"description": "extract dataset name from filename",
 							"type": "SetVariable",
 							"dependsOn": [],
 							"policy": {
@@ -160,9 +160,11 @@
 							"name": "Copy ingestion to datalake",
 							"description": "Copy ingestion csv-files to datalake as parquet ",
 							"type": "Copy",
+							"state": "Inactive",
+							"onInactiveMarkAs": "Succeeded",
 							"dependsOn": [
 								{
-									"activity": "extract dataset",
+									"activity": "download timestamp",
 									"dependencyConditions": [
 										"Succeeded"
 									]
@@ -179,6 +181,36 @@
 							"typeProperties": {
 								"source": {
 									"type": "DelimitedTextSource",
+									"additionalColumns": [
+										{
+											"name": "reference_link",
+											"value": {
+												"value": "@variables('reference_link')",
+												"type": "Expression"
+											}
+										},
+										{
+											"name": "file_name",
+											"value": {
+												"value": "@variables('file_name')",
+												"type": "Expression"
+											}
+										},
+										{
+											"name": "data_name",
+											"value": {
+												"value": "@variables('data_name')",
+												"type": "Expression"
+											}
+										},
+										{
+											"name": "download_timestamp",
+											"value": {
+												"value": "@variables('download_timestamp')",
+												"type": "Expression"
+											}
+										}
+									],
 									"storeSettings": {
 										"type": "AzureBlobStorageReadSettings",
 										"recursive": true,
@@ -233,7 +265,7 @@
 											"type": "Expression"
 										},
 										"file_name": {
-											"value": "@item()",
+											"value": "@variables('file_name')",
 											"type": "Expression"
 										},
 										"column_delimiter": {
@@ -267,12 +299,108 @@
 											"type": "Expression"
 										},
 										"file_name": {
-											"value": "@item()",
+											"value": "@replace(variables('file_name'),'.csv','')",
 											"type": "Expression"
 										}
 									}
 								}
 							]
+						},
+						{
+							"name": "reference link",
+							"type": "SetVariable",
+							"dependsOn": [
+								{
+									"activity": "dataset name",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "reference_link",
+								"value": {
+									"value": "@concat(pipeline().parameters.fileserver_user_name,'@',pipeline().parameters.fileserver_host_name,'/',pipeline().parameters.fileserver_directory,'/',item())",
+									"type": "Expression"
+								}
+							}
+						},
+						{
+							"name": "file name",
+							"type": "SetVariable",
+							"dependsOn": [
+								{
+									"activity": "reference link",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "file_name",
+								"value": {
+									"value": "@item()",
+									"type": "Expression"
+								}
+							}
+						},
+						{
+							"name": "data name",
+							"type": "SetVariable",
+							"dependsOn": [
+								{
+									"activity": "file name",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "data_name",
+								"value": {
+									"value": "''",
+									"type": "Expression"
+								}
+							}
+						},
+						{
+							"name": "download timestamp",
+							"type": "SetVariable",
+							"dependsOn": [
+								{
+									"activity": "data name",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "download_timestamp",
+								"value": {
+									"value": "@formatDateTime(convertTimeZone(pipeline().TriggerTime,'UTC','W. Europe Standard Time'), 'yyyyMMdd_HHmmss')",
+									"type": "Expression"
+								}
+							}
 						}
 					]
 				}
@@ -313,6 +441,18 @@
 				"type": "Array"
 			},
 			"dataset_name": {
+				"type": "String"
+			},
+			"reference_link": {
+				"type": "String"
+			},
+			"file_name": {
+				"type": "String"
+			},
+			"data_name": {
+				"type": "String"
+			},
+			"download_timestamp": {
 				"type": "String"
 			}
 		},
