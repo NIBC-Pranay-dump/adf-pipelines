@@ -47,9 +47,14 @@
 							"name": "Copy csv data",
 							"description": "Copy csv data from file server",
 							"type": "Copy",
-							"state": "Inactive",
-							"onInactiveMarkAs": "Succeeded",
-							"dependsOn": [],
+							"dependsOn": [
+								{
+									"activity": "extract dataset",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
 							"policy": {
 								"timeout": "0.12:00:00",
 								"retry": 0,
@@ -132,7 +137,7 @@
 											"type": "Expression"
 										},
 										"dataset_name": {
-											"value": "@item()",
+											"value": "@variables('dataset')",
 											"type": "Expression"
 										},
 										"file_name": {
@@ -142,6 +147,24 @@
 									}
 								}
 							]
+						},
+						{
+							"name": "extract dataset",
+							"description": "extract dataset from filename",
+							"type": "SetVariable",
+							"dependsOn": [],
+							"policy": {
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "dataset",
+								"value": {
+									"value": "@split(item(),'_file')[0]",
+									"type": "Expression"
+								}
+							}
 						}
 					]
 				}
@@ -171,15 +194,14 @@
 			"column_delimiter": {
 				"type": "string",
 				"defaultValue": ","
-			},
-			"skip_line_count": {
-				"type": "int",
-				"defaultValue": 2
 			}
 		},
 		"variables": {
 			"files": {
 				"type": "Array"
+			},
+			"dataset": {
+				"type": "String"
 			}
 		},
 		"folder": {
