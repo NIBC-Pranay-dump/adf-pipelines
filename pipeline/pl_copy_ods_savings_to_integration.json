@@ -65,14 +65,13 @@
 							"userProperties": [],
 							"typeProperties": {
 								"source": {
-									"type": "DelimitedTextSource",
+									"type": "BinarySource",
 									"storeSettings": {
 										"type": "FileServerReadSettings",
-										"recursive": false,
-										"enablePartitionDiscovery": false
+										"recursive": false
 									},
 									"formatSettings": {
-										"type": "DelimitedTextReadSettings"
+										"type": "BinaryReadSettings"
 									}
 								},
 								"sink": {
@@ -85,15 +84,15 @@
 							},
 							"inputs": [
 								{
-									"referenceName": "ds_fileserver_csv_file_on_prem",
+									"referenceName": "ds_fileserver_binary_on_prem",
 									"type": "DatasetReference",
 									"parameters": {
-										"host_name": {
-											"value": "@pipeline().parameters.fileserver_host_name",
-											"type": "Expression"
-										},
 										"user_name": {
 											"value": "@pipeline().parameters.fileserver_user_name",
+											"type": "Expression"
+										},
+										"host_name": {
+											"value": "@pipeline().parameters.fileserver_host_name",
 											"type": "Expression"
 										},
 										"key_vault_uri": {
@@ -111,17 +110,13 @@
 										"file_name": {
 											"value": "@item()",
 											"type": "Expression"
-										},
-										"column_delimiter": {
-											"value": "@pipeline().parameters.column_delimiter",
-											"type": "Expression"
 										}
 									}
 								}
 							],
 							"outputs": [
 								{
-									"referenceName": "ds_blob_binary_azure_shir",
+									"referenceName": "ds_blob_binary_auto_resolve",
 									"type": "DatasetReference",
 									"parameters": {
 										"storage_account_uri": {
