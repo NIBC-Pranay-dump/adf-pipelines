@@ -331,7 +331,7 @@
 							"typeProperties": {
 								"variableName": "reference_link",
 								"value": {
-									"value": "@concat(replace(pipeline().parameters.fileserver_user_name,'\\','/'),'',replace(pipeline().parameters.fileserver_host_name,'\\','/'),'/',replace(pipeline().parameters.fileserver_directory,'\\','/'),'/',variables('file_name'))",
+									"value": "@concat(replace(pipeline().parameters.fileserver_user_name,'\\','/'),'@',replace(pipeline().parameters.fileserver_host_name,'\\','/'),'/',replace(pipeline().parameters.fileserver_directory,'\\','/'),'/',variables('file_name'))",
 									"type": "Expression"
 								}
 							}
