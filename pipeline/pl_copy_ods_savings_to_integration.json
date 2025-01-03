@@ -43,9 +43,14 @@
 							"name": "Copy aa-fileserver to ingestion",
 							"description": "Copy csv-files from aa-fileserver data to ingestion as binary",
 							"type": "Copy",
-							"state": "Inactive",
-							"onInactiveMarkAs": "Succeeded",
-							"dependsOn": [],
+							"dependsOn": [
+								{
+									"activity": "download timestamp",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
 							"policy": {
 								"timeout": "0.12:00:00",
 								"retry": 0,
@@ -165,7 +170,7 @@
 							"type": "Copy",
 							"dependsOn": [
 								{
-									"activity": "download timestamp",
+									"activity": "Copy aa-fileserver to ingestion",
 									"dependencyConditions": [
 										"Succeeded"
 									]
