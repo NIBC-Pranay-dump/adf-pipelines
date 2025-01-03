@@ -325,7 +325,7 @@
 							"typeProperties": {
 								"variableName": "reference_link",
 								"value": {
-									"value": "@concat(replace(pipeline().parameters.fileserver_user_name,'\\\\','/'),'@',replace(pipeline().parameters.fileserver_host_name,'\\\\','/'),'/',pipeline().parameters.fileserver_directory,'/',item())",
+									"value": "@concat(replace(pipeline().parameters.fileserver_user_name,'\\','/'),'@',replace(pipeline().parameters.fileserver_host_name,'\\','/'),'/',pipeline().parameters.fileserver_directory,'/',item())",
 									"type": "Expression"
 								}
 							}
