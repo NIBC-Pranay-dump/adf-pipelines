@@ -166,7 +166,7 @@
 			},
 			"fileserver_directory": {
 				"type": "string",
-				"defaultValue": "CDP\\Retail_ODS\\hds_mortgages"
+				"defaultValue": "Archive\\Retail_ODS\\hds_savings\\Daily"
 			},
 			"column_delimiter": {
 				"type": "string",
@@ -183,7 +183,7 @@
 			}
 		},
 		"folder": {
-			"name": "on_prem/dick"
+			"name": "dick"
 		},
 		"annotations": []
 	}
