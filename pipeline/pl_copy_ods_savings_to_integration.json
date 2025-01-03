@@ -163,8 +163,6 @@
 							"name": "Copy ingestion to datalake",
 							"description": "Copy ingestion csv-files to datalake as parquet ",
 							"type": "Copy",
-							"state": "Inactive",
-							"onInactiveMarkAs": "Succeeded",
 							"dependsOn": [
 								{
 									"activity": "download timestamp",
@@ -297,11 +295,11 @@
 											"type": "Expression"
 										},
 										"storage_account_uri": {
-											"value": "@pipeline().globalParameters.storage_account_data_factory_uri",
+											"value": "@pipeline().globalParameters.storage_account_datalake_uri",
 											"type": "Expression"
 										},
 										"container_name": {
-											"value": "@pipeline().globalParameters.storage_container_data_factory",
+											"value": "@pipeline().globalParameters.storage_container_datalake",
 											"type": "Expression"
 										},
 										"file_name": {
