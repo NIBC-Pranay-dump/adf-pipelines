@@ -191,21 +191,32 @@
 									}
 								}
 							]
-						},
+						}
+					]
+				}
+			},
+			{
+				"name": "Enable Delete",
+				"type": "IfCondition",
+				"dependsOn": [
+					{
+						"activity": "Has Data",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@equals(pipeline().parameters.enable_delete, 'true')",
+						"type": "Expression"
+					},
+					"ifTrueActivities": [
 						{
-							"name": "delete csv file",
-							"description": "Delete the csv file in fileserver after copying",
+							"name": "Delete csv",
 							"type": "Delete",
-							"state": "Inactive",
-							"onInactiveMarkAs": "Succeeded",
-							"dependsOn": [
-								{
-									"activity": "Copy csv data",
-									"dependencyConditions": [
-										"Succeeded"
-									]
-								}
-							],
+							"dependsOn": [],
 							"policy": {
 								"timeout": "0.12:00:00",
 								"retry": 0,
@@ -248,9 +259,9 @@
 								"enableLogging": false,
 								"storeSettings": {
 									"type": "FileServerReadSettings",
-									"recursive": true,
+									"recursive": false,
 									"wildcardFileName": {
-										"value": "@pipeline().parameters.source_file_name_pattern",
+										"value": "@{pipeline().parameters.source_file_name_pattern}",
 										"type": "Expression"
 									},
 									"enablePartitionDiscovery": false
@@ -272,11 +283,11 @@
 			},
 			"dataset_name": {
 				"type": "string",
-				"defaultValue": "ab_t_qu_campaign_report"
+				"defaultValue": "hds_t_foreclosures"
 			},
 			"source_file_name_pattern": {
 				"type": "string",
-				"defaultValue": "ab_t_qu_campaign_report_file*"
+				"defaultValue": "hds_t_foreclosures*"
 			},
 			"fileserver_user_name": {
 				"type": "string",
@@ -297,6 +308,10 @@
 			"skip_line_count": {
 				"type": "int",
 				"defaultValue": 2
+			},
+			"enable_delete": {
+				"type": "string",
+				"defaultValue": "false"
 			}
 		},
 		"folder": {
