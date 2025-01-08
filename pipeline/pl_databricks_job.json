@@ -161,6 +161,38 @@
 								"errorCode": "500"
 							}
 						}
+					],
+					"ifTrueActivities": [
+						{
+							"name": "Return run_id",
+							"type": "SetVariable",
+							"dependsOn": [],
+							"policy": {
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "pipelineReturnValue",
+								"value": [
+									{
+										"key": "job_run_id",
+										"value": {
+											"type": "Expression",
+											"content": "@variables('run_id')"
+										}
+									},
+									{
+										"key": "first_task_run_id",
+										"value": {
+											"type": "Expression",
+											"content": "@activity('Check Job Run API').output.tasks[0].run_id"
+										}
+									}
+								],
+								"setSystemVariable": true
+							}
+						}
 					]
 				}
 			},
