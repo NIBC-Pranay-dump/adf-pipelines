@@ -44,6 +44,10 @@
 			},
 			"column_delimiter": {
 				"type": "string"
+			},
+			"quote_char": {
+				"type": "string",
+				"defaultValue": "\""
 			}
 		},
 		"folder": {
@@ -69,7 +73,10 @@
 			},
 			"escapeChar": "\\",
 			"firstRowAsHeader": true,
-			"quoteChar": "\""
+			"quoteChar": {
+				"value": "@dataset().quote_char",
+				"type": "Expression"
+			}
 		},
 		"schema": []
 	}

@@ -106,6 +106,10 @@
 							"column_delimiter": {
 								"value": "@pipeline().parameters.column_delimiter",
 								"type": "Expression"
+							},
+							"quote_char": {
+								"value": "@coalesce(pipeline().parameters.quote_char,'')",
+								"type": "Expression"
 							}
 						}
 					}
@@ -115,11 +119,11 @@
 		"parameters": {
 			"adls_container": {
 				"type": "string",
-				"defaultValue": "exports"
+				"defaultValue": "exports-dev"
 			},
 			"adls_folder_path": {
 				"type": "string",
-				"defaultValue": "databricks_test/export_test__cdp_preprd_transformation.staging_spaargids_be.stg_spaargids_be__on_demand_savings_interest_rates"
+				"defaultValue": "risk-model-run/dev/922408450420182/942295745812321"
 			},
 			"fileserver_host_name": {
 				"type": "string",
@@ -135,15 +139,18 @@
 			},
 			"fileserver_directory": {
 				"type": "string",
-				"defaultValue": "CDP\\Export_Test"
+				"defaultValue": "risk-model-run"
 			},
 			"sink_file_name": {
 				"type": "string",
-				"defaultValue": "databricks_test_spaargids.csv"
+				"defaultValue": "test-run-model-output-manual-export-not-quoted.csv"
 			},
 			"column_delimiter": {
 				"type": "string",
-				"defaultValue": ";"
+				"defaultValue": "|&|"
+			},
+			"quote_char": {
+				"type": "string"
 			}
 		},
 		"folder": {
