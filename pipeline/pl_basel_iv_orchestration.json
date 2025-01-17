@@ -29,7 +29,7 @@
 						},
 						"wait_seconds_between_polls": 5,
 						"job_parameters": {
-							"value": "@pipeline().parameters.dbx_job_params_check",
+							"value": "@coalesce(pipeline().parameters.dbx_job_params_check, '{}')",
 							"type": "Expression"
 						}
 					}
@@ -102,7 +102,7 @@
 										"type": "Expression"
 									},
 									"job_parameters": {
-										"value": "@pipeline().parameters.dbx_job_params_model",
+										"value": "@coalesce(pipeline().parameters.dbx_job_params_model, '{}')",
 										"type": "Expression"
 									}
 								}
