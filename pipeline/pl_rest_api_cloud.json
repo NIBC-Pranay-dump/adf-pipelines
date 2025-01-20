@@ -136,7 +136,7 @@
 				"type": "ExecutePipeline",
 				"dependsOn": [],
 				"policy": {
-					"secureInput": false
+					"secureInput": true
 				},
 				"userProperties": [],
 				"typeProperties": {
