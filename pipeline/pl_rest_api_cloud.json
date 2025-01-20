@@ -354,16 +354,13 @@
 				"defaultValue": "cbs"
 			},
 			"dataset_name": {
-				"type": "string",
-				"defaultValue": "cbs_kwb_2024_85984NED"
+				"type": "string"
 			},
 			"relative_url": {
-				"type": "string",
-				"defaultValue": "internal/cbs/kadaster-api/1.0/dataset/85984NED"
+				"type": "string"
 			},
 			"base_url": {
-				"type": "string",
-				"defaultValue": "https://apim.dev.cloud.nibc.com"
+				"type": "string"
 			},
 			"key_vault_secret_name": {
 				"type": "string",
