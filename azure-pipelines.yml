@@ -46,7 +46,7 @@ stages:
       service_connection: scn-dataplatform-dev-we-001
       dependsOn: 
         - Build
-      shared_ir_resource_id: /subscriptions/d12cd7ca-ec96-4566-8890-89f3194d1169/resourceGroups/rg-ingestion-cdp-preprd-we-ojsu/providers/Microsoft.DataFactory/factories/adf-ingestion-cdp-preprd-we-ojsu/integrationruntimes/dev
+      shared_ir_resource_id: /subscriptions/0286f6a8-8caa-4f73-bc6e-e5da3422fcf1/resourcegroups/rg-ingestion-dev-we-nwgm/providers/Microsoft.DataFactory/factories/adf-ingestion-dev-we-nwgm/integrationruntimes/dev
 
 # # Validate the bundle without applying it for the pull requests
 # - ${{ if or(eq(variables['Build.SourceBranch'], 'refs/heads/main'), eq(variables['Build.Reason'], 'Manual'), eq(variables['Build.Reason'], 'PullRequest')) }}:
