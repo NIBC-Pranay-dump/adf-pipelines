@@ -31,84 +31,84 @@ stages:
 - template: azure_devops/templates/build-stage.yaml
   parameters:
     name: Build
-    service_connection: scn-sub-cdp-preprd-we-001
-    env_path: cdp-preprd
+    service_connection: scn-dataplatform-dev-we-001
+    env_path: dev
     env: dev
-    instance_name: ojsu
+    instance_name: nwgm
 
 - ${{ if or(eq(variables['Build.SourceBranch'], 'refs/heads/main'), eq(variables['Build.Reason'], 'Manual')) }}:
   - template: azure_devops/templates/release-stage.yaml
     parameters:
       name: CDPPreProd_dev
-      env_path: cdp-preprd
+      env_path: dev
       env: dev      
-      instance_name: ojsu
-      service_connection: scn-sub-cdp-preprd-we-001
+      instance_name: nwgm
+      service_connection: scn-dataplatform-dev-we-001
       dependsOn: 
         - Build
-      shared_ir_resource_id: /subscriptions/d12cd7ca-ec96-4566-8890-89f3194d1169/resourceGroups/rg-ingestion-cdp-preprd-we-ojsu/providers/Microsoft.DataFactory/factories/adf-ingestion-cdp-preprd-we-ojsu/integrationruntimes/dev
+      # shared_ir_resource_id: /subscriptions/d12cd7ca-ec96-4566-8890-89f3194d1169/resourceGroups/rg-ingestion-cdp-preprd-we-ojsu/providers/Microsoft.DataFactory/factories/adf-ingestion-cdp-preprd-we-ojsu/integrationruntimes/dev
 
-# Validate the bundle without applying it for the pull requests
-- ${{ if or(eq(variables['Build.SourceBranch'], 'refs/heads/main'), eq(variables['Build.Reason'], 'Manual'), eq(variables['Build.Reason'], 'PullRequest')) }}:
-  - template: templates/stages/deploy-databricks-asset-bundle.yaml@templateRepo
-    parameters:
-      stage_name: DeployDatabricksAssetBundle_dev
-      dependsOn: Build
-      agent_pool_name: cdp-runners-prd
-      service_connection: scn-sub-cdp-preprd-we-001
-      dbx_env: dev
-      dbx_cli_version: $(dbx_cli_version)
-      skip_apply: ${{ parameters.skipApply }}
+# # Validate the bundle without applying it for the pull requests
+# - ${{ if or(eq(variables['Build.SourceBranch'], 'refs/heads/main'), eq(variables['Build.Reason'], 'Manual'), eq(variables['Build.Reason'], 'PullRequest')) }}:
+#   - template: templates/stages/deploy-databricks-asset-bundle.yaml@templateRepo
+#     parameters:
+#       stage_name: DeployDatabricksAssetBundle_dev
+#       dependsOn: Build
+#       agent_pool_name: cdp-runners-prd
+#       service_connection: scn-sub-cdp-preprd-we-001
+#       dbx_env: dev
+#       dbx_cli_version: $(dbx_cli_version)
+#       skip_apply: ${{ parameters.skipApply }}
   
 
-# Tst stage
-- ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/main') }}:
-  - template: azure_devops/templates/release-stage.yaml
-    parameters:
-      name: CDPPreProd_tst
-      env_path: cdp-preprd
-      env: tst      
-      instance_name: ojsu
-      service_connection: scn-sub-cdp-preprd-we-001
-      dependsOn:
-        - CDPPreProd_dev
-        - DeployDatabricksAssetBundle_dev
-      shared_ir_resource_id: /subscriptions/d12cd7ca-ec96-4566-8890-89f3194d1169/resourcegroups/rg-ingestion-cdp-preprd-we-ojsu/providers/Microsoft.DataFactory/factories/adf-ingestion-cdp-preprd-we-ojsu/integrationruntimes/tst
+# # Tst stage
+# - ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/main') }}:
+#   - template: azure_devops/templates/release-stage.yaml
+#     parameters:
+#       name: CDPPreProd_tst
+#       env_path: cdp-preprd
+#       env: tst      
+#       instance_name: ojsu
+#       service_connection: scn-sub-cdp-preprd-we-001
+#       dependsOn:
+#         - CDPPreProd_dev
+#         - DeployDatabricksAssetBundle_dev
+#       shared_ir_resource_id: /subscriptions/d12cd7ca-ec96-4566-8890-89f3194d1169/resourcegroups/rg-ingestion-cdp-preprd-we-ojsu/providers/Microsoft.DataFactory/factories/adf-ingestion-cdp-preprd-we-ojsu/integrationruntimes/tst
   
-  - template: templates/stages/deploy-databricks-asset-bundle.yaml@templateRepo
-    parameters:
-      stage_name: DeployDatabricksAssetBundle_tst
-      dependsOn: 
-        - CDPPreProd_dev
-        - DeployDatabricksAssetBundle_dev
-      agent_pool_name: cdp-runners-prd
-      service_connection: scn-sub-cdp-preprd-we-001
-      dbx_env: tst
-      dbx_cli_version: $(dbx_cli_version)
-      skip_apply: false
+#   - template: templates/stages/deploy-databricks-asset-bundle.yaml@templateRepo
+#     parameters:
+#       stage_name: DeployDatabricksAssetBundle_tst
+#       dependsOn: 
+#         - CDPPreProd_dev
+#         - DeployDatabricksAssetBundle_dev
+#       agent_pool_name: cdp-runners-prd
+#       service_connection: scn-sub-cdp-preprd-we-001
+#       dbx_env: tst
+#       dbx_cli_version: $(dbx_cli_version)
+#       skip_apply: false
 
-# Acp stage
-- ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/main') }}:
-  - template: azure_devops/templates/release-stage.yaml
-    parameters:
-      name: CDPPreProd_acp
-      env_path: cdp-preprd
-      env: acp      
-      instance_name: ojsu
-      service_connection: scn-sub-cdp-preprd-we-001
-      dependsOn: 
-        - CDPPreProd_tst
-        - DeployDatabricksAssetBundle_tst
-      shared_ir_resource_id: /subscriptions/d12cd7ca-ec96-4566-8890-89f3194d1169/resourcegroups/rg-ingestion-cdp-preprd-we-ojsu/providers/Microsoft.DataFactory/factories/adf-ingestion-cdp-preprd-we-ojsu/integrationruntimes/acp
+# # Acp stage
+# - ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/main') }}:
+#   - template: azure_devops/templates/release-stage.yaml
+#     parameters:
+#       name: CDPPreProd_acp
+#       env_path: cdp-preprd
+#       env: acp      
+#       instance_name: ojsu
+#       service_connection: scn-sub-cdp-preprd-we-001
+#       dependsOn: 
+#         - CDPPreProd_tst
+#         - DeployDatabricksAssetBundle_tst
+#       shared_ir_resource_id: /subscriptions/d12cd7ca-ec96-4566-8890-89f3194d1169/resourcegroups/rg-ingestion-cdp-preprd-we-ojsu/providers/Microsoft.DataFactory/factories/adf-ingestion-cdp-preprd-we-ojsu/integrationruntimes/acp
 
-  - template: templates/stages/deploy-databricks-asset-bundle.yaml@templateRepo
-    parameters:
-      stage_name: DeployDatabricksAssetBundle_acp
-      dependsOn: 
-        - CDPPreProd_tst
-        - DeployDatabricksAssetBundle_tst
-      agent_pool_name: cdp-runners-prd
-      service_connection: scn-sub-cdp-preprd-we-001
-      dbx_env: acp
-      dbx_cli_version: $(dbx_cli_version)
-      skip_apply: false
+#   - template: templates/stages/deploy-databricks-asset-bundle.yaml@templateRepo
+#     parameters:
+#       stage_name: DeployDatabricksAssetBundle_acp
+#       dependsOn: 
+#         - CDPPreProd_tst
+#         - DeployDatabricksAssetBundle_tst
+#       agent_pool_name: cdp-runners-prd
+#       service_connection: scn-sub-cdp-preprd-we-001
+#       dbx_env: acp
+#       dbx_cli_version: $(dbx_cli_version)
+#       skip_apply: false
