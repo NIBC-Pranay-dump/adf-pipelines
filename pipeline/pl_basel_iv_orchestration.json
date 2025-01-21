@@ -113,7 +113,19 @@
 							"type": "ExecutePipeline",
 							"dependsOn": [
 								{
-									"activity": "Set sink file name with date",
+									"activity": "Set sink_file_name",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								},
+								{
+									"activity": "Set adls_container",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								},
+								{
+									"activity": "Set adls_path",
 									"dependencyConditions": [
 										"Succeeded"
 									]
@@ -131,11 +143,11 @@
 								"waitOnCompletion": true,
 								"parameters": {
 									"adls_container": {
-										"value": "@pipeline().parameters.adls_container",
+										"value": "@variables('adls_container')",
 										"type": "Expression"
 									},
 									"adls_folder_path": {
-										"value": "@concat(pipeline().parameters.adls_folder_path, pipeline().parameters.dbx_job_id_model, '/', activity('Run model with databricks job').output.pipelineReturnValue.job_run_id)",
+										"value": "@variables('adls_path')",
 										"type": "Expression"
 									},
 									"fileserver_host_name": {
@@ -163,8 +175,8 @@
 							}
 						},
 						{
-							"name": "Set sink file name with date",
-							"description": "Use model job output to format the sink file name",
+							"name": "Set sink_file_name",
+							"description": "Use model job output to set variable",
 							"type": "SetVariable",
 							"dependsOn": [
 								{
@@ -220,6 +232,56 @@
 								"authentication": {
 									"type": "MSI",
 									"resource": "2ff814a6-3304-4ab8-85cb-cd0e6f879c1d"
+								}
+							}
+						},
+						{
+							"name": "Set adls_path",
+							"description": "Use model job output to set variable",
+							"type": "SetVariable",
+							"dependsOn": [
+								{
+									"activity": "Get model job output",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "adls_path",
+								"value": {
+									"value": "@string(json(\n    activity('Get model job output').output.notebook_output.result\n).output_export_path)",
+									"type": "Expression"
+								}
+							}
+						},
+						{
+							"name": "Set adls_container",
+							"description": "Use model job output to set variable",
+							"type": "SetVariable",
+							"dependsOn": [
+								{
+									"activity": "Get model job output",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "adls_container",
+								"value": {
+									"value": "@string(json(\n    activity('Get model job output').output.notebook_output.result\n).export_container)\n\n",
+									"type": "Expression"
 								}
 							}
 						}
@@ -282,14 +344,6 @@
 			"dbx_job_params_model": {
 				"type": "string"
 			},
-			"adls_container": {
-				"type": "string",
-				"defaultValue": "exports-dev"
-			},
-			"adls_folder_path": {
-				"type": "string",
-				"defaultValue": "risk-model-run/dev/"
-			},
 			"fileserver_host_name": {
 				"type": "string",
 				"defaultValue": "\\\\SVNIBCFILD101\\e$"
@@ -316,6 +370,12 @@
 				"type": "Boolean"
 			},
 			"sink_file_name": {
+				"type": "String"
+			},
+			"adls_container": {
+				"type": "String"
+			},
+			"adls_path": {
 				"type": "String"
 			}
 		},
