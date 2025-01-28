@@ -363,6 +363,10 @@
 			"sink_file_name_template": {
 				"type": "string",
 				"defaultValue": "basel_4_model_output_cdp_{period_end_date}.csv"
+			},
+			"annotations": {
+				"type": "string",
+				"defaultValue": "Manual Trigger"
 			}
 		},
 		"variables": {
@@ -379,6 +383,8 @@
 				"type": "String"
 			}
 		},
-		"annotations": []
+		"annotations": [
+			"@pipeline().parameters.annotations"
+		]
 	}
 }
