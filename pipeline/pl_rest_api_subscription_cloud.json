@@ -1,0 +1,561 @@
+{
+	"name": "pl_rest_api_subscription_cloud",
+	"properties": {
+		"description": "Use this pipeline to connect the the API managed services REST API",
+		"activities": [
+			{
+				"name": "Get APIM token",
+				"description": "Fetches an authentication token from Microsoft Entra Privileged Identity Management. This token is used in subsequent API calls.",
+				"type": "WebActivity",
+				"dependsOn": [
+					{
+						"activity": "Get secret",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"method": "POST",
+					"headers": {
+						"Content-Type": "application/x-www-form-urlencoded"
+					},
+					"url": {
+						"value": "@pipeline().parameters.token_url",
+						"type": "Expression"
+					},
+					"body": {
+						"value": "@concat('client_id=', pipeline().parameters.apim_cid, '&scope=', replace(pipeline().parameters.apim_scope,'<environment>',pipeline().parameters.environment), '&client_secret=', activity('Get secret').output.pipelineReturnValue.keyvault_secret_value, '&grant_type=client_credentials')",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "Get secret",
+				"type": "ExecutePipeline",
+				"dependsOn": [],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "pl_util_get_keyvault_secret",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true,
+					"parameters": {
+						"keyvault_secret_name": {
+							"value": "@pipeline().parameters.key_vault_secret_name",
+							"type": "Expression"
+						}
+					}
+				}
+			},
+			{
+				"name": "Get Service Bus token",
+				"description": "Fetches an authentication token from Microsoft Entra Privileged Identity Management. This token is used in subsequent API calls.",
+				"type": "WebActivity",
+				"dependsOn": [
+					{
+						"activity": "Get APIM token",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"method": "POST",
+					"headers": {
+						"Content-Type": "application/x-www-form-urlencoded"
+					},
+					"url": {
+						"value": "@pipeline().parameters.token_url",
+						"type": "Expression"
+					},
+					"body": {
+						"value": "@concat('client_id=', pipeline().parameters.apim_cid, '&scope=', pipeline().parameters.service_bus_scope, '&client_secret=', activity('Get secret').output.pipelineReturnValue.keyvault_secret_value, '&grant_type=client_credentials')",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "Get Storage token",
+				"description": "Fetches an authentication token from Microsoft Entra Privileged Identity Management. This token is used in subsequent API calls.",
+				"type": "WebActivity",
+				"dependsOn": [
+					{
+						"activity": "Get Service Bus token",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"method": "POST",
+					"headers": {
+						"Content-Type": "application/x-www-form-urlencoded"
+					},
+					"url": {
+						"value": "@pipeline().parameters.token_url",
+						"type": "Expression"
+					},
+					"body": {
+						"value": "@concat('client_id=', pipeline().parameters.apim_cid, '&scope=', pipeline().parameters.storage_scope, '&client_secret=', activity('Get secret').output.pipelineReturnValue.keyvault_secret_value, '&grant_type=client_credentials')",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "content-length is 0",
+				"description": "- default content_length = 100\n\nuntil content_length = 0:\n  - peek service bus and set content-length\n  - if content_length > 0 (means there is at least 1 message available):\n    - store as csv in datafactory storage account\n    - store as parquet in datalake storage account\n    - acknowledge message\n\n",
+				"type": "Until",
+				"dependsOn": [
+					{
+						"activity": "Get Storage token",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@equals(variables('content_length'),0)",
+						"type": "Expression"
+					},
+					"activities": [
+						{
+							"name": "content-length greater than 0",
+							"description": "when no message are available the content-length will be 0",
+							"type": "IfCondition",
+							"dependsOn": [
+								{
+									"activity": "content-length",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"userProperties": [],
+							"typeProperties": {
+								"expression": {
+									"value": "@greater(variables('content_length'),0)",
+									"type": "Expression"
+								},
+								"ifTrueActivities": [
+									{
+										"name": "Acknowledge service bus message",
+										"description": "Acknowledge service bus message. The message will not anymore available on the Service Bus. \n\nAfter the first call, the message will be locked for 60 seconds. If you do not acknowledge the message within this time frame, the message will be unlocked again. This means also if you try to acknowledge the message after more then 60s, you will get a failure response back .",
+										"type": "WebActivity",
+										"dependsOn": [
+											{
+												"activity": "Copy CSV to parquet",
+												"dependencyConditions": [
+													"Succeeded"
+												]
+											}
+										],
+										"policy": {
+											"timeout": "0.12:00:00",
+											"retry": 0,
+											"retryIntervalInSeconds": 30,
+											"secureOutput": false,
+											"secureInput": false
+										},
+										"userProperties": [],
+										"typeProperties": {
+											"method": "GET",
+											"headers": {
+												"Authorization": {
+													"value": "@concat('Bearer ', \n        activity('Get APIM token').output['access_token']\n)",
+													"type": "Expression"
+												},
+												"ServiceBus-Authorization": {
+													"value": "@concat('Bearer ', \n        activity('Get Service Bus token').output['access_token']\n)",
+													"type": "Expression"
+												},
+												"Topic": {
+													"value": "@pipeline().parameters.service_bus_topic",
+													"type": "Expression"
+												},
+												"Subscription": {
+													"value": "@pipeline().parameters.service_bus_topic_subscription",
+													"type": "Expression"
+												},
+												"Correlation-Id": {
+													"value": "@activity('Peek service bus message').output['ADFWebActivityResponseHeaders']['Correlation-Id']",
+													"type": "Expression"
+												},
+												"Message-Id": {
+													"value": "@activity('Peek service bus message').output['ADFWebActivityResponseHeaders']['Message-Id']",
+													"type": "Expression"
+												},
+												"Lock-Token": {
+													"value": "@activity('Peek service bus message').output['ADFWebActivityResponseHeaders']['Lock-Token']",
+													"type": "Expression"
+												}
+											},
+											"url": {
+												"value": "@concat(replace(pipeline().parameters.base_url,'<environment>',pipeline().parameters.environment),pipeline().parameters.relative_url,'acknowledge-message')",
+												"type": "Expression"
+											},
+											"connectVia": {
+												"referenceName": "cloud",
+												"type": "IntegrationRuntimeReference"
+											},
+											"body": "dummy"
+										}
+									},
+									{
+										"name": "Copy HTTP to CSV",
+										"description": "used HTTP instead of REST because REST expects json as a response",
+										"type": "Copy",
+										"dependsOn": [],
+										"policy": {
+											"timeout": "0.12:00:00",
+											"retry": 0,
+											"retryIntervalInSeconds": 30,
+											"secureOutput": false,
+											"secureInput": false
+										},
+										"userProperties": [],
+										"typeProperties": {
+											"source": {
+												"type": "BinarySource",
+												"storeSettings": {
+													"type": "HttpReadSettings",
+													"requestMethod": "POST",
+													"additionalHeaders": {
+														"value": "Authorization: Bearer @{activity('Get APIM token').output['access_token']}\nStorage-Authorization: Bearer @{activity('Get Storage token').output['access_token']}\nContent-Type: application/json\n",
+														"type": "Expression"
+													},
+													"requestBody": {
+														"value": "@concat('{\"referenceLink\": \"',activity('Peek service bus message').output['referenceLink'],'\"}')",
+														"type": "Expression"
+													},
+													"requestTimeout": ""
+												},
+												"formatSettings": {
+													"type": "BinaryReadSettings"
+												}
+											},
+											"sink": {
+												"type": "BinarySink",
+												"storeSettings": {
+													"type": "AzureBlobStorageWriteSettings"
+												}
+											},
+											"enableStaging": false
+										},
+										"inputs": [
+											{
+												"referenceName": "ds_anonymous_http_binary_cloud",
+												"type": "DatasetReference",
+												"parameters": {
+													"base_url": {
+														"value": "@replace(pipeline().parameters.base_url,'<environment>',pipeline().parameters.environment)",
+														"type": "Expression"
+													},
+													"relative_url": "@concat(pipeline().parameters.relative_url,'receive-blob')"
+												}
+											}
+										],
+										"outputs": [
+											{
+												"referenceName": "ds_blob_binary_azure_shir",
+												"type": "DatasetReference",
+												"parameters": {
+													"storage_account_uri": "@pipeline().globalParameters.storage_account_data_factory_uri",
+													"container_name": "@pipeline().globalParameters.storage_container_data_factory",
+													"datastore_name": "@pipeline().parameters.datastore_name",
+													"dataset_name": {
+														"value": "@activity('Peek service bus message').output['ADFWebActivityResponseHeaders']['Data-Name']",
+														"type": "Expression"
+													},
+													"file_name": {
+														"value": "@activity('Peek service bus message').output['ADFWebActivityResponseHeaders']['File-Name']",
+														"type": "Expression"
+													}
+												}
+											}
+										]
+									},
+									{
+										"name": "Copy CSV to parquet",
+										"type": "Copy",
+										"dependsOn": [
+											{
+												"activity": "Copy HTTP to CSV",
+												"dependencyConditions": [
+													"Succeeded"
+												]
+											}
+										],
+										"policy": {
+											"timeout": "0.12:00:00",
+											"retry": 0,
+											"retryIntervalInSeconds": 30,
+											"secureOutput": false,
+											"secureInput": false
+										},
+										"userProperties": [],
+										"typeProperties": {
+											"source": {
+												"type": "DelimitedTextSource",
+												"additionalColumns": [
+													{
+														"name": "download_timestamp",
+														"value": {
+															"value": "@formatDateTime(convertTimeZone(pipeline().TriggerTime,'UTC','W. Europe Standard Time'), 'yyyyMMdd_HHmmss')",
+															"type": "Expression"
+														}
+													},
+													{
+														"name": "filename",
+														"value": {
+															"value": "@activity('Peek service bus message').output['ADFWebActivityResponseHeaders']['File-Name']",
+															"type": "Expression"
+														}
+													}
+												],
+												"storeSettings": {
+													"type": "AzureBlobStorageReadSettings",
+													"recursive": false,
+													"enablePartitionDiscovery": false
+												},
+												"formatSettings": {
+													"type": "DelimitedTextReadSettings",
+													"skipLineCount": 2
+												}
+											},
+											"sink": {
+												"type": "ParquetSink",
+												"storeSettings": {
+													"type": "AzureBlobFSWriteSettings"
+												},
+												"formatSettings": {
+													"type": "ParquetWriteSettings"
+												}
+											},
+											"enableStaging": false,
+											"translator": {
+												"type": "TabularTranslator",
+												"typeConversion": true,
+												"typeConversionSettings": {
+													"allowDataTruncation": true,
+													"treatBooleanAsNumber": false
+												}
+											}
+										},
+										"inputs": [
+											{
+												"referenceName": "ds_blob_csv_azure_shir",
+												"type": "DatasetReference",
+												"parameters": {
+													"storage_account_uri": "@pipeline().globalParameters.storage_account_data_factory_uri",
+													"container_name": "@pipeline().globalParameters.storage_container_data_factory",
+													"datastore_name": "@pipeline().parameters.datastore_name",
+													"dataset_name": {
+														"value": "@activity('Peek service bus message').output['ADFWebActivityResponseHeaders']['Data-Name']",
+														"type": "Expression"
+													},
+													"file_name": {
+														"value": "@activity('Peek service bus message').output['ADFWebActivityResponseHeaders']['File-Name']",
+														"type": "Expression"
+													},
+													"column_delimiter": "|&|",
+													"encoding": "UTF-8",
+													"first_row_as_header": {
+														"value": "true",
+														"type": "Expression"
+													}
+												}
+											}
+										],
+										"outputs": [
+											{
+												"referenceName": "ds_adls_parquet_auto_resolve",
+												"type": "DatasetReference",
+												"parameters": {
+													"datastore_name": "@pipeline().parameters.datastore_name",
+													"dataset_name": {
+														"value": "@activity('Peek service bus message').output['ADFWebActivityResponseHeaders']['Data-Name']",
+														"type": "Expression"
+													},
+													"storage_account_uri": "@pipeline().globalParameters.storage_account_datalake_uri",
+													"container_name": "@pipeline().globalParameters.storage_container_datalake",
+													"file_name": {
+														"value": "@replace(activity('Peek service bus message').output['ADFWebActivityResponseHeaders']['File-Name'],'.csv','')",
+														"type": "Expression"
+													}
+												}
+											}
+										]
+									}
+								]
+							}
+						},
+						{
+							"name": "Peek service bus message",
+							"description": "Fetches a reference link from the Service Bus to download a file from the Storage Account",
+							"type": "WebActivity",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"method": "GET",
+								"headers": {
+									"Authorization": {
+										"value": "@concat('Bearer ', \n        activity('Get APIM token').output['access_token']\n)",
+										"type": "Expression"
+									},
+									"ServiceBus-Authorization": {
+										"value": "@concat('Bearer ', \n        activity('Get Service Bus token').output['access_token']\n)",
+										"type": "Expression"
+									},
+									"Topic": {
+										"value": "@pipeline().parameters.service_bus_topic",
+										"type": "Expression"
+									},
+									"Subscription": {
+										"value": "@pipeline().parameters.service_bus_topic_subscription",
+										"type": "Expression"
+									}
+								},
+								"url": {
+									"value": "@concat(replace(pipeline().parameters.base_url,'<environment>',pipeline().parameters.environment),pipeline().parameters.relative_url,'peek-message')",
+									"type": "Expression"
+								},
+								"connectVia": {
+									"referenceName": "cloud",
+									"type": "IntegrationRuntimeReference"
+								},
+								"body": "dummy"
+							}
+						},
+						{
+							"name": "content-length",
+							"type": "SetVariable",
+							"dependsOn": [
+								{
+									"activity": "Peek service bus message",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "content_length",
+								"value": {
+									"value": "@int(activity('Peek service bus message').output['ADFWebActivityResponseHeaders']['Content-Length'])",
+									"type": "Expression"
+								}
+							}
+						}
+					],
+					"timeout": "0.12:00:00"
+				}
+			}
+		],
+		"parameters": {
+			"environment": {
+				"type": "string",
+				"defaultValue": "dev"
+			},
+			"datastore_name": {
+				"type": "string",
+				"defaultValue": "ods_savings"
+			},
+			"apim_cid": {
+				"type": "string",
+				"defaultValue": "a1bb61c1-d7c6-468b-9e6a-720dcd63ce91"
+			},
+			"apim_scope": {
+				"type": "string",
+				"defaultValue": "https://apim.<environment>.cloud.nibc.com/.default"
+			},
+			"base_url": {
+				"type": "string",
+				"defaultValue": "https://apim.<environment>.cloud.nibc.com"
+			},
+			"relative_url": {
+				"type": "string",
+				"defaultValue": "/internal/consumer/1.0/"
+			},
+			"key_vault_secret_name": {
+				"type": "string",
+				"defaultValue": "apim-authorization-access-token"
+			},
+			"queue_dataset_name": {
+				"type": "string",
+				"defaultValue": "service_bus_queue"
+			},
+			"service_bus_topic": {
+				"type": "string",
+				"defaultValue": "ods-savings"
+			},
+			"service_bus_topic_subscription": {
+				"type": "string",
+				"defaultValue": "cdp"
+			},
+			"service_bus_scope": {
+				"type": "string",
+				"defaultValue": "https://servicebus.azure.net/.default"
+			},
+			"storage_scope": {
+				"type": "string",
+				"defaultValue": "https://storage.azure.com/.default"
+			},
+			"token_url": {
+				"type": "string",
+				"defaultValue": "https://login.microsoftonline.com/8614d95f-762b-4789-a741-2589e3d0b08b/oauth2/v2.0/token"
+			}
+		},
+		"variables": {
+			"content_length": {
+				"type": "Integer",
+				"defaultValue": 100
+			}
+		},
+		"folder": {
+			"name": "cloud"
+		},
+		"annotations": []
+	}
+}
