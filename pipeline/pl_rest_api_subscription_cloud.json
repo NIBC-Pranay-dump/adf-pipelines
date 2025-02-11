@@ -522,10 +522,6 @@
 				"type": "string",
 				"defaultValue": "apim-authorization-access-token"
 			},
-			"queue_dataset_name": {
-				"type": "string",
-				"defaultValue": "service_bus_queue"
-			},
 			"service_bus_topic": {
 				"type": "string",
 				"defaultValue": "ods-savings"
