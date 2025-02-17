@@ -1,0 +1,478 @@
+{
+	"name": "pl_service_bus_binary_download",
+	"properties": {
+		"activities": [
+			{
+				"name": "Get APIM Client Secret",
+				"description": "Get authentication credentials to securely access the API",
+				"type": "ExecutePipeline",
+				"dependsOn": [],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "pl_util_get_keyvault_secret",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true,
+					"parameters": {
+						"keyvault_secret_name": {
+							"value": "@pipeline().parameters.key_vault_apim_authorization",
+							"type": "Expression"
+						}
+					}
+				}
+			},
+			{
+				"name": "Get APIM token",
+				"description": "API Post request to fetch an authorization token from Microsoft Entra Privileged Identity Management. This token is used in subsequent API calls.",
+				"type": "WebActivity",
+				"dependsOn": [
+					{
+						"activity": "Get APIM Client Secret",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": true,
+					"secureInput": true
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"method": "POST",
+					"headers": {
+						"Content-Type": "application/x-www-form-urlencoded"
+					},
+					"url": {
+						"value": "@pipeline().parameters.microsoft_tenant_login",
+						"type": "Expression"
+					},
+					"connectVia": {
+						"referenceName": "cloud",
+						"type": "IntegrationRuntimeReference"
+					},
+					"body": {
+						"value": "@concat('client_id=',pipeline().parameters.microsoft_entra_client_id, '&scope=', pipeline().parameters.apim_scope, '&client_secret=', activity('Get APIM Client Secret').output.pipelineReturnValue.keyvault_secret_value, '&grant_type=client_credentials')",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "Get Service Bus token",
+				"description": "API Post request to fetch an authorization token to authorize an operation between APIM and Service Bus topic",
+				"type": "WebActivity",
+				"dependsOn": [
+					{
+						"activity": "Get APIM Client Secret",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": true,
+					"secureInput": true
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"method": "POST",
+					"headers": {
+						"Content-Type": "application/x-www-form-urlencoded"
+					},
+					"url": {
+						"value": "@pipeline().parameters.microsoft_tenant_login",
+						"type": "Expression"
+					},
+					"connectVia": {
+						"referenceName": "cloud",
+						"type": "IntegrationRuntimeReference"
+					},
+					"body": {
+						"value": "@concat('client_id=', pipeline().parameters.microsoft_entra_client_id,'&scope=', pipeline().parameters.servicebus_scope,'&client_secret=', activity('Get APIM Client Secret').output.pipelineReturnValue.keyvault_secret_value, '&grant_type=client_credentials')",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "Get Storage token",
+				"description": "API Post request to fetch an authorization token to authorize an operation between APIM and Storage",
+				"type": "WebActivity",
+				"dependsOn": [
+					{
+						"activity": "Get APIM Client Secret",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": true,
+					"secureInput": true
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"method": "POST",
+					"headers": {
+						"Content-Type": "application/x-www-form-urlencoded"
+					},
+					"url": {
+						"value": "@pipeline().parameters.microsoft_tenant_login",
+						"type": "Expression"
+					},
+					"connectVia": {
+						"referenceName": "cloud",
+						"type": "IntegrationRuntimeReference"
+					},
+					"body": {
+						"value": "@concat('client_id=',pipeline().parameters.microsoft_entra_client_id, '&scope=', pipeline().parameters.storage_scope, '&client_secret=', activity('Get APIM Client Secret').output.pipelineReturnValue.keyvault_secret_value, '&grant_type=client_credentials')",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "Until content length is 0",
+				"type": "Until",
+				"dependsOn": [
+					{
+						"activity": "Get APIM token",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					},
+					{
+						"activity": "Get Service Bus token",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					},
+					{
+						"activity": "Get Storage token",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@equals(int(variables('content_length')),0)",
+						"type": "Expression"
+					},
+					"activities": [
+						{
+							"name": "Get Blob Reference Link",
+							"description": "API GET request to fetch the download link for a particular topic and subscription using APIM and ServiceBus Authorization",
+							"type": "WebActivity",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": true
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"method": "GET",
+								"headers": {
+									"Authorization": {
+										"value": "@concat('Bearer ',activity('Get APIM token').output.access_token)",
+										"type": "Expression"
+									},
+									"ServiceBus-Authorization": {
+										"value": "@concat('Bearer ',activity('Get Service Bus token').output.access_token)",
+										"type": "Expression"
+									},
+									"Topic": {
+										"value": "@pipeline().parameters.topic",
+										"type": "Expression"
+									},
+									"Subscription": {
+										"value": "@pipeline().parameters.subscription",
+										"type": "Expression"
+									}
+								},
+								"url": {
+									"value": "@concat(pipeline().parameters.apim_url,'/internal/consumer/1.0/peek-message')",
+									"type": "Expression"
+								},
+								"connectVia": {
+									"referenceName": "cloud",
+									"type": "IntegrationRuntimeReference"
+								}
+							}
+						},
+						{
+							"name": "Set content length",
+							"type": "SetVariable",
+							"dependsOn": [
+								{
+									"activity": "Get Blob Reference Link",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "content_length",
+								"value": {
+									"value": "@activity('Get Blob Reference Link').output.ADFWebActivityResponseHeaders['Content-Length']",
+									"type": "Expression"
+								}
+							}
+						},
+						{
+							"name": "If Blob Reference Not Null",
+							"type": "IfCondition",
+							"dependsOn": [
+								{
+									"activity": "Get Blob Reference Link",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"userProperties": [],
+							"typeProperties": {
+								"expression": {
+									"value": "@not(empty(activity('Get Blob Reference Link').output?.referenceLink))",
+									"type": "Expression"
+								},
+								"ifTrueActivities": [
+									{
+										"name": "Acknowledge Message",
+										"description": "Acknowledge message to receive from queue. The reference link is stored as output activity.",
+										"type": "WebActivity",
+										"dependsOn": [
+											{
+												"activity": "Download Blob",
+												"dependencyConditions": [
+													"Succeeded"
+												]
+											}
+										],
+										"policy": {
+											"timeout": "0.12:00:00",
+											"retry": 0,
+											"retryIntervalInSeconds": 30,
+											"secureOutput": false,
+											"secureInput": true
+										},
+										"userProperties": [],
+										"typeProperties": {
+											"method": "GET",
+											"headers": {
+												"Authorization": {
+													"value": "@concat('Bearer ',activity('Get APIM token').output.access_token)",
+													"type": "Expression"
+												},
+												"ServiceBus-Authorization": {
+													"value": "@concat('Bearer ',activity('Get Service Bus token').output.access_token)",
+													"type": "Expression"
+												},
+												"Topic": {
+													"value": "@pipeline().parameters.topic",
+													"type": "Expression"
+												},
+												"Subscription": {
+													"value": "@pipeline().parameters.subscription",
+													"type": "Expression"
+												},
+												"Correlation-Id": {
+													"value": "@activity('Get Blob Reference Link').output.ADFWebActivityResponseHeaders['Correlation-Id']",
+													"type": "Expression"
+												},
+												"Message-Id": {
+													"value": "@activity('Get Blob Reference Link').output.ADFWebActivityResponseHeaders['Message-Id']",
+													"type": "Expression"
+												},
+												"Lock-Token": {
+													"value": "@activity('Get Blob Reference Link').output.ADFWebActivityResponseHeaders['Lock-Token']",
+													"type": "Expression"
+												}
+											},
+											"url": {
+												"value": "@concat(pipeline().parameters.apim_url,'/internal/consumer/1.0/acknowledge-message')",
+												"type": "Expression"
+											},
+											"connectVia": {
+												"referenceName": "cloud",
+												"type": "IntegrationRuntimeReference"
+											}
+										}
+									},
+									{
+										"name": "Download Blob",
+										"description": "API Post request to download binary file from storage using APIM and Storage Authorization",
+										"type": "Copy",
+										"dependsOn": [],
+										"policy": {
+											"timeout": "0.12:00:00",
+											"retry": 0,
+											"retryIntervalInSeconds": 30,
+											"secureOutput": false,
+											"secureInput": true
+										},
+										"userProperties": [],
+										"typeProperties": {
+											"source": {
+												"type": "BinarySource",
+												"storeSettings": {
+													"type": "HttpReadSettings",
+													"requestMethod": "POST",
+													"additionalHeaders": {
+														"value": "Authorization: Bearer @{activity('Get APIM token').output['access_token']}\nStorage-Authorization: Bearer @{activity('Get Storage token').output['access_token']}\nContent-Type: application/json\n",
+														"type": "Expression"
+													},
+													"requestBody": {
+														"value": "@concat(\n    '{\n        \"referenceLink\":\"',activity('Get Blob Reference Link').output.referenceLink,'\"\n    }'\n)",
+														"type": "Expression"
+													},
+													"requestTimeout": ""
+												},
+												"formatSettings": {
+													"type": "BinaryReadSettings"
+												}
+											},
+											"sink": {
+												"type": "BinarySink",
+												"storeSettings": {
+													"type": "AzureBlobStorageWriteSettings",
+													"copyBehavior": "PreserveHierarchy"
+												}
+											},
+											"enableStaging": false
+										},
+										"inputs": [
+											{
+												"referenceName": "ds_anonymous_http_binary_cloud",
+												"type": "DatasetReference",
+												"parameters": {
+													"base_url": {
+														"value": "@pipeline().parameters.apim_url",
+														"type": "Expression"
+													},
+													"relative_url": {
+														"value": "internal/consumer/1.0/receive-blob",
+														"type": "Expression"
+													}
+												}
+											}
+										],
+										"outputs": [
+											{
+												"referenceName": "ds_blob_binary_auto_resolve",
+												"type": "DatasetReference",
+												"parameters": {
+													"storage_account_uri": {
+														"value": "@pipeline().globalParameters.storage_account_data_factory_uri",
+														"type": "Expression"
+													},
+													"container_name": {
+														"value": "@pipeline().globalParameters.storage_container_data_factory",
+														"type": "Expression"
+													},
+													"datastore_name": {
+														"value": "@pipeline().parameters.datastore_name",
+														"type": "Expression"
+													},
+													"dataset_name": {
+														"value": "@pipeline().parameters.dataset_name",
+														"type": "Expression"
+													},
+													"file_name": {
+														"value": "@last(array(split(activity('Get Blob Reference Link').output.referenceLink,'/' )))",
+														"type": "Expression"
+													}
+												}
+											}
+										]
+									}
+								]
+							}
+						}
+					],
+					"timeout": "0.12:00:00"
+				}
+			}
+		],
+		"parameters": {
+			"topic": {
+				"type": "string",
+				"defaultValue": "acm-frl"
+			},
+			"subscription": {
+				"type": "string",
+				"defaultValue": "cdp"
+			},
+			"apim_scope": {
+				"type": "string",
+				"defaultValue": "https://apim.dev.cloud.nibc.com/.default"
+			},
+			"servicebus_scope": {
+				"type": "string",
+				"defaultValue": "https://servicebus.azure.net/.default"
+			},
+			"storage_scope": {
+				"type": "string",
+				"defaultValue": "https://storage.azure.com/.default"
+			},
+			"apim_url": {
+				"type": "string",
+				"defaultValue": "https://apim.dev.cloud.nibc.com"
+			},
+			"datastore_name": {
+				"type": "string",
+				"defaultValue": "frl"
+			},
+			"dataset_name": {
+				"type": "string",
+				"defaultValue": "frl"
+			},
+			"microsoft_tenant_login": {
+				"type": "string",
+				"defaultValue": "https://login.microsoftonline.com/8614d95f-762b-4789-a741-2589e3d0b08b/oauth2/v2.0/token"
+			},
+			"microsoft_entra_cid_scope": {
+				"type": "string",
+				"defaultValue": "0c28ca60-24cd-45bd-95f1-01fdaee9c41c/.default"
+			},
+			"microsoft_entra_client_id": {
+				"type": "string",
+				"defaultValue": "a1bb61c1-d7c6-468b-9e6a-720dcd63ce91"
+			},
+			"key_vault_apim_authorization": {
+				"type": "string",
+				"defaultValue": "apim-authorization-access-token"
+			}
+		},
+		"variables": {
+			"content_length": {
+				"type": "String",
+				"defaultValue": "1"
+			}
+		},
+		"folder": {
+			"name": "cloud"
+		},
+		"annotations": []
+	}
+}
