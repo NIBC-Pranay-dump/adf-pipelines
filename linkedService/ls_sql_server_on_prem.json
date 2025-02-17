@@ -32,7 +32,7 @@
 			}
 		},
 		"connectVia": {
-			"referenceName": "shared-on-premises",
+			"referenceName": "on-premises",
 			"type": "IntegrationRuntimeReference"
 		}
 	}
