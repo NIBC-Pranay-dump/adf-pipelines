@@ -71,7 +71,7 @@
 				"value": "@dataset().column_delimiter",
 				"type": "Expression"
 			},
-			"escapeChar": "\\",
+			"escapeChar": "\"",
 			"firstRowAsHeader": true,
 			"quoteChar": {
 				"value": "@dataset().quote_char",
