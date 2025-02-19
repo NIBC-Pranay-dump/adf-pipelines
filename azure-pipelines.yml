@@ -46,7 +46,6 @@ stages:
       service_connection: scn-sub-cdp-preprd-we-001
       dependsOn: 
         - Build
-      shared_ir_resource_id: /subscriptions/d12cd7ca-ec96-4566-8890-89f3194d1169/resourceGroups/rg-ingestion-cdp-preprd-we-ojsu/providers/Microsoft.DataFactory/factories/adf-ingestion-cdp-preprd-we-ojsu/integrationruntimes/dev
 
 # Validate the bundle without applying it for the pull requests
 - ${{ if or(eq(variables['Build.SourceBranch'], 'refs/heads/main'), eq(variables['Build.Reason'], 'Manual'), eq(variables['Build.Reason'], 'PullRequest')) }}:
@@ -73,7 +72,6 @@ stages:
       dependsOn:
         - CDPPreProd_dev
         - DeployDatabricksAssetBundle_dev
-      shared_ir_resource_id: /subscriptions/d12cd7ca-ec96-4566-8890-89f3194d1169/resourcegroups/rg-ingestion-cdp-preprd-we-ojsu/providers/Microsoft.DataFactory/factories/adf-ingestion-cdp-preprd-we-ojsu/integrationruntimes/tst
   
   - template: templates/stages/deploy-databricks-asset-bundle.yaml@templateRepo
     parameters:
@@ -99,7 +97,6 @@ stages:
       dependsOn: 
         - CDPPreProd_tst
         - DeployDatabricksAssetBundle_tst
-      shared_ir_resource_id: /subscriptions/d12cd7ca-ec96-4566-8890-89f3194d1169/resourcegroups/rg-ingestion-cdp-preprd-we-ojsu/providers/Microsoft.DataFactory/factories/adf-ingestion-cdp-preprd-we-ojsu/integrationruntimes/acp
 
   - template: templates/stages/deploy-databricks-asset-bundle.yaml@templateRepo
     parameters:

@@ -15,8 +15,6 @@ parameters:
     default: []
   - name: service_connection
     type: string
-  - name: shared_ir_resource_id
-    type: string
 
 stages:
 - stage: ${{ parameters.name }}
@@ -74,7 +72,6 @@ stages:
         templateLocation: 'Linked artifact'
         csmFile: '$(Pipeline.Workspace)/ARMTemplateForFactory.json'
         csmParametersFile: '$(Pipeline.Workspace)/ARMTemplateParametersForFactory.json'
-        overrideParameters: -factoryName $(data_factory_name) -shared-on-premises_properties_typeProperties_linkedInfo_resourceId ${{ parameters.shared_ir_resource_id }}
         deploymentMode: 'Incremental'
 
     - task: AzurePowerShell@5
