@@ -47,7 +47,7 @@
 			},
 			"quote_char": {
 				"type": "string",
-				"defaultValue": "\""
+				"defaultValue": "\\"
 			}
 		},
 		"folder": {
