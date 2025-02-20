@@ -379,7 +379,72 @@
 										],
 										"outputs": [
 											{
-												"referenceName": "ds_blob_binary_auto_resolve",
+												"referenceName": "ds_blob_binary_folder_azure_shir",
+												"type": "DatasetReference",
+												"parameters": {
+													"storage_account_uri": {
+														"value": "@pipeline().globalParameters.storage_account_data_factory_uri",
+														"type": "Expression"
+													},
+													"container_name": {
+														"value": "@pipeline().globalParameters.storage_container_data_factory",
+														"type": "Expression"
+													},
+													"datastore_name": {
+														"value": "@pipeline().parameters.datastore_name",
+														"type": "Expression"
+													}
+												}
+											}
+										]
+									},
+									{
+										"name": "Unpack Zip",
+										"description": "Then we can extract each csv file in the zip",
+										"type": "Copy",
+										"dependsOn": [
+											{
+												"activity": "Acknowledge Message",
+												"dependencyConditions": [
+													"Succeeded"
+												]
+											}
+										],
+										"policy": {
+											"timeout": "0.12:00:00",
+											"retry": 0,
+											"retryIntervalInSeconds": 30,
+											"secureOutput": false,
+											"secureInput": false
+										},
+										"userProperties": [],
+										"typeProperties": {
+											"source": {
+												"type": "BinarySource",
+												"storeSettings": {
+													"type": "AzureBlobStorageReadSettings",
+													"recursive": false,
+													"deleteFilesAfterCompletion": false
+												},
+												"formatSettings": {
+													"type": "BinaryReadSettings",
+													"compressionProperties": {
+														"type": "ZipDeflateReadSettings",
+														"preserveZipFileNameAsFolder": false
+													}
+												}
+											},
+											"sink": {
+												"type": "BinarySink",
+												"storeSettings": {
+													"type": "AzureBlobStorageWriteSettings"
+												}
+											},
+											"enableStaging": false
+										},
+										"inputs": [
+											{
+												"referenceName": "ds_blob_binary_folder_azure_shir_compressed",
 												"type": "DatasetReference",
 												"parameters": {
 													"storage_account_uri": {
@@ -394,12 +459,28 @@
 														"value": "@pipeline().parameters.datastore_name",
 														"type": "Expression"
 													},
-													"dataset_name": {
-														"value": "@pipeline().parameters.dataset_name",
+													"filename": {
+														"value": "@concat(pipeline().parameters.datastore_name,'.zip')",
+														"type": "Expression"
+													}
+												}
+											}
+										],
+										"outputs": [
+											{
+												"referenceName": "ds_blob_binary_folder_azure_shir",
+												"type": "DatasetReference",
+												"parameters": {
+													"storage_account_uri": {
+														"value": "@pipeline().globalParameters.storage_account_data_factory_uri",
 														"type": "Expression"
 													},
-													"file_name": {
-														"value": "@last(array(split(activity('Get Blob Reference Link').output.referenceLink,'/' )))",
+													"container_name": {
+														"value": "@pipeline().globalParameters.storage_container_data_factory",
+														"type": "Expression"
+													},
+													"datastore_name": {
+														"value": "@pipeline().parameters.datastore_name",
 														"type": "Expression"
 													}
 												}
@@ -440,10 +521,6 @@
 				"defaultValue": "https://apim.dev.cloud.nibc.com"
 			},
 			"datastore_name": {
-				"type": "string",
-				"defaultValue": "frl"
-			},
-			"dataset_name": {
 				"type": "string",
 				"defaultValue": "frl"
 			},
