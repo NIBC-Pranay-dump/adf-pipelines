@@ -72,6 +72,7 @@ stages:
         templateLocation: 'Linked artifact'
         csmFile: '$(Pipeline.Workspace)/ARMTemplateForFactory.json'
         csmParametersFile: '$(Pipeline.Workspace)/ARMTemplateParametersForFactory.json'
+        overrideParameters: -factoryName $(data_factory_name)
         deploymentMode: 'Incremental'
 
     - task: AzurePowerShell@5
