@@ -33,7 +33,7 @@
 						"type": "Expression"
 					},
 					"body": {
-						"value": "@concat('client_id=', pipeline().parameters.apim_cid, '&scope=', replace(pipeline().parameters.apim_scope,'<environment>',pipeline().parameters.environment), '&client_secret=', activity('Get secret').output.pipelineReturnValue.keyvault_secret_value, '&grant_type=client_credentials')",
+						"value": "@concat('client_id=', pipeline().parameters.apim_cid, '&scope=', pipeline().parameters.apim_scope, '&client_secret=', activity('Get secret').output.pipelineReturnValue.keyvault_secret_value, '&grant_type=client_credentials')",
 						"type": "Expression"
 					}
 				}
@@ -221,7 +221,7 @@
 												}
 											},
 											"url": {
-												"value": "@concat(replace(pipeline().parameters.base_url,'<environment>',pipeline().parameters.environment),pipeline().parameters.relative_url,'acknowledge-message')",
+												"value": "@concat(pipeline().parameters.base_url,pipeline().parameters.relative_url,'acknowledge-message')",
 												"type": "Expression"
 											},
 											"connectVia": {
@@ -278,7 +278,7 @@
 												"type": "DatasetReference",
 												"parameters": {
 													"base_url": {
-														"value": "@replace(pipeline().parameters.base_url,'<environment>',pipeline().parameters.environment)",
+														"value": "@pipeline().parameters.base_url",
 														"type": "Expression"
 													},
 													"relative_url": "@concat(pipeline().parameters.relative_url,'receive-blob')"
@@ -454,7 +454,7 @@
 									}
 								},
 								"url": {
-									"value": "@concat(replace(pipeline().parameters.base_url,'<environment>',pipeline().parameters.environment),pipeline().parameters.relative_url,'peek-message')",
+									"value": "@concat(pipeline().parameters.base_url,pipeline().parameters.relative_url,'peek-message')",
 									"type": "Expression"
 								},
 								"connectVia": {
@@ -494,10 +494,6 @@
 			}
 		],
 		"parameters": {
-			"environment": {
-				"type": "string",
-				"defaultValue": "dev"
-			},
 			"datastore_name": {
 				"type": "string",
 				"defaultValue": "ods_savings"
@@ -508,11 +504,11 @@
 			},
 			"apim_scope": {
 				"type": "string",
-				"defaultValue": "https://apim.<environment>.cloud.nibc.com/.default"
+				"defaultValue": "https://apim.dev.cloud.nibc.com/.default"
 			},
 			"base_url": {
 				"type": "string",
-				"defaultValue": "https://apim.<environment>.cloud.nibc.com"
+				"defaultValue": "https://apim.dev.cloud.nibc.com"
 			},
 			"relative_url": {
 				"type": "string",
