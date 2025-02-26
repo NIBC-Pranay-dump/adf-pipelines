@@ -355,8 +355,7 @@
 											"sink": {
 												"type": "BinarySink",
 												"storeSettings": {
-													"type": "AzureBlobStorageWriteSettings",
-													"copyBehavior": "PreserveHierarchy"
+													"type": "AzureBlobStorageWriteSettings"
 												}
 											},
 											"enableStaging": false
@@ -379,7 +378,7 @@
 										],
 										"outputs": [
 											{
-												"referenceName": "ds_blob_binary_folder_azure_shir",
+												"referenceName": "ds_blob_binary_folder_azure_shir_filename",
 												"type": "DatasetReference",
 												"parameters": {
 													"storage_account_uri": {
@@ -392,6 +391,10 @@
 													},
 													"datastore_name": {
 														"value": "@pipeline().parameters.datastore_name",
+														"type": "Expression"
+													},
+													"filename": {
+														"value": "@last(array(split(activity('Get Blob Reference Link').output.referenceLink,'/')))",
 														"type": "Expression"
 													}
 												}
@@ -460,7 +463,7 @@
 														"type": "Expression"
 													},
 													"filename": {
-														"value": "@concat(pipeline().parameters.datastore_name,'.zip')",
+														"value": "@last(array(split(activity('Get Blob Reference Link').output.referenceLink,'/')))",
 														"type": "Expression"
 													}
 												}

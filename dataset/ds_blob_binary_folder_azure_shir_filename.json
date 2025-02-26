@@ -1,0 +1,51 @@
+{
+	"name": "ds_blob_binary_folder_azure_shir_filename",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "ls_blob_azure_shir",
+			"type": "LinkedServiceReference",
+			"parameters": {
+				"storage_account_uri": {
+					"value": "@dataset().storage_account_uri",
+					"type": "Expression"
+				}
+			}
+		},
+		"parameters": {
+			"storage_account_uri": {
+				"type": "string"
+			},
+			"container_name": {
+				"type": "string"
+			},
+			"datastore_name": {
+				"type": "string"
+			},
+			"filename": {
+				"type": "string"
+			}
+		},
+		"folder": {
+			"name": "azure_shir"
+		},
+		"annotations": [],
+		"type": "Binary",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobStorageLocation",
+				"fileName": {
+					"value": "@dataset().filename",
+					"type": "Expression"
+				},
+				"folderPath": {
+					"value": "@concat('datastore_',dataset().datastore_name)",
+					"type": "Expression"
+				},
+				"container": {
+					"value": "@dataset().container_name",
+					"type": "Expression"
+				}
+			}
+		}
+	}
+}
