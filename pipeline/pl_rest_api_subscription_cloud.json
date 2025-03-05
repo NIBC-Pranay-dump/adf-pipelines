@@ -4,41 +4,6 @@
 		"description": "Use this pipeline to connect the the API managed services REST API",
 		"activities": [
 			{
-				"name": "Get APIM token",
-				"description": "Fetches an authentication token from Microsoft Entra Privileged Identity Management. This token is used in subsequent API calls.",
-				"type": "WebActivity",
-				"dependsOn": [
-					{
-						"activity": "Get secret",
-						"dependencyConditions": [
-							"Succeeded"
-						]
-					}
-				],
-				"policy": {
-					"timeout": "0.12:00:00",
-					"retry": 0,
-					"retryIntervalInSeconds": 30,
-					"secureOutput": false,
-					"secureInput": false
-				},
-				"userProperties": [],
-				"typeProperties": {
-					"method": "POST",
-					"headers": {
-						"Content-Type": "application/x-www-form-urlencoded"
-					},
-					"url": {
-						"value": "@pipeline().parameters.token_url",
-						"type": "Expression"
-					},
-					"body": {
-						"value": "@concat('client_id=', pipeline().parameters.apim_cid, '&scope=', pipeline().parameters.apim_scope, '&client_secret=', activity('Get secret').output.pipelineReturnValue.keyvault_secret_value, '&grant_type=client_credentials')",
-						"type": "Expression"
-					}
-				}
-			},
-			{
 				"name": "Get secret",
 				"type": "ExecutePipeline",
 				"dependsOn": [],
@@ -61,82 +26,12 @@
 				}
 			},
 			{
-				"name": "Get Service Bus token",
-				"description": "Fetches an authentication token from Microsoft Entra Privileged Identity Management. This token is used in subsequent API calls.",
-				"type": "WebActivity",
-				"dependsOn": [
-					{
-						"activity": "Get APIM token",
-						"dependencyConditions": [
-							"Succeeded"
-						]
-					}
-				],
-				"policy": {
-					"timeout": "0.12:00:00",
-					"retry": 0,
-					"retryIntervalInSeconds": 30,
-					"secureOutput": false,
-					"secureInput": false
-				},
-				"userProperties": [],
-				"typeProperties": {
-					"method": "POST",
-					"headers": {
-						"Content-Type": "application/x-www-form-urlencoded"
-					},
-					"url": {
-						"value": "@pipeline().parameters.token_url",
-						"type": "Expression"
-					},
-					"body": {
-						"value": "@concat('client_id=', pipeline().parameters.apim_cid, '&scope=', pipeline().parameters.service_bus_scope, '&client_secret=', activity('Get secret').output.pipelineReturnValue.keyvault_secret_value, '&grant_type=client_credentials')",
-						"type": "Expression"
-					}
-				}
-			},
-			{
-				"name": "Get Storage token",
-				"description": "Fetches an authentication token from Microsoft Entra Privileged Identity Management. This token is used in subsequent API calls.",
-				"type": "WebActivity",
-				"dependsOn": [
-					{
-						"activity": "Get Service Bus token",
-						"dependencyConditions": [
-							"Succeeded"
-						]
-					}
-				],
-				"policy": {
-					"timeout": "0.12:00:00",
-					"retry": 0,
-					"retryIntervalInSeconds": 30,
-					"secureOutput": false,
-					"secureInput": false
-				},
-				"userProperties": [],
-				"typeProperties": {
-					"method": "POST",
-					"headers": {
-						"Content-Type": "application/x-www-form-urlencoded"
-					},
-					"url": {
-						"value": "@pipeline().parameters.token_url",
-						"type": "Expression"
-					},
-					"body": {
-						"value": "@concat('client_id=', pipeline().parameters.apim_cid, '&scope=', pipeline().parameters.storage_scope, '&client_secret=', activity('Get secret').output.pipelineReturnValue.keyvault_secret_value, '&grant_type=client_credentials')",
-						"type": "Expression"
-					}
-				}
-			},
-			{
-				"name": "content-length is 0",
+				"name": "content-length 0 and statuscode 200",
 				"description": "- default content_length = 100\n\nuntil content_length = 0:\n  - peek service bus and set content-length\n  - if content_length > 0 (means there is at least 1 message available):\n    - store as csv in datafactory storage account\n    - store as parquet in datalake storage account\n    - acknowledge message\n\n",
 				"type": "Until",
 				"dependsOn": [
 					{
-						"activity": "Get Storage token",
+						"activity": "Get secret",
 						"dependencyConditions": [
 							"Succeeded"
 						]
@@ -145,12 +40,12 @@
 				"userProperties": [],
 				"typeProperties": {
 					"expression": {
-						"value": "@equals(variables('content_length'),0)",
+						"value": "@and(equals(variables('content_length'),0),equals(variables('statusCode'),200))",
 						"type": "Expression"
 					},
 					"activities": [
 						{
-							"name": "content-length greater than 0",
+							"name": "contentLength gt 0 statusCode 200",
 							"description": "when no message are available the content-length will be 0",
 							"type": "IfCondition",
 							"dependsOn": [
@@ -159,12 +54,18 @@
 									"dependencyConditions": [
 										"Succeeded"
 									]
+								},
+								{
+									"activity": "statusCode",
+									"dependencyConditions": [
+										"Succeeded"
+									]
 								}
 							],
 							"userProperties": [],
 							"typeProperties": {
 								"expression": {
-									"value": "@greater(variables('content_length'),0)",
+									"value": "@and(greater(variables('content_length'),0),equals(variables('statusCode'),200))",
 									"type": "Expression"
 								},
 								"ifTrueActivities": [
@@ -174,7 +75,7 @@
 										"type": "WebActivity",
 										"dependsOn": [
 											{
-												"activity": "Copy CSV to parquet",
+												"activity": "Copy HTTP to CSV",
 												"dependencyConditions": [
 													"Succeeded"
 												]
@@ -192,11 +93,11 @@
 											"method": "GET",
 											"headers": {
 												"Authorization": {
-													"value": "@concat('Bearer ', \n        activity('Get APIM token').output['access_token']\n)",
+													"value": "@concat('Bearer ', variables('apim_token'))",
 													"type": "Expression"
 												},
 												"ServiceBus-Authorization": {
-													"value": "@concat('Bearer ', \n        activity('Get Service Bus token').output['access_token']\n)",
+													"value": "@concat('Bearer ',variables('servicebus_token'))",
 													"type": "Expression"
 												},
 												"Topic": {
@@ -221,7 +122,7 @@
 												}
 											},
 											"url": {
-												"value": "@concat(pipeline().parameters.base_url,pipeline().parameters.relative_url,'acknowledge-message')",
+												"value": "@concat(replace(pipeline().parameters.base_url, '<environment>', pipeline().parameters.environment),pipeline().parameters.relative_url,'acknowledge-message')",
 												"type": "Expression"
 											},
 											"connectVia": {
@@ -251,7 +152,7 @@
 													"type": "HttpReadSettings",
 													"requestMethod": "POST",
 													"additionalHeaders": {
-														"value": "Authorization: Bearer @{activity('Get APIM token').output['access_token']}\nStorage-Authorization: Bearer @{activity('Get Storage token').output['access_token']}\nContent-Type: application/json\n",
+														"value": "Authorization: Bearer @{variables('apim_token')}\nStorage-Authorization: Bearer @{variables('storage_token')}\nContent-Type: application/json\n",
 														"type": "Expression"
 													},
 													"requestBody": {
@@ -278,7 +179,7 @@
 												"type": "DatasetReference",
 												"parameters": {
 													"base_url": {
-														"value": "@pipeline().parameters.base_url",
+														"value": "@replace(pipeline().parameters.base_url, '<environment>', pipeline().parameters.environment)",
 														"type": "Expression"
 													},
 													"relative_url": "@concat(pipeline().parameters.relative_url,'receive-blob')"
@@ -310,7 +211,7 @@
 										"type": "Copy",
 										"dependsOn": [
 											{
-												"activity": "Copy HTTP to CSV",
+												"activity": "Acknowledge service bus message",
 												"dependencyConditions": [
 													"Succeeded"
 												]
@@ -424,7 +325,14 @@
 							"name": "Peek service bus message",
 							"description": "Fetches a reference link from the Service Bus to download a file from the Storage Account",
 							"type": "WebActivity",
-							"dependsOn": [],
+							"dependsOn": [
+								{
+									"activity": "statuscode not 200",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
 							"policy": {
 								"timeout": "0.12:00:00",
 								"retry": 0,
@@ -437,11 +345,11 @@
 								"method": "GET",
 								"headers": {
 									"Authorization": {
-										"value": "@concat('Bearer ', \n        activity('Get APIM token').output['access_token']\n)",
+										"value": "@concat('Bearer ', variables('apim_token'))",
 										"type": "Expression"
 									},
 									"ServiceBus-Authorization": {
-										"value": "@concat('Bearer ', \n        activity('Get Service Bus token').output['access_token']\n)",
+										"value": "@concat('Bearer ', variables('servicebus_token'))",
 										"type": "Expression"
 									},
 									"Topic": {
@@ -454,7 +362,7 @@
 									}
 								},
 								"url": {
-									"value": "@concat(pipeline().parameters.base_url,pipeline().parameters.relative_url,'peek-message')",
+									"value": "@concat(replace(pipeline().parameters.base_url, '<environment>', pipeline().parameters.environment),pipeline().parameters.relative_url,'peek-message')",
 									"type": "Expression"
 								},
 								"connectVia": {
@@ -466,6 +374,7 @@
 						},
 						{
 							"name": "content-length",
+							"description": "",
 							"type": "SetVariable",
 							"dependsOn": [
 								{
@@ -487,6 +396,234 @@
 									"type": "Expression"
 								}
 							}
+						},
+						{
+							"name": "statusCode",
+							"type": "SetVariable",
+							"dependsOn": [
+								{
+									"activity": "Peek service bus message",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "statusCode",
+								"value": {
+									"value": "@if(contains(activity('Peek service bus message').output,'statusCode'),activity('Peek service bus message').output['statusCode'],200)",
+									"type": "Expression"
+								}
+							}
+						},
+						{
+							"name": "statuscode not 200",
+							"description": "statuscode is not 200 at start of pipeline and is not 200 when token expires after 1 hour",
+							"type": "IfCondition",
+							"dependsOn": [],
+							"userProperties": [],
+							"typeProperties": {
+								"expression": {
+									"value": "@not(equals(variables('statusCode'),200))",
+									"type": "Expression"
+								},
+								"ifTrueActivities": [
+									{
+										"name": "Get APIM token",
+										"description": "Fetches an authentication token from Microsoft Entra Privileged Identity Management. This token is used in subsequent API calls.",
+										"type": "WebActivity",
+										"dependsOn": [],
+										"policy": {
+											"timeout": "0.12:00:00",
+											"retry": 0,
+											"retryIntervalInSeconds": 30,
+											"secureOutput": false,
+											"secureInput": false
+										},
+										"userProperties": [],
+										"typeProperties": {
+											"method": "POST",
+											"headers": {
+												"Content-Type": "application/x-www-form-urlencoded"
+											},
+											"url": {
+												"value": "@pipeline().parameters.token_url",
+												"type": "Expression"
+											},
+											"body": {
+												"value": "@concat('client_id=', pipeline().parameters.apim_cid, '&scope=', replace(pipeline().parameters.apim_scope, '<environment>', pipeline().parameters.environment), '&client_secret=', activity('Get secret').output.pipelineReturnValue.keyvault_secret_value, '&grant_type=client_credentials')",
+												"type": "Expression"
+											}
+										}
+									},
+									{
+										"name": "Get Service Bus token",
+										"description": "Fetches an authentication token from Microsoft Entra Privileged Identity Management. This token is used in subsequent API calls.",
+										"type": "WebActivity",
+										"dependsOn": [],
+										"policy": {
+											"timeout": "0.12:00:00",
+											"retry": 0,
+											"retryIntervalInSeconds": 30,
+											"secureOutput": false,
+											"secureInput": false
+										},
+										"userProperties": [],
+										"typeProperties": {
+											"method": "POST",
+											"headers": {
+												"Content-Type": "application/x-www-form-urlencoded"
+											},
+											"url": {
+												"value": "@pipeline().parameters.token_url",
+												"type": "Expression"
+											},
+											"body": {
+												"value": "@concat('client_id=', pipeline().parameters.apim_cid, '&scope=', pipeline().parameters.service_bus_scope, '&client_secret=', activity('Get secret').output.pipelineReturnValue.keyvault_secret_value, '&grant_type=client_credentials')",
+												"type": "Expression"
+											}
+										}
+									},
+									{
+										"name": "Get Storage token",
+										"description": "Fetches an authentication token from Microsoft Entra Privileged Identity Management. This token is used in subsequent API calls.",
+										"type": "WebActivity",
+										"dependsOn": [],
+										"policy": {
+											"timeout": "0.12:00:00",
+											"retry": 0,
+											"retryIntervalInSeconds": 30,
+											"secureOutput": false,
+											"secureInput": false
+										},
+										"userProperties": [],
+										"typeProperties": {
+											"method": "POST",
+											"headers": {
+												"Content-Type": "application/x-www-form-urlencoded"
+											},
+											"url": {
+												"value": "@pipeline().parameters.token_url",
+												"type": "Expression"
+											},
+											"body": {
+												"value": "@concat('client_id=', pipeline().parameters.apim_cid, '&scope=', pipeline().parameters.storage_scope, '&client_secret=', activity('Get secret').output.pipelineReturnValue.keyvault_secret_value, '&grant_type=client_credentials')",
+												"type": "Expression"
+											}
+										}
+									},
+									{
+										"name": "apim token",
+										"type": "SetVariable",
+										"dependsOn": [
+											{
+												"activity": "Get APIM token",
+												"dependencyConditions": [
+													"Succeeded"
+												]
+											}
+										],
+										"policy": {
+											"secureOutput": false,
+											"secureInput": false
+										},
+										"userProperties": [],
+										"typeProperties": {
+											"variableName": "apim_token",
+											"value": {
+												"value": "@activity('Get APIM token').output['access_token']",
+												"type": "Expression"
+											}
+										}
+									},
+									{
+										"name": "servicebus token",
+										"type": "SetVariable",
+										"dependsOn": [
+											{
+												"activity": "Get Service Bus token",
+												"dependencyConditions": [
+													"Succeeded"
+												]
+											}
+										],
+										"policy": {
+											"secureOutput": false,
+											"secureInput": false
+										},
+										"userProperties": [],
+										"typeProperties": {
+											"variableName": "servicebus_token",
+											"value": {
+												"value": "@activity('Get Service Bus token').output['access_token']",
+												"type": "Expression"
+											}
+										}
+									},
+									{
+										"name": "storage token",
+										"type": "SetVariable",
+										"dependsOn": [
+											{
+												"activity": "Get Storage token",
+												"dependencyConditions": [
+													"Succeeded"
+												]
+											}
+										],
+										"policy": {
+											"secureOutput": false,
+											"secureInput": false
+										},
+										"userProperties": [],
+										"typeProperties": {
+											"variableName": "storage_token",
+											"value": {
+												"value": "@activity('Get Storage token').output['access_token']",
+												"type": "Expression"
+											}
+										}
+									},
+									{
+										"name": "statuscode is 200",
+										"type": "SetVariable",
+										"dependsOn": [
+											{
+												"activity": "servicebus token",
+												"dependencyConditions": [
+													"Succeeded"
+												]
+											},
+											{
+												"activity": "apim token",
+												"dependencyConditions": [
+													"Succeeded"
+												]
+											},
+											{
+												"activity": "storage token",
+												"dependencyConditions": [
+													"Succeeded"
+												]
+											}
+										],
+										"policy": {
+											"secureOutput": false,
+											"secureInput": false
+										},
+										"userProperties": [],
+										"typeProperties": {
+											"variableName": "statusCode",
+											"value": 200
+										}
+									}
+								]
+							}
 						}
 					],
 					"timeout": "0.12:00:00"
@@ -504,11 +641,11 @@
 			},
 			"apim_scope": {
 				"type": "string",
-				"defaultValue": "https://apim.dev.cloud.nibc.com/.default"
+				"defaultValue": "https://apim.<environment>.cloud.nibc.com/.default"
 			},
 			"base_url": {
 				"type": "string",
-				"defaultValue": "https://apim.dev.cloud.nibc.com"
+				"defaultValue": "https://apim.<environment>.cloud.nibc.com"
 			},
 			"relative_url": {
 				"type": "string",
@@ -537,12 +674,28 @@
 			"token_url": {
 				"type": "string",
 				"defaultValue": "https://login.microsoftonline.com/8614d95f-762b-4789-a741-2589e3d0b08b/oauth2/v2.0/token"
+			},
+			"environment": {
+				"type": "string"
 			}
 		},
 		"variables": {
 			"content_length": {
 				"type": "Integer",
 				"defaultValue": 100
+			},
+			"statusCode": {
+				"type": "Integer",
+				"defaultValue": 401
+			},
+			"apim_token": {
+				"type": "String"
+			},
+			"servicebus_token": {
+				"type": "String"
+			},
+			"storage_token": {
+				"type": "String"
 			}
 		},
 		"folder": {
