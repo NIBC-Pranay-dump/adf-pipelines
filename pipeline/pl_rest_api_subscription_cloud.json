@@ -33,7 +33,7 @@
 						"type": "Expression"
 					},
 					"body": {
-						"value": "@concat('client_id=', pipeline().parameters.apim_cid, '&scope=', pipeline().parameters.apim_scope, '&client_secret=', activity('Get secret').output.pipelineReturnValue.keyvault_secret_value, '&grant_type=client_credentials')",
+						"value": "@concat('client_id=', pipeline().parameters.apim_cid, '&scope=', replace(pipeline().parameters.apim_scope, '<environment>', pipeline().parameters.environment), '&client_secret=', activity('Get secret').output.pipelineReturnValue.keyvault_secret_value, '&grant_type=client_credentials')",
 						"type": "Expression"
 					}
 				}
@@ -131,7 +131,7 @@
 				}
 			},
 			{
-				"name": "content-length is 0",
+				"name": "content-length 0 or statuscode not 200",
 				"description": "- default content_length = 100\n\nuntil content_length = 0:\n  - peek service bus and set content-length\n  - if content_length > 0 (means there is at least 1 message available):\n    - store as csv in datafactory storage account\n    - store as parquet in datalake storage account\n    - acknowledge message\n\n",
 				"type": "Until",
 				"dependsOn": [
@@ -145,12 +145,12 @@
 				"userProperties": [],
 				"typeProperties": {
 					"expression": {
-						"value": "@equals(variables('content_length'),0)",
+						"value": "@or(equals(variables('content_length'),0),not(equals(variables('statusCode'),200)))",
 						"type": "Expression"
 					},
 					"activities": [
 						{
-							"name": "content-length greater than 0",
+							"name": "content-length gt 0 and statuscode 200",
 							"description": "when no message are available the content-length will be 0",
 							"type": "IfCondition",
 							"dependsOn": [
@@ -159,12 +159,18 @@
 									"dependencyConditions": [
 										"Succeeded"
 									]
+								},
+								{
+									"activity": "statusCode",
+									"dependencyConditions": [
+										"Succeeded"
+									]
 								}
 							],
 							"userProperties": [],
 							"typeProperties": {
 								"expression": {
-									"value": "@greater(variables('content_length'),0)",
+									"value": "@and(greater(variables('content_length'),0),equals(variables('statusCode'),200))",
 									"type": "Expression"
 								},
 								"ifTrueActivities": [
@@ -221,7 +227,7 @@
 												}
 											},
 											"url": {
-												"value": "@concat(pipeline().parameters.base_url,pipeline().parameters.relative_url,'acknowledge-message')",
+												"value": "@concat(replace(pipeline().parameters.base_url, '<environment>', pipeline().parameters.environment), pipeline().parameters.relative_url,'acknowledge-message')",
 												"type": "Expression"
 											},
 											"connectVia": {
@@ -278,7 +284,7 @@
 												"type": "DatasetReference",
 												"parameters": {
 													"base_url": {
-														"value": "@pipeline().parameters.base_url",
+														"value": "@replace(pipeline().parameters.base_url, '<environment>', pipeline().parameters.environment)",
 														"type": "Expression"
 													},
 													"relative_url": "@concat(pipeline().parameters.relative_url,'receive-blob')"
@@ -454,7 +460,7 @@
 									}
 								},
 								"url": {
-									"value": "@concat(pipeline().parameters.base_url,pipeline().parameters.relative_url,'peek-message')",
+									"value": "@concat(replace(pipeline().parameters.base_url, '<environment>', pipeline().parameters.environment), pipeline().parameters.relative_url, 'peek-message')",
 									"type": "Expression"
 								},
 								"connectVia": {
@@ -487,6 +493,30 @@
 									"type": "Expression"
 								}
 							}
+						},
+						{
+							"name": "statusCode",
+							"type": "SetVariable",
+							"dependsOn": [
+								{
+									"activity": "Peek service bus message",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "statusCode",
+								"value": {
+									"value": "@if(contains(activity('Peek service bus message').output,'statusCode'),activity('Peek service bus message').output['statusCode'],200)",
+									"type": "Expression"
+								}
+							}
 						}
 					],
 					"timeout": "0.12:00:00"
@@ -504,11 +534,11 @@
 			},
 			"apim_scope": {
 				"type": "string",
-				"defaultValue": "https://apim.dev.cloud.nibc.com/.default"
+				"defaultValue": "https://apim.<environment>.cloud.nibc.com/.default"
 			},
 			"base_url": {
 				"type": "string",
-				"defaultValue": "https://apim.dev.cloud.nibc.com"
+				"defaultValue": "https://apim.<environment>.cloud.nibc.com"
 			},
 			"relative_url": {
 				"type": "string",
@@ -537,12 +567,19 @@
 			"token_url": {
 				"type": "string",
 				"defaultValue": "https://login.microsoftonline.com/8614d95f-762b-4789-a741-2589e3d0b08b/oauth2/v2.0/token"
+			},
+			"environment": {
+				"type": "string"
 			}
 		},
 		"variables": {
 			"content_length": {
 				"type": "Integer",
 				"defaultValue": 100
+			},
+			"statusCode": {
+				"type": "Integer",
+				"defaultValue": 200
 			}
 		},
 		"folder": {
