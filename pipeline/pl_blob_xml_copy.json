@@ -1,10 +1,9 @@
 {
-	"name": "pl_decompress_zip",
+	"name": "pl_blob_xml_copy",
 	"properties": {
 		"activities": [
 			{
-				"name": "Unpack Zip",
-				"description": "Then we can extract each csv file in the zip",
+				"name": "CSV to parquet",
 				"type": "Copy",
 				"dependsOn": [],
 				"policy": {
@@ -17,31 +16,33 @@
 				"userProperties": [],
 				"typeProperties": {
 					"source": {
-						"type": "BinarySource",
+						"type": "XmlSource",
 						"storeSettings": {
-							"type": "AzureBlobStorageReadSettings",
-							"recursive": false,
-							"deleteFilesAfterCompletion": false
+							"type": "AzureBlobFSReadSettings",
+							"recursive": true,
+							"enablePartitionDiscovery": false
 						},
 						"formatSettings": {
-							"type": "BinaryReadSettings",
-							"compressionProperties": {
-								"type": "ZipDeflateReadSettings",
-								"preserveZipFileNameAsFolder": false
-							}
+							"type": "XmlReadSettings",
+							"validationMode": "none",
+							"namespaces": true
 						}
 					},
 					"sink": {
-						"type": "BinarySink",
+						"type": "ParquetSink",
 						"storeSettings": {
-							"type": "AzureBlobStorageWriteSettings"
+							"type": "AzureBlobFSWriteSettings",
+							"copyBehavior": "PreserveHierarchy"
+						},
+						"formatSettings": {
+							"type": "ParquetWriteSettings"
 						}
 					},
 					"enableStaging": false
 				},
 				"inputs": [
 					{
-						"referenceName": "ds_blob_binary_folder_azure_shir_compressed",
+						"referenceName": "ds_adls_xml_auto_resolve",
 						"type": "DatasetReference",
 						"parameters": {
 							"storage_account_uri": {
@@ -52,12 +53,12 @@
 								"value": "@pipeline().globalParameters.storage_container_data_factory",
 								"type": "Expression"
 							},
-							"filename": {
-								"value": "@pipeline().parameters.filename",
-								"type": "Expression"
-							},
 							"datastore_name": {
 								"value": "@pipeline().parameters.datastore_name",
+								"type": "Expression"
+							},
+							"dataset_name": {
+								"value": "@pipeline().parameters.dataset_name",
 								"type": "Expression"
 							}
 						}
@@ -65,19 +66,27 @@
 				],
 				"outputs": [
 					{
-						"referenceName": "ds_blob_binary_folder_azure_shir",
+						"referenceName": "ds_adls_parquet_auto_resolve",
 						"type": "DatasetReference",
 						"parameters": {
+							"datastore_name": {
+								"value": "@pipeline().parameters.datastore_name",
+								"type": "Expression"
+							},
+							"dataset_name": {
+								"value": "@pipeline().parameters.dataset_name",
+								"type": "Expression"
+							},
 							"storage_account_uri": {
-								"value": "@pipeline().globalParameters.storage_account_data_factory_uri",
+								"value": "@pipeline().globalParameters.storage_account_datalake_uri",
 								"type": "Expression"
 							},
 							"container_name": {
-								"value": "@pipeline().globalParameters.storage_container_data_factory",
+								"value": "@pipeline().globalParameters.storage_container_datalake",
 								"type": "Expression"
 							},
-							"datastore_name": {
-								"value": "@pipeline().parameters.datastore_name",
+							"file_name": {
+								"value": "@pipeline().parameters.dataset_name",
 								"type": "Expression"
 							}
 						}
@@ -88,11 +97,11 @@
 		"parameters": {
 			"datastore_name": {
 				"type": "string",
-				"defaultValue": "frontarena"
+				"defaultValue": "frl"
 			},
-			"filename": {
+			"dataset_name": {
 				"type": "string",
-				"defaultValue": "250303_ProductInterface_CDP.zip"
+				"defaultValue": "real_estate"
 			}
 		},
 		"folder": {
