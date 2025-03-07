@@ -346,7 +346,7 @@
 											"type": "Expression"
 										},
 										"file_name": {
-											"value": "@item()",
+											"value": "@pipeline().parameters.dataset_name",
 											"type": "Expression"
 										}
 									}
@@ -378,11 +378,11 @@
 		"parameters": {
 			"datastore_name": {
 				"type": "string",
-				"defaultValue": "bagpro"
+				"defaultValue": "bagpro_test"
 			},
 			"dataset_name": {
 				"type": "string",
-				"defaultValue": "bagpro"
+				"defaultValue": "bagpro_test"
 			},
 			"base_url": {
 				"type": "string",
