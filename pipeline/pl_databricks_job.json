@@ -101,7 +101,7 @@
 							"typeProperties": {
 								"variableName": "job_status",
 								"value": {
-									"value": "@if(\nor(\nequals(activity('Check Job Run API').output.state.life_cycle_state, 'PENDING'), equals(activity('Check Job Run API').output.state.life_cycle_state, 'RUNNING')\n),\n'Running',\nactivity('Check Job Run API').output.state.life_cycle_state\n)",
+									"value": "@if(\nor(\nequals(activity('Check Job Run API').output.state.life_cycle_state, 'RUNNING'), or(\nequals(activity('Check Job Run API').output.state.life_cycle_state, 'PENDING'), equals(activity('Check Job Run API').output.state.life_cycle_state, 'QUEUED')\n)\n),\n'Running',\nactivity('Check Job Run API').output.state.life_cycle_state\n)",
 									"type": "Expression"
 								}
 							}
@@ -126,7 +126,7 @@
 							}
 						}
 					],
-					"timeout": "0.12:00:00"
+					"timeout": "0.01:00:00"
 				}
 			},
 			{
