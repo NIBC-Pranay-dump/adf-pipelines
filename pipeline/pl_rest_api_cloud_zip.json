@@ -360,7 +360,7 @@
 							"dependsOn": [],
 							"policy": {
 								"secureOutput": false,
-								"secureInput": false
+								"secureInput": true
 							},
 							"userProperties": [],
 							"typeProperties": {
@@ -369,6 +369,87 @@
 									"value": "@substring(item(), add(lastIndexOf(item(), '_'), 1), 8)",
 									"type": "Expression"
 								}
+							}
+						},
+						{
+							"name": "Set file_name",
+							"description": "The variable is needed as the item property of the loop cannot be accessed within the if statement",
+							"type": "SetVariable",
+							"dependsOn": [],
+							"policy": {
+								"secureOutput": false,
+								"secureInput": true
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "file_name",
+								"value": {
+									"value": "@item()",
+									"type": "Expression"
+								}
+							}
+						},
+						{
+							"name": "If delete file after download is set",
+							"description": "Check if the variable is true otherwise skip delete",
+							"type": "IfCondition",
+							"dependsOn": [
+								{
+									"activity": "Set file_name",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								},
+								{
+									"activity": "Zipped CSV to Parquet",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"userProperties": [],
+							"typeProperties": {
+								"expression": {
+									"value": "@pipeline().parameters.delete_file_after_download",
+									"type": "Expression"
+								},
+								"ifTrueActivities": [
+									{
+										"name": "Delete file",
+										"description": "",
+										"type": "WebActivity",
+										"dependsOn": [],
+										"policy": {
+											"timeout": "0.00:20:00",
+											"retry": 0,
+											"retryIntervalInSeconds": 30,
+											"secureOutput": true,
+											"secureInput": true
+										},
+										"userProperties": [],
+										"typeProperties": {
+											"method": "GET",
+											"headers": {
+												"Authorization": {
+													"value": "@concat('Bearer ', activity('Get access token').output['access_token'])",
+													"type": "Expression"
+												},
+												"Filename": {
+													"value": "@string(variables('file_name'))",
+													"type": "Expression"
+												}
+											},
+											"url": {
+												"value": "@concat(pipeline().parameters.base_url, pipeline().parameters.relative_url_delete)",
+												"type": "Expression"
+											},
+											"connectVia": {
+												"referenceName": "cloud",
+												"type": "IntegrationRuntimeReference"
+											}
+										}
+									}
+								]
 							}
 						}
 					]
@@ -396,6 +477,10 @@
 				"type": "string",
 				"defaultValue": "/internal/cddn/bagpro-api/1.0/retrieve"
 			},
+			"relative_url_delete": {
+				"type": "string",
+				"defaultValue": "/internal/cddn/bagpro-api/1.0/delete"
+			},
 			"key_vault_secret_name": {
 				"type": "string",
 				"defaultValue": "apim-authorization-access-token"
@@ -406,11 +491,15 @@
 			},
 			"microsoft_entra_scope": {
 				"type": "string",
-				"defaultValue": "0c28ca60-24cd-45bd-95f1-01fdaee9c41c/.default"
+				"defaultValue": "https://apim.dev.cloud.nibc.com/.default"
 			},
 			"column_delimiter": {
 				"type": "string",
 				"defaultValue": ";"
+			},
+			"delete_file_after_download": {
+				"type": "bool",
+				"defaultValue": false
 			}
 		},
 		"variables": {
@@ -418,6 +507,9 @@
 				"type": "Array"
 			},
 			"file_date": {
+				"type": "String"
+			},
+			"file_name": {
 				"type": "String"
 			}
 		},
