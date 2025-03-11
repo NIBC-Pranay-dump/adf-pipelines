@@ -42,7 +42,7 @@
 					"timeout": "0.12:00:00",
 					"retry": 0,
 					"retryIntervalInSeconds": 30,
-					"secureOutput": true,
+					"secureOutput": false,
 					"secureInput": true
 				},
 				"userProperties": [],
@@ -65,7 +65,7 @@
 				}
 			},
 			{
-				"name": "Set dataset name",
+				"name": "Set dataset names",
 				"type": "SetVariable",
 				"dependsOn": [
 					{
@@ -81,9 +81,9 @@
 				},
 				"userProperties": [],
 				"typeProperties": {
-					"variableName": "dataset_name",
+					"variableName": "dataset_names",
 					"value": {
-						"value": "@json(activity('List datasets').output['files'])",
+						"value": "@if(\n    equals(activity('List datasets').output['files'], '['''']'),\n    json('[]'),\n    json(activity('List datasets').output['files']) \n)",
 						"type": "Expression"
 					}
 				}
@@ -125,7 +125,7 @@
 				"type": "ForEach",
 				"dependsOn": [
 					{
-						"activity": "Set dataset name",
+						"activity": "Are multiple files avaliable",
 						"dependencyConditions": [
 							"Succeeded"
 						]
@@ -134,7 +134,7 @@
 				"userProperties": [],
 				"typeProperties": {
 					"items": {
-						"value": "@variables('dataset_name')",
+						"value": "@variables('dataset_names')",
 						"type": "Expression"
 					},
 					"isSequential": true,
@@ -454,6 +454,42 @@
 						}
 					]
 				}
+			},
+			{
+				"name": "Are multiple files avaliable",
+				"description": "If they are, we cannot handle them so fail the pipeline. This has not been a case so far hence we do not account for the edge case in this implementation.",
+				"type": "IfCondition",
+				"dependsOn": [
+					{
+						"activity": "Set dataset names",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@greater(length(variables('dataset_names')), 1)",
+						"type": "Expression"
+					},
+					"ifTrueActivities": [
+						{
+							"name": "Fail if more than 1 data avaliable",
+							"description": "This fail should notify us that there we need to consider this edge case in our implementation",
+							"type": "Fail",
+							"dependsOn": [],
+							"userProperties": [],
+							"typeProperties": {
+								"message": {
+									"value": "@concat(string(length(variables('dataset_names'))), 'files avaliable through the CIP server. Please consier different approach.')",
+									"type": "Expression"
+								},
+								"errorCode": "TooManyFiles"
+							}
+						}
+					]
+				}
 			}
 		],
 		"parameters": {
@@ -503,7 +539,7 @@
 			}
 		},
 		"variables": {
-			"dataset_name": {
+			"dataset_names": {
 				"type": "Array"
 			},
 			"file_date": {
