@@ -161,31 +161,39 @@
 		],
 		"parameters": {
 			"datastore_name": {
-				"type": "string"
+				"type": "string",
+				"defaultValue": "salesforce"
 			},
 			"dataset_name": {
-				"type": "string"
+				"type": "string",
+				"defaultValue": "ssm_cases"
 			},
 			"relative_url": {
-				"type": "string"
+				"type": "string",
+				"defaultValue": "retrieve-ssm-cases"
 			},
 			"base_url": {
-				"type": "string"
+				"type": "string",
+				"defaultValue": "https://apim.dev.cloud.nibc.com/internal/salesforce-api/1.0"
 			},
 			"key_vault_secret_name": {
-				"type": "string"
+				"type": "string",
+				"defaultValue": "apim-authorization-access-token"
 			},
 			"microsoft_entra_cid": {
-				"type": "string"
+				"type": "string",
+				"defaultValue": "a1bb61c1-d7c6-468b-9e6a-720dcd63ce91"
 			},
 			"microsoft_entra_scope": {
-				"type": "string"
+				"type": "string",
+				"defaultValue": "https://apim.dev.cloud.nibc.com/.default"
 			},
 			"column_mapping": {
 				"type": "string"
 			},
 			"message_body": {
-				"type": "string"
+				"type": "string",
+				"defaultValue": "\"{   \"compositeRequest\": [     {       \"method\": \"GET\", \"url\": \"/services/data/v59.0/query?q=SELECT Id, CaseNumber, Status, isClosed, Loan_Number_Display__c, Date_opened__c, Date_closed__c, NonCollaborativeMode__c, MotivationNoChange__c, Notice__c, (SELECT Id, AnnualIncomeClient1__c, AnnualIncomeClient2__c, AnnualPensionClient1__c, AnnualPensionClient2__c, PaymentPension__c, PaymentEndFiscal__c, PaymentEndLoan__c, IntentionConversion__c, IntentionExtendLoan__c, IntentionInterestRateAveraging__c, IntentionInternalRefinance__c, IntentionMoving__c, IntentionNewRepaymentTypeAnn__c, IntentionNewRepaymentTypeLin__c, IntentionPrepayOnce__c, IntentionOther__c, IntentionPrepayOnceAmount__c, IntentionPrepayPeriodAmount__c, IntentionPrepayPeriodEndDate__c, IntentionPrepayPeriodically__c, IntentionUpdatePropertyValue__c, IntentionVisitAdvisor__c, NoIntentionReason__c, OpenIntentionDescr__c, Follow_up_Date__c, FollowUpAction__c FROM Tasks WHERE RecordType.DeveloperName = 'Active_Servicing') FROM Case WHERE RecordType.DeveloperName = 'Active_Servicing' AND ((isclosed = true) OR (isclosed = false AND Owner.Name != 'Wachtrij Actief Beheer'))\",       \"referenceId\": \"CaseWithTasks\"     }   ] }\""
 			}
 		},
 		"folder": {
