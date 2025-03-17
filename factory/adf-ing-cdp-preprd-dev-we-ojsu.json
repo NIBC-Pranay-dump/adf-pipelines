@@ -2,6 +2,14 @@
 	"name": "adf-ing-cdp-preprd-dev-we-ojsu",
 	"properties": {
 		"globalParameters": {
+			"cip_client_id": {
+				"type": "String",
+				"value": "a1bb61c1-d7c6-468b-9e6a-720dcd63ce91"
+			},
+			"cip_scope": {
+				"type": "String",
+				"value": "https://apim.dev.cloud.nibc.com/.default"
+			},
 			"key_vault_uri": {
 				"type": "String",
 				"value": "https://kv-ing-cdp-preprd-dev-we.vault.azure.net/"

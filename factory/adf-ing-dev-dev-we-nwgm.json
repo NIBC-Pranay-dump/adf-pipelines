@@ -2,6 +2,14 @@
 	"name": "adf-ing-dev-dev-we-nwgm",
 	"properties": {
 		"globalParameters": {
+			"cip_client_id": {
+				"type": "String",
+				"value": "foo-bar"
+			},
+			"cip_scope": {
+				"type": "String",
+				"value": "https://apim.dev.cloud.nibc.com/.default"
+			},
 			"key_vault_uri": {
 				"type": "String",
 				"value": "https://kv-ing-dev-dev-we-nwgm.vault.azure.net/"
