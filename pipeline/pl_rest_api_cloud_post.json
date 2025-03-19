@@ -56,28 +56,8 @@
 					},
 					"enableStaging": false,
 					"translator": {
-						"type": "TabularTranslator",
-						"mappings": [
-							{
-								"source": {
-									"path": "$[\"Id\"]"
-								},
-								"sink": {
-									"name": "Id",
-									"type": "String"
-								}
-							},
-							{
-								"source": {
-									"path": "$[\"CaseNumber\"]"
-								},
-								"sink": {
-									"name": "case_number",
-									"type": "String"
-								}
-							}
-						],
-						"collectionReference": "$['records']"
+						"value": "@json(string(pipeline().parameters.column_mapping))",
+						"type": "Expression"
 					}
 				},
 				"inputs": [
