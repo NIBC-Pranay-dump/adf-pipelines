@@ -261,7 +261,6 @@
 						"storeSettings": {
 							"type": "AzureBlobStorageReadSettings",
 							"recursive": false,
-							"wildcardFolderPath": "@concat(     'datastore_', pipeline().parameters.datastore_name,     '/dataset_', pipeline().parameters.dataset_name )",
 							"enablePartitionDiscovery": false
 						},
 						"formatSettings": {
