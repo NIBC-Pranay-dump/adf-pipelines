@@ -261,12 +261,21 @@
 						"storeSettings": {
 							"type": "AzureBlobStorageReadSettings",
 							"recursive": false,
+							"wildcardFolderPath": {
+								"value": "@concat('datastore_', pipeline().parameters.datastore_name,\n        '/dataset_', pipeline().parameters.dataset_name\n)",
+								"type": "Expression"
+							},
+							"wildcardFileName": {
+								"value": "@variables('file_name')",
+								"type": "Expression"
+							},
 							"enablePartitionDiscovery": false
 						},
 						"formatSettings": {
 							"type": "DelimitedTextReadSettings",
 							"compressionProperties": {
-								"type": "ZipDeflateReadSettings"
+								"type": "ZipDeflateReadSettings",
+								"preserveZipFileNameAsFolder": false
 							}
 						}
 					},
