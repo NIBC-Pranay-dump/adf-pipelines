@@ -264,7 +264,10 @@
 							"enablePartitionDiscovery": false
 						},
 						"formatSettings": {
-							"type": "DelimitedTextReadSettings"
+							"type": "DelimitedTextReadSettings",
+							"compressionProperties": {
+								"type": "ZipDeflateReadSettings"
+							}
 						}
 					},
 					"sink": {
@@ -284,14 +287,15 @@
 				},
 				"inputs": [
 					{
-						"referenceName": "ds_blob_csv_no_header_azure_shir",
+						"referenceName": "ds_blob_zipped_csv_unpack_auto_resolve",
 						"type": "DatasetReference",
 						"parameters": {
 							"storage_account_uri": "@pipeline().globalParameters.storage_account_data_factory_uri",
 							"container_name": "@pipeline().globalParameters.storage_container_data_factory",
 							"datastore_name": "@pipeline().parameters.datastore_name",
-							"dataset_name": "@pipeline().parameters.dataset_name",
-							"file_name": "@variables('file_name')"
+							"column_delimiter": ",",
+							"encoding": "UTF-8",
+							"first_row_as_header": true
 						}
 					}
 				],
