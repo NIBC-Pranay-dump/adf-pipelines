@@ -3,13 +3,7 @@
 	"properties": {
 		"linkedServiceName": {
 			"referenceName": "ls_blob_auto_resolve",
-			"type": "LinkedServiceReference",
-			"parameters": {
-				"storage_account_uri": {
-					"value": "@dataset().storage_account_uri",
-					"type": "Expression"
-				}
-			}
+			"type": "LinkedServiceReference"
 		},
 		"parameters": {
 			"storage_account_uri": {
@@ -35,16 +29,7 @@
 		"type": "Json",
 		"typeProperties": {
 			"location": {
-				"type": "AzureBlobStorageLocation",
-				"fileName": {
-					"value": "@dataset().file_name",
-					"type": "Expression"
-				},
-				"folderPath": {
-					"value": "@concat('datastore_', dataset().datastore_name\n,'/dataset_', dataset().dataset_name)",
-					"type": "Expression"
-				},
-				"container": "@dataset().container_name"
+				"type": "AzureBlobStorageLocation"
 			},
 			"compression": {
 				"type": "ZipDeflate",
