@@ -36,11 +36,6 @@
 		"typeProperties": {
 			"location": {
 				"type": "AzureBlobStorageLocation",
-				"fileName": {
-					"value": "@dataset().file_name",
-					"type": "Expression"
-				},
-				"folderPath": "@concat('datastore_', dataset().datastore_name, '/dataset_', dataset().dataset_name)",
 				"container": "@dataset().container_name"
 			},
 			"compression": {
