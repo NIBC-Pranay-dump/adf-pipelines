@@ -41,7 +41,7 @@
 					"type": "Expression"
 				},
 				"folderPath": {
-					"value": "@dataset().datastore_name",
+					"value": "@concat('datastore_', dataset().datastore_name, '/dataset_', dataset().dataset_name)",
 					"type": "Expression"
 				},
 				"container": {
