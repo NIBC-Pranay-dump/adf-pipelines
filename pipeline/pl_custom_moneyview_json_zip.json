@@ -295,7 +295,11 @@
 							"storage_account_uri": "@pipeline().globalParameters.storage_account_data_factory_uri",
 							"datastore_name": "@pipeline().parameters.datastore_name",
 							"dataset_name": "@pipeline().parameters.dataset_name",
-							"file_name": "@variables('file_name')"
+							"file_name": "@variables('file_name')",
+							"container_name": {
+								"value": "@pipeline().globalParameters.storage_container_data_factory",
+								"type": "Expression"
+							}
 						}
 					}
 				],
