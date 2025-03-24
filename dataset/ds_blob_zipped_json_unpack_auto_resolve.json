@@ -15,9 +15,6 @@
 			"storage_account_uri": {
 				"type": "string"
 			},
-			"container_name": {
-				"type": "string"
-			},
 			"datastore_name": {
 				"type": "string"
 			},
@@ -25,6 +22,9 @@
 				"type": "string"
 			},
 			"file_name": {
+				"type": "string"
+			},
+			"container_name": {
 				"type": "string"
 			}
 		},
@@ -36,6 +36,14 @@
 		"typeProperties": {
 			"location": {
 				"type": "AzureBlobStorageLocation",
+				"fileName": {
+					"value": "@dataset().file_name",
+					"type": "Expression"
+				},
+				"folderPath": {
+					"value": "@concat('datastore_', dataset().datastore_name\n,'/dataset_', dataset().dataset_name)",
+					"type": "Expression"
+				},
 				"container": "@dataset().container_name"
 			},
 			"compression": {
