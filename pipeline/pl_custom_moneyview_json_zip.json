@@ -241,7 +241,7 @@
 				"userProperties": [],
 				"typeProperties": {
 					"source": {
-						"type": "DelimitedTextSource",
+						"type": "JsonSource",
 						"additionalColumns": [
 							{
 								"name": "file_name",
@@ -261,18 +261,11 @@
 						"storeSettings": {
 							"type": "AzureBlobStorageReadSettings",
 							"recursive": false,
-							"wildcardFolderPath": {
-								"value": "@concat('datastore_', pipeline().parameters.datastore_name,\n        '/dataset_', pipeline().parameters.dataset_name\n)",
-								"type": "Expression"
-							},
-							"wildcardFileName": {
-								"value": "@variables('file_name')",
-								"type": "Expression"
-							},
+							"wildcardFolderPath": "@concat(     'datastore_', pipeline().parameters.datastore_name,     '/dataset_', pipeline().parameters.dataset_name )",
 							"enablePartitionDiscovery": false
 						},
 						"formatSettings": {
-							"type": "DelimitedTextReadSettings",
+							"type": "JsonReadSettings",
 							"compressionProperties": {
 								"type": "ZipDeflateReadSettings",
 								"preserveZipFileNameAsFolder": false
@@ -296,15 +289,13 @@
 				},
 				"inputs": [
 					{
-						"referenceName": "ds_blob_zipped_csv_unpack_auto_resolve",
+						"referenceName": "ds_blob_zipped_json_unpack_auto_resolve",
 						"type": "DatasetReference",
 						"parameters": {
 							"storage_account_uri": "@pipeline().globalParameters.storage_account_data_factory_uri",
-							"container_name": "@pipeline().globalParameters.storage_container_data_factory",
 							"datastore_name": "@pipeline().parameters.datastore_name",
-							"column_delimiter": ",",
-							"encoding": "UTF-8",
-							"first_row_as_header": true
+							"dataset_name": "@pipeline().parameters.dataset_name",
+							"file_name": "@variables('file_name')"
 						}
 					}
 				],
