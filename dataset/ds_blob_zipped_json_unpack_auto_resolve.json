@@ -1,0 +1,53 @@
+{
+	"name": "ds_blob_zipped_json_unpack_auto_resolve",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "ls_blob_auto_resolve",
+			"type": "LinkedServiceReference",
+			"parameters": {
+				"storage_account_uri": {
+					"value": "@dataset().storage_account_uri",
+					"type": "Expression"
+				}
+			}
+		},
+		"parameters": {
+			"storage_account_uri": {
+				"type": "string"
+			},
+			"container_name": {
+				"type": "string"
+			},
+			"datastore_name": {
+				"type": "string"
+			},
+			"dataset_name": {
+				"type": "string"
+			},
+			"file_name": {
+				"type": "string"
+			}
+		},
+		"folder": {
+			"name": "auto_resolve"
+		},
+		"annotations": [],
+		"type": "Json",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobStorageLocation",
+				"fileName": {
+					"value": "@dataset().file_name",
+					"type": "Expression"
+				},
+				"folderPath": "@concat('datastore_', dataset().datastore_name, '/dataset_', dataset().dataset_name)",
+				"container": "@dataset().container_name"
+			},
+			"compression": {
+				"type": "ZipDeflate",
+				"level": "Optimal"
+			}
+		},
+		"schema": {}
+	}
+}
