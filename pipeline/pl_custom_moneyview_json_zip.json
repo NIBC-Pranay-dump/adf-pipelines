@@ -49,6 +49,10 @@
 					"url": {
 						"value": "@replace(\r\n    pipeline().parameters.retrieve_files_url,\r\n    '<environment>',\r\n    pipeline().parameters.environment\r\n)",
 						"type": "Expression"
+					},
+					"connectVia": {
+						"referenceName": "cloud",
+						"type": "IntegrationRuntimeReference"
 					}
 				}
 			},
@@ -464,6 +468,10 @@
 								"url": {
 									"value": "@replace(\n    pipeline().parameters.delete_files_url,\n    '<environment>',\n    pipeline().parameters.environment\n)",
 									"type": "Expression"
+								},
+								"connectVia": {
+									"referenceName": "cloud",
+									"type": "IntegrationRuntimeReference"
 								}
 							}
 						},
@@ -533,6 +541,10 @@
 					"url": {
 						"value": "@pipeline().parameters.apim_token_url",
 						"type": "Expression"
+					},
+					"connectVia": {
+						"referenceName": "cloud",
+						"type": "IntegrationRuntimeReference"
 					},
 					"body": {
 						"value": "@concat('client_id=', pipeline().parameters.apim_cid, '&scope=', replace(pipeline().parameters.apim_scope, '<environment>', pipeline().parameters.environment), '&client_secret=', activity('Get secret').output.pipelineReturnValue.keyvault_secret_value, '&grant_type=client_credentials')",
@@ -646,6 +658,9 @@
 				"type": "String"
 			},
 			"download_timestamp": {
+				"type": "String"
+			},
+			"test": {
 				"type": "String"
 			}
 		},
