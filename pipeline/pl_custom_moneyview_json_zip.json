@@ -31,7 +31,7 @@
 					"retry": 0,
 					"retryIntervalInSeconds": 30,
 					"secureOutput": false,
-					"secureInput": true
+					"secureInput": false
 				},
 				"userProperties": [],
 				"typeProperties": {
@@ -47,7 +47,7 @@
 						}
 					},
 					"url": {
-						"value": "https://apim.dev.cloud.nibc.com/internal/moneyview-api/1.0/retrieve-files",
+						"value": "@replace(\r\n    pipeline().parameters.retrieve_files_url,\r\n    '<environment>',\r\n    pipeline().parameters.environment\r\n)",
 						"type": "Expression"
 					}
 				}
@@ -462,7 +462,7 @@
 									}
 								},
 								"url": {
-									"value": "https://apim.dev.cloud.nibc.com/internal/moneyview-api/1.0/delete-files",
+									"value": "@replace(\n    pipeline().parameters.delete_files_url,\n    '<environment>',\n    pipeline().parameters.environment\n)",
 									"type": "Expression"
 								}
 							}
@@ -622,6 +622,14 @@
 			"apim_scope": {
 				"type": "string",
 				"defaultValue": "https://apim.<environment>.cloud.nibc.com/.default"
+			},
+			"retrieve_files_url": {
+				"type": "string",
+				"defaultValue": "https://apim.<environment>.cloud.nibc.com/internal/moneyview-api/1.0/retrieve-files"
+			},
+			"delete_files_url": {
+				"type": "string",
+				"defaultValue": "https://apim.<environment>.cloud.nibc.com/internal/moneyview-api/1.0/delete-files"
 			}
 		},
 		"variables": {
