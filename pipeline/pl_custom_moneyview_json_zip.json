@@ -528,53 +528,20 @@
 		],
 		"parameters": {
 			"file_name_template": {
-				"type": "string",
-				"defaultValue": "MV_NIBC_Hypotheken_{yyyymmdd}.json.zip"
+				"type": "string"
 			},
 			"keyvault_secret_name": {
 				"type": "string",
 				"defaultValue": "api-credentials-moneyview"
 			},
 			"datastore_name": {
-				"type": "string",
-				"defaultValue": "moneyview"
+				"type": "string"
 			},
 			"dataset_name": {
-				"type": "string",
-				"defaultValue": "mv_nibc_hypotheken"
+				"type": "string"
 			},
 			"column_mapping": {
-				"type": "string",
-				"defaultValue": {
-					"type": "TabularTranslator",
-					"mappings": [
-						{
-							"source": {
-								"path": "$['renteFeed']"
-							},
-							"sink": {
-								"name": "$['renteFeed']"
-							}
-						},
-						{
-							"source": {
-								"path": "file_name"
-							},
-							"sink": {
-								"name": "file_name"
-							}
-						},
-						{
-							"source": {
-								"path": "download_timestamp"
-							},
-							"sink": {
-								"name": "download_timestamp"
-							}
-						}
-					],
-					"mapComplexValuesToString": true
-				}
+				"type": "string"
 			},
 			"dbx_workspace_url": {
 				"type": "string",
