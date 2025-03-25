@@ -8,13 +8,19 @@
 				"type": "WebActivity",
 				"dependsOn": [
 					{
-						"activity": "get password",
+						"activity": "set file name",
 						"dependencyConditions": [
 							"Succeeded"
 						]
 					},
 					{
-						"activity": "set file name",
+						"activity": "Get APIM token",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					},
+					{
+						"activity": "set download timestamp",
 						"dependencyConditions": [
 							"Succeeded"
 						]
@@ -31,15 +37,17 @@
 				"typeProperties": {
 					"method": "GET",
 					"headers": {
-						"User": "API_DOWNLOAD_NIBC",
-						"Pwd": {
-							"value": "@activity('get password').output.pipelineReturnValue.keyvault_secret_value",
+						"Authorization": {
+							"value": "@concat(\n        'Bearer ',\n        activity('Get APIM token').output['access_token']\n)",
 							"type": "Expression"
 						},
-						"Organisationcode": "NIBC"
+						"File-Names": {
+							"value": "@variables('file_name')",
+							"type": "Expression"
+						}
 					},
 					"url": {
-						"value": "@concat('https://apitransfer.moneyview.nl/filetransfer?json={\"action\":\"get\", \"filenames\":[\"', variables('file_name'), '\"]}')",
+						"value": "https://apim.dev.cloud.nibc.com/internal/moneyview-api/1.0/retrieve-files",
 						"type": "Expression"
 					}
 				}
@@ -332,29 +340,6 @@
 				]
 			},
 			{
-				"name": "get password",
-				"description": "Turns out, having this separate pipeline does increase the time it takes, and there is a limit to the number of pipelines that can run at the same time, we could consider doing this directly, but than we would be copying that same logic everywhere",
-				"type": "ExecutePipeline",
-				"dependsOn": [],
-				"policy": {
-					"secureInput": false
-				},
-				"userProperties": [],
-				"typeProperties": {
-					"pipeline": {
-						"referenceName": "pl_util_get_keyvault_secret",
-						"type": "PipelineReference"
-					},
-					"waitOnCompletion": true,
-					"parameters": {
-						"keyvault_secret_name": {
-							"value": "@pipeline().parameters.keyvault_secret_name",
-							"type": "Expression"
-						}
-					}
-				}
-			},
-			{
 				"name": "correct_decoding",
 				"type": "DatabricksNotebook",
 				"dependsOn": [
@@ -412,14 +397,7 @@
 				"name": "set file date",
 				"description": "Set file date in west europe timezone",
 				"type": "SetVariable",
-				"dependsOn": [
-					{
-						"activity": "set download timestamp",
-						"dependencyConditions": [
-							"Succeeded"
-						]
-					}
-				],
+				"dependsOn": [],
 				"policy": {
 					"secureOutput": false,
 					"secureInput": false
@@ -474,15 +452,17 @@
 							"typeProperties": {
 								"method": "GET",
 								"headers": {
-									"User": "API_DOWNLOAD_NIBC",
-									"Pwd": {
-										"value": "@activity('get password').output.pipelineReturnValue.keyvault_secret_value",
+									"Authorization": {
+										"value": "@concat(\n        'Bearer ',\n        activity('Get APIM token').output['access_token']\n)",
 										"type": "Expression"
 									},
-									"Organisationcode": "NIBC"
+									"File-Names": {
+										"value": "@variables('file_name_to_delete')",
+										"type": "Expression"
+									}
 								},
 								"url": {
-									"value": "@concat('https://apitransfer.moneyview.nl/filetransfer?json={\"action\":\"delete\", \"filenames\":[\"', variables('file_name_to_delete'), '\"]}')",
+									"value": "https://apim.dev.cloud.nibc.com/internal/moneyview-api/1.0/delete-files",
 									"type": "Expression"
 								}
 							}
@@ -524,15 +504,68 @@
 						"type": "Expression"
 					}
 				}
+			},
+			{
+				"name": "Get APIM token",
+				"description": "Fetches an authentication token from Microsoft Entra Privileged Identity Management. This token is used in subsequent API calls.",
+				"type": "WebActivity",
+				"dependsOn": [
+					{
+						"activity": "Get secret",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"method": "POST",
+					"headers": {
+						"Content-Type": "application/x-www-form-urlencoded"
+					},
+					"url": {
+						"value": "@pipeline().parameters.apim_token_url",
+						"type": "Expression"
+					},
+					"body": {
+						"value": "@concat('client_id=', pipeline().parameters.apim_cid, '&scope=', replace(pipeline().parameters.apim_scope, '<environment>', pipeline().parameters.environment), '&client_secret=', activity('Get secret').output.pipelineReturnValue.keyvault_secret_value, '&grant_type=client_credentials')",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "Get secret",
+				"type": "ExecutePipeline",
+				"dependsOn": [],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "pl_util_get_keyvault_secret",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true,
+					"parameters": {
+						"keyvault_secret_name": {
+							"value": "@pipeline().parameters.key_vault_secret_name",
+							"type": "Expression"
+						}
+					}
+				}
 			}
 		],
 		"parameters": {
 			"file_name_template": {
 				"type": "string"
-			},
-			"keyvault_secret_name": {
-				"type": "string",
-				"defaultValue": "api-credentials-moneyview"
 			},
 			"datastore_name": {
 				"type": "string"
@@ -570,6 +603,25 @@
 			"remove_period_in_days": {
 				"type": "int",
 				"defaultValue": 7
+			},
+			"apim_token_url": {
+				"type": "string",
+				"defaultValue": "https://login.microsoftonline.com/8614d95f-762b-4789-a741-2589e3d0b08b/oauth2/v2.0/token"
+			},
+			"environment": {
+				"type": "string"
+			},
+			"key_vault_secret_name": {
+				"type": "string",
+				"defaultValue": "apim-authorization-access-token"
+			},
+			"apim_cid": {
+				"type": "string",
+				"defaultValue": "a1bb61c1-d7c6-468b-9e6a-720dcd63ce91"
+			},
+			"apim_scope": {
+				"type": "string",
+				"defaultValue": "https://apim.<environment>.cloud.nibc.com/.default"
 			}
 		},
 		"variables": {
