@@ -58,7 +58,7 @@
 			},
 			{
 				"name": "Set csv_string",
-				"description": "set string",
+				"description": "",
 				"type": "SetVariable",
 				"dependsOn": [
 					{
