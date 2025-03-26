@@ -577,16 +577,49 @@
 		],
 		"parameters": {
 			"file_name_template": {
-				"type": "string"
+				"type": "string",
+				"defaultValue": "MV_NIBC_Hypotheken_{yyyymmdd}.json.zip"
 			},
 			"datastore_name": {
-				"type": "string"
+				"type": "string",
+				"defaultValue": "moneyview"
 			},
 			"dataset_name": {
-				"type": "string"
+				"type": "string",
+				"defaultValue": "mv_nibc_hypotheken"
 			},
 			"column_mapping": {
-				"type": "string"
+				"type": "string",
+				"defaultValue": {
+					"type": "TabularTranslator",
+					"mappings": [
+						{
+							"source": {
+								"path": "$['renteFeed']"
+							},
+							"sink": {
+								"name": "$['renteFeed']"
+							}
+						},
+						{
+							"source": {
+								"path": "file_name"
+							},
+							"sink": {
+								"name": "file_name"
+							}
+						},
+						{
+							"source": {
+								"path": "download_timestamp"
+							},
+							"sink": {
+								"name": "download_timestamp"
+							}
+						}
+					],
+					"mapComplexValuesToString": true
+				}
 			},
 			"dbx_workspace_url": {
 				"type": "string",
@@ -606,7 +639,7 @@
 			},
 			"notebook_path": {
 				"type": "string",
-				"defaultValue": "/Workspace/Shared/adf-pipelines/scn_sub_cdp_preprd_we_001/dev/files/databricks_notebooks/decode_moneyview_base64"
+				"defaultValue": "/Workspace/Shared/decode_moneyview_base64"
 			},
 			"remove_file": {
 				"type": "bool",
@@ -621,7 +654,8 @@
 				"defaultValue": "https://login.microsoftonline.com/8614d95f-762b-4789-a741-2589e3d0b08b/oauth2/v2.0/token"
 			},
 			"environment": {
-				"type": "string"
+				"type": "string",
+				"defaultValue": "dev"
 			},
 			"key_vault_secret_name": {
 				"type": "string",
