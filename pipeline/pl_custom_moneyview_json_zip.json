@@ -694,9 +694,6 @@
 			},
 			"download_timestamp": {
 				"type": "String"
-			},
-			"test": {
-				"type": "String"
 			}
 		},
 		"folder": {
