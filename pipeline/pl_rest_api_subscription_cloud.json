@@ -66,7 +66,7 @@
 				"type": "WebActivity",
 				"dependsOn": [
 					{
-						"activity": "Get APIM token",
+						"activity": "Get secret",
 						"dependencyConditions": [
 							"Succeeded"
 						]
@@ -101,7 +101,7 @@
 				"type": "WebActivity",
 				"dependsOn": [
 					{
-						"activity": "Get Service Bus token",
+						"activity": "Get secret",
 						"dependencyConditions": [
 							"Succeeded"
 						]
@@ -131,12 +131,24 @@
 				}
 			},
 			{
-				"name": "content-length 0 or statuscode not 200",
-				"description": "- default content_length = 100\n\nuntil content_length = 0:\n  - peek service bus and set content-length\n  - if content_length > 0 (means there is at least 1 message available):\n    - store as csv in datafactory storage account\n    - store as parquet in datalake storage account\n    - acknowledge message\n\n",
+				"name": "No data left or something failed",
+				"description": "Run inner loop until:\n  - No data is left:\n      content_length = 0 means no more messages are available\n  - Something failed:\n      The last activity in the inner loop has either failed or is being skipped (due to failure of earlier activity)\n",
 				"type": "Until",
 				"dependsOn": [
 					{
 						"activity": "Get Storage token",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					},
+					{
+						"activity": "Get Service Bus token",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					},
+					{
+						"activity": "Get APIM token",
 						"dependencyConditions": [
 							"Succeeded"
 						]
@@ -145,7 +157,7 @@
 				"userProperties": [],
 				"typeProperties": {
 					"expression": {
-						"value": "@or(equals(variables('content_length'),0),not(equals(variables('statusCode'),200)))",
+						"value": "@or(or(equals(variables('content_length'),0),not(equals(variables('statusCode'),200))), contains(createArray('Failed','Skipped'),coalesce(activity('Acknowledge service bus message')?.status,'Skipped')))",
 						"type": "Expression"
 					},
 					"activities": [
@@ -519,7 +531,7 @@
 							}
 						}
 					],
-					"timeout": "0.12:00:00"
+					"timeout": "0.02:00:00"
 				}
 			}
 		],
