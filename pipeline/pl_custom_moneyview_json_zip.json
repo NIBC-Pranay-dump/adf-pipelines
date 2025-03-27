@@ -349,7 +349,7 @@
 				"type": "DatabricksNotebook",
 				"dependsOn": [
 					{
-						"activity": "get encoded file string",
+						"activity": "store zip-file",
 						"dependencyConditions": [
 							"Succeeded"
 						]
@@ -572,6 +572,46 @@
 							"value": "@pipeline().parameters.key_vault_secret_name",
 							"type": "Expression"
 						}
+					}
+				}
+			},
+			{
+				"name": "store zip-file",
+				"description": "read contents of queue-file",
+				"type": "WebActivity",
+				"dependsOn": [
+					{
+						"activity": "get encoded file string",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"method": "PUT",
+					"headers": {
+						"x-ms-version": "2017-11-09",
+						"x-ms-blob-type": "BlockBlob"
+					},
+					"url": {
+						"value": "@concat(\n    pipeline().globalParameters.storage_account_data_factory_uri, \n    pipeline().globalParameters.storage_container_data_factory,\n    '/datastore_', pipeline().parameters.datastore_name,\n    '/dataset_', pipeline().parameters.datastore_name,\n    '/', variables('file_name')\n)",
+						"type": "Expression"
+					},
+					"body": {
+						"value": "@decodeBase64(json(activity('get encoded file string').output)['file'])",
+						"type": "Expression"
+					},
+					"authentication": {
+						"type": "MSI",
+						"resource": "https://storage.azure.com"
 					}
 				}
 			}
