@@ -598,15 +598,16 @@
 				"typeProperties": {
 					"method": "PUT",
 					"headers": {
-						"x-ms-version": "2017-11-09",
-						"x-ms-blob-type": "BlockBlob"
+						"x-ms-blob-type": "BlockBlob",
+						"Content-Type": "application/octet-stream",
+						"x-ms-version": "2017-11-09"
 					},
 					"url": {
-						"value": "@concat(\n    pipeline().globalParameters.storage_account_data_factory_uri, \n    pipeline().globalParameters.storage_container_data_factory,\n    '/datastore_', pipeline().parameters.datastore_name,\n    '/dataset_', pipeline().parameters.datastore_name,\n    '/', variables('file_name')\n)",
+						"value": "@concat(\n    pipeline().globalParameters.storage_account_data_factory_uri, \n    pipeline().globalParameters.storage_container_data_factory,\n    '/datastore_', pipeline().parameters.datastore_name,\n    '/dataset_', pipeline().parameters.dataset_name,\n    '/', variables('file_name')\n)",
 						"type": "Expression"
 					},
 					"body": {
-						"value": "@decodeBase64(json(activity('get encoded file string').output)['file'])",
+						"value": "@decodeBase64(json(\n    activity('get encoded file string').output.Response\n)[0]['file'])",
 						"type": "Expression"
 					},
 					"authentication": {
