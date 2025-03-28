@@ -7,7 +7,7 @@
 			"url": "https://mc-nrwds-jsrxzck5dxnlwjfs1w8.soap.marketingcloudapis.com/",
 			"enableServerCertificateValidation": true,
 			"authenticationType": "Basic",
-			"userName": "216atrhuo0imbcctklk2r844",
+			"userName": "216atrhuo0imbcctk1k2r844",
 			"password": {
 				"type": "AzureKeyVaultSecret",
 				"store": {
