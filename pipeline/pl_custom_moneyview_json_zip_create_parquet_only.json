@@ -1,5 +1,5 @@
 {
-	"name": "pipeline1",
+	"name": "pl_custom_moneyview_json_zip_create_parquet_only",
 	"properties": {
 		"activities": [
 			{
