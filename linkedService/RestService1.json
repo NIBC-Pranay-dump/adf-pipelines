@@ -1,0 +1,12 @@
+{
+	"name": "RestService1",
+	"properties": {
+		"annotations": [],
+		"type": "RestService",
+		"typeProperties": {
+			"url": "https://mc-nrwds-jsrxzck5dxnlwjfs1w8.soap.marketingcloudapis.com/",
+			"enableServerCertificateValidation": true,
+			"authenticationType": "Anonymous"
+		}
+	}
+}
