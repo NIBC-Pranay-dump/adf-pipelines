@@ -108,6 +108,8 @@
 			{
 				"name": "create csv using dummy text file",
 				"type": "Copy",
+				"state": "Inactive",
+				"onInactiveMarkAs": "Succeeded",
 				"dependsOn": [
 					{
 						"activity": "Set csv_string",
@@ -236,6 +238,8 @@
 			{
 				"name": "create parquet",
 				"type": "Copy",
+				"state": "Inactive",
+				"onInactiveMarkAs": "Succeeded",
 				"dependsOn": [
 					{
 						"activity": "create csv using dummy text file",
@@ -347,6 +351,8 @@
 			{
 				"name": "correct_decoding",
 				"type": "DatabricksNotebook",
+				"state": "Inactive",
+				"onInactiveMarkAs": "Succeeded",
 				"dependsOn": [
 					{
 						"activity": "store zip-file",
@@ -579,6 +585,8 @@
 				"name": "store zip-file",
 				"description": "read contents of queue-file",
 				"type": "WebActivity",
+				"state": "Inactive",
+				"onInactiveMarkAs": "Succeeded",
 				"dependsOn": [
 					{
 						"activity": "get encoded file string",
