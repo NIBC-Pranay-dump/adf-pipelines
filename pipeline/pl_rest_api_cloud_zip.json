@@ -121,11 +121,11 @@
 				}
 			},
 			{
-				"name": "Download each zip file avaliable",
+				"name": "Download each zip file available",
 				"type": "ForEach",
 				"dependsOn": [
 					{
-						"activity": "Are multiple files avaliable",
+						"activity": "Are multiple files available",
 						"dependencyConditions": [
 							"Succeeded"
 						]
@@ -146,9 +146,9 @@
 							"dependsOn": [],
 							"policy": {
 								"timeout": "0.12:00:00",
-								"retry": 0,
-								"retryIntervalInSeconds": 30,
-								"secureOutput": true,
+								"retry": 1,
+								"retryIntervalInSeconds": 60,
+								"secureOutput": false,
 								"secureInput": true
 							},
 							"userProperties": [],
@@ -456,7 +456,7 @@
 				}
 			},
 			{
-				"name": "Are multiple files avaliable",
+				"name": "Are multiple files available",
 				"description": "If they are, we cannot handle them so fail the pipeline. This has not been a case so far hence we do not account for the edge case in this implementation.",
 				"type": "IfCondition",
 				"dependsOn": [
@@ -475,14 +475,14 @@
 					},
 					"ifTrueActivities": [
 						{
-							"name": "Fail if more than 1 data avaliable",
+							"name": "Fail if more than 1 data available",
 							"description": "This fail should notify us that there we need to consider this edge case in our implementation",
 							"type": "Fail",
 							"dependsOn": [],
 							"userProperties": [],
 							"typeProperties": {
 								"message": {
-									"value": "@concat(string(length(variables('dataset_names'))), 'files avaliable through the CIP server. Please consier different approach.')",
+									"value": "@concat(string(length(variables('dataset_names'))), 'files available through the CIP server. Please consier different approach.')",
 									"type": "Expression"
 								},
 								"errorCode": "TooManyFiles"
