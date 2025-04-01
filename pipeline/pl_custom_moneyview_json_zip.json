@@ -57,31 +57,6 @@
 				}
 			},
 			{
-				"name": "Set csv_string",
-				"description": "",
-				"type": "SetVariable",
-				"dependsOn": [
-					{
-						"activity": "correct_decoding",
-						"dependencyConditions": [
-							"Succeeded"
-						]
-					}
-				],
-				"policy": {
-					"secureOutput": false,
-					"secureInput": false
-				},
-				"userProperties": [],
-				"typeProperties": {
-					"variableName": "file_content",
-					"value": {
-						"value": "@activity('correct_decoding').output['runOutput']['adf_output_value']",
-						"type": "Expression"
-					}
-				}
-			},
-			{
 				"name": "set file name",
 				"type": "SetVariable",
 				"dependsOn": [
@@ -106,256 +81,11 @@
 				}
 			},
 			{
-				"name": "create csv using dummy text file",
-				"type": "Copy",
-				"state": "Inactive",
-				"onInactiveMarkAs": "Succeeded",
-				"dependsOn": [
-					{
-						"activity": "Set csv_string",
-						"dependencyConditions": [
-							"Succeeded"
-						]
-					}
-				],
-				"policy": {
-					"timeout": "0.12:00:00",
-					"retry": 0,
-					"retryIntervalInSeconds": 30,
-					"secureOutput": false,
-					"secureInput": false
-				},
-				"userProperties": [],
-				"typeProperties": {
-					"source": {
-						"type": "DelimitedTextSource",
-						"additionalColumns": [
-							{
-								"name": "file_content",
-								"value": {
-									"value": "@string(variables('file_content'))",
-									"type": "Expression"
-								}
-							}
-						],
-						"storeSettings": {
-							"type": "AzureBlobStorageReadSettings",
-							"recursive": true,
-							"enablePartitionDiscovery": false
-						},
-						"formatSettings": {
-							"type": "DelimitedTextReadSettings"
-						}
-					},
-					"sink": {
-						"type": "DelimitedTextSink",
-						"storeSettings": {
-							"type": "AzureBlobStorageWriteSettings"
-						},
-						"formatSettings": {
-							"type": "DelimitedTextWriteSettings",
-							"quoteAllText": true,
-							"fileExtension": ".txt"
-						}
-					},
-					"enableStaging": false,
-					"translator": {
-						"type": "TabularTranslator",
-						"mappings": [
-							{
-								"source": {
-									"name": "file_content",
-									"type": "String"
-								},
-								"sink": {
-									"type": "String",
-									"physicalType": "String",
-									"ordinal": 1
-								}
-							}
-						],
-						"typeConversion": true,
-						"typeConversionSettings": {
-							"allowDataTruncation": true,
-							"treatBooleanAsNumber": false
-						}
-					}
-				},
-				"inputs": [
-					{
-						"referenceName": "ds_blob_csv_azure_shir",
-						"type": "DatasetReference",
-						"parameters": {
-							"storage_account_uri": {
-								"value": "@pipeline().globalParameters.storage_account_data_factory_uri",
-								"type": "Expression"
-							},
-							"container_name": {
-								"value": "@pipeline().globalParameters.storage_container_data_factory",
-								"type": "Expression"
-							},
-							"datastore_name": {
-								"value": "@pipeline().parameters.datastore_name",
-								"type": "Expression"
-							},
-							"dataset_name": "empty_file",
-							"file_name": "file_with_one_dummy_row.csv",
-							"column_delimiter": ",",
-							"encoding": "UTF-8",
-							"first_row_as_header": true
-						}
-					}
-				],
-				"outputs": [
-					{
-						"referenceName": "ds_blob_csv_no_header_azure_shir",
-						"type": "DatasetReference",
-						"parameters": {
-							"storage_account_uri": {
-								"value": "@pipeline().globalParameters.storage_account_data_factory_uri",
-								"type": "Expression"
-							},
-							"container_name": {
-								"value": "@pipeline().globalParameters.storage_container_data_factory",
-								"type": "Expression"
-							},
-							"datastore_name": {
-								"value": "@pipeline().parameters.datastore_name",
-								"type": "Expression"
-							},
-							"dataset_name": {
-								"value": "@pipeline().parameters.dataset_name",
-								"type": "Expression"
-							},
-							"file_name": {
-								"value": "@variables('file_name')",
-								"type": "Expression"
-							}
-						}
-					}
-				]
-			},
-			{
-				"name": "create parquet",
-				"type": "Copy",
-				"state": "Inactive",
-				"onInactiveMarkAs": "Succeeded",
-				"dependsOn": [
-					{
-						"activity": "create csv using dummy text file",
-						"dependencyConditions": [
-							"Succeeded"
-						]
-					}
-				],
-				"policy": {
-					"timeout": "0.12:00:00",
-					"retry": 0,
-					"retryIntervalInSeconds": 30,
-					"secureOutput": false,
-					"secureInput": false
-				},
-				"userProperties": [],
-				"typeProperties": {
-					"source": {
-						"type": "JsonSource",
-						"additionalColumns": [
-							{
-								"name": "file_name",
-								"value": {
-									"value": "@variables('file_name')",
-									"type": "Expression"
-								}
-							},
-							{
-								"name": "download_timestamp",
-								"value": {
-									"value": "@variables('download_timestamp')",
-									"type": "Expression"
-								}
-							}
-						],
-						"storeSettings": {
-							"type": "AzureBlobStorageReadSettings",
-							"recursive": false,
-							"enablePartitionDiscovery": false
-						},
-						"formatSettings": {
-							"type": "JsonReadSettings",
-							"compressionProperties": {
-								"type": "ZipDeflateReadSettings",
-								"preserveZipFileNameAsFolder": false
-							}
-						}
-					},
-					"sink": {
-						"type": "ParquetSink",
-						"storeSettings": {
-							"type": "AzureBlobFSWriteSettings"
-						},
-						"formatSettings": {
-							"type": "ParquetWriteSettings"
-						}
-					},
-					"enableStaging": false,
-					"translator": {
-						"value": "@json(string(pipeline().parameters.column_mapping))",
-						"type": "Expression"
-					}
-				},
-				"inputs": [
-					{
-						"referenceName": "ds_blob_zipped_json_unpack_auto_resolve",
-						"type": "DatasetReference",
-						"parameters": {
-							"storage_account_uri": "@pipeline().globalParameters.storage_account_data_factory_uri",
-							"datastore_name": "@pipeline().parameters.datastore_name",
-							"dataset_name": "@pipeline().parameters.dataset_name",
-							"file_name": "@variables('file_name')",
-							"container_name": {
-								"value": "@pipeline().globalParameters.storage_container_data_factory",
-								"type": "Expression"
-							}
-						}
-					}
-				],
-				"outputs": [
-					{
-						"referenceName": "ds_adls_parquet_auto_resolve",
-						"type": "DatasetReference",
-						"parameters": {
-							"datastore_name": {
-								"value": "@pipeline().parameters.datastore_name",
-								"type": "Expression"
-							},
-							"dataset_name": {
-								"value": "@pipeline().parameters.dataset_name",
-								"type": "Expression"
-							},
-							"storage_account_uri": {
-								"value": "@pipeline().globalParameters.storage_account_datalake_uri",
-								"type": "Expression"
-							},
-							"container_name": {
-								"value": "@pipeline().globalParameters.storage_container_datalake",
-								"type": "Expression"
-							},
-							"file_name": {
-								"value": "@toLower(replace(\n    variables('file_name'), \n    '.json.zip', \n    ''\n))",
-								"type": "Expression"
-							}
-						}
-					}
-				]
-			},
-			{
-				"name": "correct_decoding",
+				"name": "Extract JSON File",
 				"type": "DatabricksNotebook",
-				"state": "Inactive",
-				"onInactiveMarkAs": "Succeeded",
 				"dependsOn": [
 					{
-						"activity": "store zip-file",
+						"activity": "get encoded file string",
 						"dependencyConditions": [
 							"Succeeded"
 						]
@@ -420,86 +150,6 @@
 						"value": "@formatDateTime(convertTimeZone(pipeline().TriggerTime,'UTC','W. Europe Standard Time'),'yyyy-MM-dd')",
 						"type": "Expression"
 					}
-				}
-			},
-			{
-				"name": "Delete file from api if remove_file param is true",
-				"type": "IfCondition",
-				"dependsOn": [
-					{
-						"activity": "create parquet",
-						"dependencyConditions": [
-							"Succeeded"
-						]
-					}
-				],
-				"userProperties": [],
-				"typeProperties": {
-					"expression": {
-						"value": "@pipeline().parameters.remove_file",
-						"type": "Expression"
-					},
-					"ifTrueActivities": [
-						{
-							"name": "delete file on API",
-							"description": "API docs: https://apitransfer.moneyview.nl/",
-							"type": "WebActivity",
-							"dependsOn": [
-								{
-									"activity": "set file name_to_delete",
-									"dependencyConditions": [
-										"Succeeded"
-									]
-								}
-							],
-							"policy": {
-								"timeout": "0.12:00:00",
-								"retry": 0,
-								"retryIntervalInSeconds": 30,
-								"secureOutput": false,
-								"secureInput": true
-							},
-							"userProperties": [],
-							"typeProperties": {
-								"method": "GET",
-								"headers": {
-									"Authorization": {
-										"value": "@concat(\n        'Bearer ',\n        activity('Get APIM token').output['access_token']\n)",
-										"type": "Expression"
-									},
-									"File-Names": {
-										"value": "@variables('file_name_to_delete')",
-										"type": "Expression"
-									}
-								},
-								"url": {
-									"value": "@replace(\n    pipeline().parameters.delete_files_url,\n    '<environment>',\n    pipeline().parameters.environment\n)",
-									"type": "Expression"
-								},
-								"connectVia": {
-									"referenceName": "cloud",
-									"type": "IntegrationRuntimeReference"
-								}
-							}
-						},
-						{
-							"name": "set file name_to_delete",
-							"type": "SetVariable",
-							"dependsOn": [],
-							"policy": {
-								"secureOutput": false,
-								"secureInput": false
-							},
-							"userProperties": [],
-							"typeProperties": {
-								"variableName": "file_name_to_delete",
-								"value": {
-									"value": "@replace(\n    pipeline().parameters.file_name_template, \n    '{yyyymmdd}', \n    formatDateTime(addDays(variables('file_date'),mul(-1,pipeline().parameters.remove_period_in_days)),'yyyyMMdd')\n)",
-									"type": "Expression"
-								}
-							}
-						}
-					]
 				}
 			},
 			{
@@ -693,7 +343,7 @@
 			},
 			"notebook_path": {
 				"type": "string",
-				"defaultValue": "/Workspace/Shared/decode_moneyview_base64"
+				"defaultValue": "/Workspace/Shared/adf-pipelines/test_decode_moneyview_base64"
 			},
 			"remove_file": {
 				"type": "bool",
@@ -746,6 +396,9 @@
 				"type": "String"
 			},
 			"download_timestamp": {
+				"type": "String"
+			},
+			"zip_data": {
 				"type": "String"
 			}
 		},
