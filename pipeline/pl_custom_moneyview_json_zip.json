@@ -109,8 +109,14 @@
 							"value": "@json(\n    activity('get encoded file string').output.Response\n)[0]['file']",
 							"type": "Expression"
 						},
-						"dbx_workspace_dir": "file:///Workspace/Shared/tmp",
-						"dbx_temp_folder": "/moneyview_parquet_temp",
+						"dbx_workspace_tmp_dir": {
+							"value": "@pipeline().parameters.dbx_workspace_tmp_dir",
+							"type": "Expression"
+						},
+						"dbx_workspace_tmp_folder": {
+							"value": "@pipeline().parameters.dbx_workspace_temp_folder",
+							"type": "Expression"
+						},
 						"ado_target_path": "abfss://ingestion-dev@stdatalakecdppreprdweojs.dfs.core.windows.net/datastore_moneyview/mv_nibc_hypotheken_zip"
 					}
 				},
@@ -383,6 +389,14 @@
 			"delete_files_url": {
 				"type": "string",
 				"defaultValue": "https://apim.<environment>.cloud.nibc.com/internal/moneyview-api/1.0/delete-files"
+			},
+			"dbx_workspace_tmp_dir": {
+				"type": "string",
+				"defaultValue": "file:///Workspace/Shared/tmp"
+			},
+			"dbx_workspace_tmp_folder": {
+				"type": "string",
+				"defaultValue": "/moneyview_parquet_temp"
 			}
 		},
 		"variables": {
