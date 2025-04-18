@@ -111,7 +111,7 @@
 						},
 						"dbx_workspace_dir": "file:///Workspace/Shared/tmp",
 						"dbx_temp_folder": "/moneyview_parquet_temp",
-						"ado_target_path": "abfss://ingestion-dev@stdatalakecdppreprdweojs.dfs.core.windows.net/datastore_moneyview/dataset_test_json_extract"
+						"ado_target_path": "abfss://ingestion-dev@stdatalakecdppreprdweojs.dfs.core.windows.net/datastore_moneyview/mv_nibc_hypotheken_zip"
 					}
 				},
 				"linkedServiceName": {
