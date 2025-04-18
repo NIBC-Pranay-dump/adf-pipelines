@@ -108,7 +108,10 @@
 						"adf_input_value": {
 							"value": "@json(\n    activity('get encoded file string').output.Response\n)[0]['file']",
 							"type": "Expression"
-						}
+						},
+						"dbx_workspace_dir": "file:///Workspace/Shared/tmp",
+						"dbx_temp_folder": "/moneyview_parquet_temp",
+						"ado_target_path": "abfss://ingestion-dev@stdatalakecdppreprdweojs.dfs.core.windows.net/datastore_moneyview/dataset_test_json_extract"
 					}
 				},
 				"linkedServiceName": {
@@ -343,7 +346,7 @@
 			},
 			"notebook_path": {
 				"type": "string",
-				"defaultValue": "/Workspace/Shared/adf-pipelines/test_decode_moneyview_base64"
+				"defaultValue": "/Workspace/Shared/adf-pipelines/decode_moneyview_content_to_parquet"
 			},
 			"remove_file": {
 				"type": "bool",
