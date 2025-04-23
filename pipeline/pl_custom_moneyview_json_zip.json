@@ -113,10 +113,6 @@
 							"value": "@pipeline().parameters.dbx_workspace_tmp_dir",
 							"type": "Expression"
 						},
-						"dbx_workspace_tmp_folder": {
-							"value": "@pipeline().parameters.dbx_workspace_tmp_folder",
-							"type": "Expression"
-						},
 						"ado_target_path": "abfss://ingestion-dev@stdatalakecdppreprdweojs.dfs.core.windows.net/datastore_moneyview/mv_nibc_hypotheken_zip"
 					}
 				},
@@ -392,11 +388,7 @@
 			},
 			"dbx_workspace_tmp_dir": {
 				"type": "string",
-				"defaultValue": "file:///Workspace/Shared/tmp"
-			},
-			"dbx_workspace_tmp_folder": {
-				"type": "string",
-				"defaultValue": "/moneyview_parquet_temp"
+				"defaultValue": "file:///Workspace/Shared/tmp/moneyview_parquet_temp"
 			}
 		},
 		"variables": {
