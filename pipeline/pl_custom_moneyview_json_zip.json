@@ -105,7 +105,7 @@
 						"type": "Expression"
 					},
 					"baseParameters": {
-						"adf_input_value": {
+						"encoded_zip_file_string": {
 							"value": "@json(\n    activity('get encoded file string').output.Response\n)[0]['file']",
 							"type": "Expression"
 						},
@@ -113,7 +113,10 @@
 							"value": "@pipeline().parameters.dbx_workspace_tmp_dir",
 							"type": "Expression"
 						},
-						"ado_target_path": "abfss://ingestion-dev@stdatalakecdppreprdweojs.dfs.core.windows.net/datastore_moneyview/mv_nibc_hypotheken_zip"
+						"ado_target_path": {
+							"value": "@concat('abfss://', pipeline().globalParameters.storage_container_datalake, '@', substring(pipeline().globalParameters.storage_account_datalake_uri,8,47),'datastore_', pipeline().parameters.datastore_name, '/', pipeline().parameters.dataset_name, '_zip')",
+							"type": "Expression"
+						}
 					}
 				},
 				"linkedServiceName": {
