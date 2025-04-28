@@ -113,7 +113,7 @@
 							"value": "@pipeline().parameters.dbx_workspace_tmp_dir",
 							"type": "Expression"
 						},
-						"ado_target_path": {
+						"adls_target_path": {
 							"value": "@concat('abfss://', pipeline().globalParameters.storage_container_datalake, '@', substring(pipeline().globalParameters.storage_account_datalake_uri,8,46),'datastore_', pipeline().parameters.datastore_name, '/', pipeline().parameters.dataset_name, '_zip')",
 							"type": "Expression"
 						}
