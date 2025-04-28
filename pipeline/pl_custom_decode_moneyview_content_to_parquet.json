@@ -1,5 +1,5 @@
 {
-	"name": "pl_custom_moneyview_json_zip",
+	"name": "pl_custom_decode_moneyview_content_to_parquet",
 	"properties": {
 		"activities": [
 			{
