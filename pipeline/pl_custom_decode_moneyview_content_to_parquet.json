@@ -1,0 +1,422 @@
+{
+	"name": "pl_custom_decode_moneyview_content_to_parquet",
+	"properties": {
+		"activities": [
+			{
+				"name": "get encoded file string",
+				"description": "API docs: https://apitransfer.moneyview.nl/",
+				"type": "WebActivity",
+				"dependsOn": [
+					{
+						"activity": "set file name",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					},
+					{
+						"activity": "Get APIM token",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					},
+					{
+						"activity": "set download timestamp",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"method": "GET",
+					"headers": {
+						"Authorization": {
+							"value": "@concat(\n        'Bearer ',\n        activity('Get APIM token').output['access_token']\n)",
+							"type": "Expression"
+						},
+						"File-Names": {
+							"value": "@variables('file_name')",
+							"type": "Expression"
+						}
+					},
+					"url": {
+						"value": "@replace(\r\n    pipeline().parameters.retrieve_files_url,\r\n    '<environment>',\r\n    pipeline().parameters.environment\r\n)",
+						"type": "Expression"
+					},
+					"connectVia": {
+						"referenceName": "cloud",
+						"type": "IntegrationRuntimeReference"
+					}
+				}
+			},
+			{
+				"name": "set file name",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "set file date",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "file_name",
+					"value": {
+						"value": "@replace(\n    pipeline().parameters.file_name_template, \n    '{yyyymmdd}', \n    formatDateTime(variables('file_date'), 'yyyyMMdd')\n)",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "Extract JSON File",
+				"type": "DatabricksNotebook",
+				"dependsOn": [
+					{
+						"activity": "get encoded file string",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 300,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"notebookPath": {
+						"value": "@pipeline().parameters.notebook_path",
+						"type": "Expression"
+					},
+					"baseParameters": {
+						"encoded_zip_file_string": {
+							"value": "@json(\n    activity('get encoded file string').output.Response\n)[0]['file']",
+							"type": "Expression"
+						},
+						"dbx_workspace_tmp_dir": {
+							"value": "@pipeline().parameters.dbx_workspace_tmp_dir",
+							"type": "Expression"
+						},
+						"adls_target_path": {
+							"value": "@concat('abfss://', pipeline().globalParameters.storage_container_datalake, '@', substring(pipeline().globalParameters.storage_account_datalake_uri,8,46),'datastore_', pipeline().parameters.datastore_name, '/', pipeline().parameters.dataset_name, '_zip')",
+							"type": "Expression"
+						}
+					}
+				},
+				"linkedServiceName": {
+					"referenceName": "ls_databricks_job_cluster_azure_shir",
+					"type": "LinkedServiceReference",
+					"parameters": {
+						"dbx_workspace_url": {
+							"value": "@pipeline().parameters.dbx_workspace_url",
+							"type": "Expression"
+						},
+						"dbx_workspace_resource_id": {
+							"value": "@pipeline().parameters.dbx_workspace_resource_id",
+							"type": "Expression"
+						},
+						"dbx_cluster_version": {
+							"value": "@pipeline().parameters.dbx_cluster_version",
+							"type": "Expression"
+						},
+						"dbx_cluster_node_type": {
+							"value": "@pipeline().parameters.dbx_cluster_node_type",
+							"type": "Expression"
+						}
+					}
+				}
+			},
+			{
+				"name": "set file date",
+				"description": "Set file date in west europe timezone",
+				"type": "SetVariable",
+				"dependsOn": [],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "file_date",
+					"value": {
+						"value": "@formatDateTime(convertTimeZone(pipeline().TriggerTime,'UTC','W. Europe Standard Time'),'yyyy-MM-dd')",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "set download timestamp",
+				"description": "Set download timestamp in west europe timezone",
+				"type": "SetVariable",
+				"dependsOn": [],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "download_timestamp",
+					"value": {
+						"value": "@formatDateTime(convertTimeZone(pipeline().TriggerTime,'UTC','W. Europe Standard Time'), 'yyyyMMdd_HHmmss')",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "Get APIM token",
+				"description": "Fetches an authentication token from Microsoft Entra Privileged Identity Management. This token is used in subsequent API calls.",
+				"type": "WebActivity",
+				"dependsOn": [
+					{
+						"activity": "Get secret",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"method": "POST",
+					"headers": {
+						"Content-Type": "application/x-www-form-urlencoded"
+					},
+					"url": {
+						"value": "@pipeline().parameters.apim_token_url",
+						"type": "Expression"
+					},
+					"connectVia": {
+						"referenceName": "cloud",
+						"type": "IntegrationRuntimeReference"
+					},
+					"body": {
+						"value": "@concat('client_id=', pipeline().parameters.apim_cid, '&scope=', replace(pipeline().parameters.apim_scope, '<environment>', pipeline().parameters.environment), '&client_secret=', activity('Get secret').output.pipelineReturnValue.keyvault_secret_value, '&grant_type=client_credentials')",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "Get secret",
+				"type": "ExecutePipeline",
+				"dependsOn": [],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "pl_util_get_keyvault_secret",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true,
+					"parameters": {
+						"keyvault_secret_name": {
+							"value": "@pipeline().parameters.key_vault_secret_name",
+							"type": "Expression"
+						}
+					}
+				}
+			},
+			{
+				"name": "store zip-file",
+				"description": "read contents of queue-file",
+				"type": "WebActivity",
+				"state": "Inactive",
+				"onInactiveMarkAs": "Succeeded",
+				"dependsOn": [
+					{
+						"activity": "get encoded file string",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"method": "PUT",
+					"headers": {
+						"x-ms-blob-type": "BlockBlob",
+						"Content-Type": "application/octet-stream",
+						"x-ms-version": "2017-11-09"
+					},
+					"url": {
+						"value": "@concat(\n    pipeline().globalParameters.storage_account_data_factory_uri, \n    pipeline().globalParameters.storage_container_data_factory,\n    '/datastore_', pipeline().parameters.datastore_name,\n    '/dataset_', pipeline().parameters.dataset_name,\n    '/', variables('file_name')\n)",
+						"type": "Expression"
+					},
+					"connectVia": {
+						"referenceName": "cloud",
+						"type": "IntegrationRuntimeReference"
+					},
+					"body": {
+						"value": "@json(\n    activity('get encoded file string').output.Response\n)[0]['file']",
+						"type": "Expression"
+					},
+					"authentication": {
+						"type": "MSI",
+						"resource": "https://storage.azure.com"
+					}
+				}
+			}
+		],
+		"parameters": {
+			"file_name_template": {
+				"type": "string",
+				"defaultValue": "MV_NIBC_Hypotheken_{yyyymmdd}.json.zip"
+			},
+			"datastore_name": {
+				"type": "string",
+				"defaultValue": "moneyview"
+			},
+			"dataset_name": {
+				"type": "string",
+				"defaultValue": "mv_nibc_hypotheken"
+			},
+			"column_mapping": {
+				"type": "string",
+				"defaultValue": {
+					"type": "TabularTranslator",
+					"mappings": [
+						{
+							"source": {
+								"path": "$['renteFeed']"
+							},
+							"sink": {
+								"name": "$['renteFeed']"
+							}
+						},
+						{
+							"source": {
+								"path": "file_name"
+							},
+							"sink": {
+								"name": "file_name"
+							}
+						},
+						{
+							"source": {
+								"path": "download_timestamp"
+							},
+							"sink": {
+								"name": "download_timestamp"
+							}
+						}
+					],
+					"mapComplexValuesToString": true
+				}
+			},
+			"dbx_workspace_url": {
+				"type": "string",
+				"defaultValue": "https://adb-1053042427915632.12.azuredatabricks.net"
+			},
+			"dbx_workspace_resource_id": {
+				"type": "string",
+				"defaultValue": "/subscriptions/d12cd7ca-ec96-4566-8890-89f3194d1169/resourceGroups/rg-transformation-cdp-preprd-we-ojsu/providers/Microsoft.Databricks/workspaces/dbw-transformation-cdp-preprd"
+			},
+			"dbx_cluster_version": {
+				"type": "string",
+				"defaultValue": "14.3.x-scala2.12"
+			},
+			"dbx_cluster_node_type": {
+				"type": "string",
+				"defaultValue": "Standard_DS3_v2"
+			},
+			"notebook_path": {
+				"type": "string",
+				"defaultValue": "/Workspace/Shared/adf-pipelines/scn_sub_cdp_preprd_we_001/dev/files/databricks_notebooks/decode_moneyview_content_to_parquet"
+			},
+			"remove_file": {
+				"type": "bool",
+				"defaultValue": false
+			},
+			"remove_period_in_days": {
+				"type": "int",
+				"defaultValue": 7
+			},
+			"apim_token_url": {
+				"type": "string",
+				"defaultValue": "https://login.microsoftonline.com/8614d95f-762b-4789-a741-2589e3d0b08b/oauth2/v2.0/token"
+			},
+			"environment": {
+				"type": "string",
+				"defaultValue": "dev"
+			},
+			"key_vault_secret_name": {
+				"type": "string",
+				"defaultValue": "apim-authorization-access-token"
+			},
+			"apim_cid": {
+				"type": "string",
+				"defaultValue": "a1bb61c1-d7c6-468b-9e6a-720dcd63ce91"
+			},
+			"apim_scope": {
+				"type": "string",
+				"defaultValue": "https://apim.<environment>.cloud.nibc.com/.default"
+			},
+			"retrieve_files_url": {
+				"type": "string",
+				"defaultValue": "https://apim.<environment>.cloud.nibc.com/internal/moneyview-api/1.0/retrieve-files"
+			},
+			"delete_files_url": {
+				"type": "string",
+				"defaultValue": "https://apim.<environment>.cloud.nibc.com/internal/moneyview-api/1.0/delete-files"
+			},
+			"dbx_workspace_tmp_dir": {
+				"type": "string",
+				"defaultValue": "file:///Workspace/Shared/tmp/moneyview_parquet_temp"
+			}
+		},
+		"variables": {
+			"file_content": {
+				"type": "String"
+			},
+			"file_name": {
+				"type": "String"
+			},
+			"file_date": {
+				"type": "String"
+			},
+			"file_name_to_delete": {
+				"type": "String"
+			},
+			"download_timestamp": {
+				"type": "String"
+			},
+			"zip_data": {
+				"type": "String"
+			}
+		},
+		"folder": {
+			"name": "cloud"
+		},
+		"annotations": []
+	}
+}

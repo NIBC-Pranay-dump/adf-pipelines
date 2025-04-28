@@ -1,0 +1,15 @@
+{
+	"name": "AzureFunction1",
+	"properties": {
+		"annotations": [],
+		"type": "AzureFunction",
+		"typeProperties": {
+			"functionAppUrl": "https://func-dbtcompleted-cdp-preprd-dev-we-ojsu.azurewebsites.net",
+			"authentication": "Anonymous"
+		},
+		"connectVia": {
+			"referenceName": "cloud",
+			"type": "IntegrationRuntimeReference"
+		}
+	}
+}
