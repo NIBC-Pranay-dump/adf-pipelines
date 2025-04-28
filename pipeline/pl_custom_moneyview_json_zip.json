@@ -351,7 +351,7 @@
 			},
 			"notebook_path": {
 				"type": "string",
-				"defaultValue": "/Workspace/Shared/adf-pipelines/decode_moneyview_content_to_parquet"
+				"defaultValue": "/Workspace/Shared/adf-pipelines/scn_sub_cdp_preprd_we_001/dev/files/databricks_notebooks/backup_databricks_table_notebook"
 			},
 			"remove_file": {
 				"type": "bool",
