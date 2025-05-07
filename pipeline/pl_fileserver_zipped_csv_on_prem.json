@@ -4,9 +4,9 @@
 		"description": "ADF pipeline to copy zipped files from a file server ",
 		"activities": [
 			{
-				"name": "Copy csv data",
-				"description": "Copy zipped csv data from file server",
-				"type": "Copy",
+				"name": "Get each file name",
+				"description": "Retrieve each name of the file of the dataset to iterate over",
+				"type": "GetMetadata",
 				"dependsOn": [],
 				"policy": {
 					"timeout": "0.12:00:00",
@@ -17,43 +17,8 @@
 				},
 				"userProperties": [],
 				"typeProperties": {
-					"source": {
-						"type": "DelimitedTextSource",
-						"storeSettings": {
-							"type": "FileServerReadSettings",
-							"recursive": false,
-							"wildcardFileName": {
-								"value": "@pipeline().parameters.source_file_name_pattern",
-								"type": "Expression"
-							},
-							"enablePartitionDiscovery": false
-						},
-						"formatSettings": {
-							"type": "DelimitedTextReadSettings",
-							"skipLineCount": {
-								"value": "@pipeline().parameters.skip_line_count",
-								"type": "Expression"
-							},
-							"compressionProperties": {
-								"type": "ZipDeflateReadSettings"
-							}
-						}
-					},
-					"sink": {
-						"type": "ParquetSink",
-						"storeSettings": {
-							"type": "AzureBlobFSWriteSettings",
-							"copyBehavior": "MergeFiles"
-						},
-						"formatSettings": {
-							"type": "ParquetWriteSettings"
-						}
-					},
-					"enableStaging": false
-				},
-				"inputs": [
-					{
-						"referenceName": "ds_fileserver_zipped_csv",
+					"dataset": {
+						"referenceName": "ds_fileserver_csv_directory_on_prem",
 						"type": "DatasetReference",
 						"parameters": {
 							"user_name": {
@@ -81,36 +46,179 @@
 								"type": "Expression"
 							}
 						}
-					}
-				],
-				"outputs": [
-					{
-						"referenceName": "ds_adls_parquet_auto_resolve",
-						"type": "DatasetReference",
-						"parameters": {
-							"datastore_name": {
-								"value": "@pipeline().parameters.datastore_name",
-								"type": "Expression"
-							},
-							"dataset_name": {
-								"value": "@pipeline().parameters.dataset_name",
-								"type": "Expression"
-							},
-							"storage_account_uri": {
-								"value": "@pipeline().globalParameters.storage_account_datalake_uri",
-								"type": "Expression"
-							},
-							"container_name": {
-								"value": "@pipeline().globalParameters.storage_container_datalake",
-								"type": "Expression"
-							},
-							"file_name": {
-								"value": "@pipeline().parameters.source_file_name_pattern",
-								"type": "Expression"
-							}
+					},
+					"fieldList": [
+						"childItems"
+					],
+					"storeSettings": {
+						"type": "FileServerReadSettings",
+						"recursive": true,
+						"enablePartitionDiscovery": false
+					},
+					"formatSettings": {
+						"type": "DelimitedTextReadSettings",
+						"skipLineCount": {
+							"value": "@pipeline().parameters.skip_line_count",
+							"type": "Expression"
 						}
 					}
-				]
+				}
+			},
+			{
+				"name": "Keep only the zip files",
+				"description": "",
+				"type": "Filter",
+				"dependsOn": [
+					{
+						"activity": "Get each file name",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('Get each file name').output.childItems",
+						"type": "Expression"
+					},
+					"condition": {
+						"value": "@endsWith(item().name, '.zip')",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "Copy all files",
+				"description": "Loop over all files coming out of filter and copy data",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "Keep only the zip files",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('Keep only the zip files').output.value",
+						"type": "Expression"
+					},
+					"isSequential": true,
+					"activities": [
+						{
+							"name": "Copy csv data",
+							"description": "Copy zipped csv data from file server",
+							"type": "Copy",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "DelimitedTextSource",
+									"storeSettings": {
+										"type": "FileServerReadSettings",
+										"recursive": false,
+										"wildcardFileName": {
+											"value": "@item().name",
+											"type": "Expression"
+										},
+										"enablePartitionDiscovery": false
+									},
+									"formatSettings": {
+										"type": "DelimitedTextReadSettings",
+										"skipLineCount": {
+											"value": "@pipeline().parameters.skip_line_count",
+											"type": "Expression"
+										},
+										"compressionProperties": {
+											"type": "ZipDeflateReadSettings"
+										}
+									}
+								},
+								"sink": {
+									"type": "ParquetSink",
+									"storeSettings": {
+										"type": "AzureBlobFSWriteSettings",
+										"copyBehavior": "MergeFiles"
+									},
+									"formatSettings": {
+										"type": "ParquetWriteSettings"
+									}
+								},
+								"enableStaging": false
+							},
+							"inputs": [
+								{
+									"referenceName": "ds_fileserver_zipped_csv",
+									"type": "DatasetReference",
+									"parameters": {
+										"user_name": {
+											"value": "@pipeline().parameters.fileserver_user_name",
+											"type": "Expression"
+										},
+										"host_name": {
+											"value": "@pipeline().parameters.fileserver_host_name",
+											"type": "Expression"
+										},
+										"key_vault_uri": {
+											"value": "@pipeline().globalParameters.key_vault_uri",
+											"type": "Expression"
+										},
+										"fileserver_password_secret_name": {
+											"value": "@pipeline().parameters.keyvault_secret_name",
+											"type": "Expression"
+										},
+										"directory": {
+											"value": "@pipeline().parameters.fileserver_directory",
+											"type": "Expression"
+										},
+										"column_delimiter": {
+											"value": "@pipeline().parameters.column_delimiter",
+											"type": "Expression"
+										}
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "ds_adls_parquet_auto_resolve",
+									"type": "DatasetReference",
+									"parameters": {
+										"datastore_name": {
+											"value": "@pipeline().parameters.datastore_name",
+											"type": "Expression"
+										},
+										"dataset_name": {
+											"value": "@pipeline().parameters.dataset_name",
+											"type": "Expression"
+										},
+										"storage_account_uri": {
+											"value": "@pipeline().globalParameters.storage_account_datalake_uri",
+											"type": "Expression"
+										},
+										"container_name": {
+											"value": "@pipeline().globalParameters.storage_container_datalake",
+											"type": "Expression"
+										},
+										"file_name": {
+											"value": "@item().name",
+											"type": "Expression"
+										}
+									}
+								}
+							]
+						}
+					]
+				}
 			}
 		],
 		"parameters": {
@@ -125,10 +233,6 @@
 			"dataset_name": {
 				"type": "string",
 				"defaultValue": "bagpro_history_20250507"
-			},
-			"source_file_name_pattern": {
-				"type": "string",
-				"defaultValue": "cddn_export_bag_pro_20211220.zip"
 			},
 			"fileserver_user_name": {
 				"type": "string",
