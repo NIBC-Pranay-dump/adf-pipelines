@@ -62,7 +62,6 @@
 			},
 			"compressionCodec": "ZipDeflate",
 			"compressionLevel": "Optimal",
-			"encodingName": "US-ASCII",
 			"escapeChar": "\\",
 			"firstRowAsHeader": true,
 			"quoteChar": "\""
