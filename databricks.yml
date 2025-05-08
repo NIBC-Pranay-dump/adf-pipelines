@@ -10,10 +10,14 @@ bundle:
 
 include:
   - databricks_jobs/unity_backup_job.yaml
+  - databricks_jobs/decode_moneyview_content_to_parquet_job.yaml
 
 variables: 
   service_principal_id:
     description: ID of the ADF service principal that should have access to our job
+    type: string
+  moneyview_service_principal_id:
+    description: Service principal id for execution of MoneyView Job
     type: string
   cluster_id:
     description: ID for cluster to run the job on.
@@ -35,6 +39,8 @@ targets:
       cluster_id: "1220-112536-2dhkacra"
       # ID for the spn-dbt-databricks
       service_principal_id: "2198662a-dc4e-43b0-b943-cf8822942fe5"
+      # Service principal id for execution of MoneyView Job spn-cdp-preprd-we-001
+      moneyview_service_principal_id: "6a364769-1392-4670-a865-476da98e8f6b"
     permissions:
       # ID for Service Principal adf-ing-cdp-preprd-dev-we-ojsu needed to run the custom moneyview notebook
       # since the notebook does not have a job associated to it.
@@ -53,6 +59,8 @@ targets:
       cluster_id: "1220-112536-2dhkacra"
       # ID for the spn-dbt-databricks
       service_principal_id: "2198662a-dc4e-43b0-b943-cf8822942fe5"
+      # Service principal id for execution of MoneyView Job spn-cdp-preprd-we-001
+      moneyview_service_principal_id: "6a364769-1392-4670-a865-476da98e8f6b"
     permissions:
       # ID for Service Principal adf-ing-cdp-preprd-tst-we-ojsu needed to run the custom moneyview notebook
       # since the notebook does not have a job associated to it.
@@ -61,6 +69,7 @@ targets:
       # ID for the spn-dbt-databricks service principal needed to run the unity backup job
       - service_principal_name: "2198662a-dc4e-43b0-b943-cf8822942fe5"
         level: CAN_MANAGE
+
 
   acp:
     mode: production
@@ -71,6 +80,8 @@ targets:
       cluster_id: "1220-112536-2dhkacra"
       # ID for the spn-dbt-databricks
       service_principal_id: "2198662a-dc4e-43b0-b943-cf8822942fe5"
+      # Service principal id for execution of MoneyView Job spn-cdp-preprd-we-001
+      moneyview_service_principal_id: "6a364769-1392-4670-a865-476da98e8f6b"
     permissions:
       # ID for Service Principal adf-ing-cdp-preprd-acp-we-ojsu needed to run the custom moneyview notebook
       # since the notebook does not have a job associated to it.
@@ -79,6 +90,7 @@ targets:
       # ID for the spn-dbt-databricks service principal needed to run the unity backup job
       - service_principal_name: "2198662a-dc4e-43b0-b943-cf8822942fe5"
         level: CAN_MANAGE
+
 
   prd:
     mode: production
@@ -89,6 +101,8 @@ targets:
       cluster_id: "1219-115818-pb4nlwc5"
       # ID for the spn-prod-dbt-databricks
       service_principal_id: "bdabf07b-13c0-41fc-aa50-c409936d6dd8"
+      # Service principal id for execution of MoneyView Job spn-cdp-prd-we-001
+      moneyview_service_principal_id: "fd6a7160-f659-460a-a41c-fd5a15258812"
     permissions:
       # ID for Service Principal adf-ing-cdp-preprd-prd-we-ojsu
       - service_principal_name: "58273cac-6cea-41f5-8ec4-7b070fe9c3ed"

@@ -1,0 +1,45 @@
+# This file contains the definition of a job on Databricks
+# This job will be triggered from ADF
+
+resources:
+  jobs:
+    decode_moneyview_content_to_parquet:
+      name: "${bundle.name} - Decode MoneyView Content to Parquet - ${bundle.target}"
+
+      run_as: 
+        # This is the service principal that will run the job
+        service_principal_name: "${var.moneyview_service_principal_id}"
+
+      # Define job clusters separately
+      job_clusters:
+        - job_cluster_key: decode_moneyview_cluster
+          new_cluster:
+            spark_version: "16.3.x-scala2.12"
+            node_type_id: "Standard_F4s_v2"
+            spark_conf:
+              spark.databricks.cluster.profile: singleNode
+              spark.master: local[*, 4]
+            custom_tags:
+              ResourceClass: SingleNode
+
+      tasks:
+        - task_key: decode-moneyview-content
+          # We are using the job cluster defined above to run the notebook
+          job_cluster_key: decode_moneyview_cluster
+          notebook_task:
+              notebook_path: ../databricks_notebooks/decode_moneyview_content_to_parquet.py
+  
+      # These values can be used in the notebook by using dbutils.widgets.get("<parameter_name>")
+      parameters:
+        - name: encoded_zip_file_path
+          # Default value is required
+          default: ""
+        - name: dbx_workspace_tmp_dir
+          default: "file:///Workspace/Shared/tmp/moneyview_parquet_temp"
+        - name: adls_target_path
+          # Default value is required
+          default: ""
+      permissions:
+        # Asset bundles called this service principal name, but we need a service principal id
+        - service_principal_name: "${var.moneyview_service_principal_id}"
+          level: CAN_MANAGE_RUN
