@@ -7,6 +7,8 @@
 				"name": "copy REST API dataset",
 				"description": "Copies the REST API dataset to datalake.",
 				"type": "Copy",
+				"state": "Inactive",
+				"onInactiveMarkAs": "Failed",
 				"dependsOn": [
 					{
 						"activity": "Get access token",
@@ -157,6 +159,8 @@
 				"name": "copy REST API dataset part 1",
 				"description": "Copies the REST API dataset to datalake.",
 				"type": "Copy",
+				"state": "Inactive",
+				"onInactiveMarkAs": "Succeeded",
 				"dependsOn": [
 					{
 						"activity": "copy REST API dataset",
@@ -254,11 +258,13 @@
 				"name": "copy REST API dataset part 2",
 				"description": "Copies the REST API dataset to datalake.",
 				"type": "Copy",
+				"state": "Inactive",
+				"onInactiveMarkAs": "Succeeded",
 				"dependsOn": [
 					{
-						"activity": "copy REST API dataset",
+						"activity": "Get access token",
 						"dependencyConditions": [
-							"Failed"
+							"Succeeded"
 						]
 					}
 				],
@@ -308,7 +314,7 @@
 						"type": "DatasetReference",
 						"parameters": {
 							"relative_url": {
-								"value": "@concat(pipeline().parameters.relative_url,'?$skip=9999')",
+								"value": "@concat(\n    pipeline().parameters.relative_url,\n    '?$skip=100000',\n    '&$top=10'\n)",
 								"type": "Expression"
 							},
 							"base_url": {
@@ -346,6 +352,207 @@
 						}
 					}
 				]
+			},
+			{
+				"name": "Table info",
+				"description": "Table info",
+				"type": "WebActivity",
+				"state": "Inactive",
+				"onInactiveMarkAs": "Succeeded",
+				"dependsOn": [
+					{
+						"activity": "Get access token",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"method": "GET",
+					"headers": {
+						"Authorization": {
+							"value": "@concat('Bearer ', activity('Get access token').output['access_token'])",
+							"type": "Expression"
+						}
+					},
+					"url": {
+						"value": "@concat(\n    pipeline().parameters.base_url, '/',\n    replace(pipeline().parameters.relative_url, 'dataset', ''),\n    '/TableInfos'\n)",
+						"type": "Expression"
+					},
+					"connectVia": {
+						"referenceName": "cloud",
+						"type": "IntegrationRuntimeReference"
+					}
+				}
+			},
+			{
+				"name": "Loop until all data is copied",
+				"type": "Until",
+				"dependsOn": [
+					{
+						"activity": "Get access token",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@greaterOrEquals(variables('lines_to_skip'), pipeline().parameters.total_rows)",
+						"type": "Expression"
+					},
+					"activities": [
+						{
+							"name": "copy chunk of data",
+							"description": "Copies the REST API dataset to datalake.",
+							"type": "Copy",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "RestSource",
+									"httpRequestTimeout": "00:01:40",
+									"requestInterval": "00.00:00:00.010",
+									"requestMethod": "GET",
+									"additionalHeaders": {
+										"Authorization": {
+											"value": "@concat('Bearer ', activity('Get access token').output['access_token'])",
+											"type": "Expression"
+										}
+									},
+									"paginationRules": {
+										"supportRFC5988": "true"
+									}
+								},
+								"sink": {
+									"type": "ParquetSink",
+									"storeSettings": {
+										"type": "AzureBlobFSWriteSettings",
+										"copyBehavior": "FlattenHierarchy"
+									},
+									"formatSettings": {
+										"type": "ParquetWriteSettings"
+									}
+								},
+								"enableStaging": false,
+								"translator": {
+									"value": "@json(string(pipeline().parameters.column_mapping))",
+									"type": "Expression"
+								}
+							},
+							"inputs": [
+								{
+									"referenceName": "ds_rest_api_cloud",
+									"type": "DatasetReference",
+									"parameters": {
+										"relative_url": {
+											"value": "@concat(\n    pipeline().parameters.relative_url,\n    '?$skip=', string(variables('lines_to_skip')),\n    '&$top=', string(pipeline().parameters.page_size)\n)",
+											"type": "Expression"
+										},
+										"base_url": {
+											"value": "@pipeline().parameters.base_url",
+											"type": "Expression"
+										}
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "ds_adls_parquet_auto_resolve",
+									"type": "DatasetReference",
+									"parameters": {
+										"datastore_name": {
+											"value": "@pipeline().parameters.datastore_name",
+											"type": "Expression"
+										},
+										"dataset_name": {
+											"value": "@pipeline().parameters.dataset_name",
+											"type": "Expression"
+										},
+										"storage_account_uri": {
+											"value": "@pipeline().globalParameters.storage_account_datalake_uri",
+											"type": "Expression"
+										},
+										"container_name": {
+											"value": "@pipeline().globalParameters.storage_container_datalake",
+											"type": "Expression"
+										},
+										"file_name": {
+											"value": "@concat(pipeline().parameters.dataset_name, '_', string(variables('lines_to_skip')))",
+											"type": "Expression"
+										}
+									}
+								}
+							]
+						},
+						{
+							"name": "Set prev_lines_to_skip",
+							"description": "only needed because no self references are allowed",
+							"type": "SetVariable",
+							"dependsOn": [
+								{
+									"activity": "copy chunk of data",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "prev_lines_to_skip",
+								"value": {
+									"value": "@variables('lines_to_skip')",
+									"type": "Expression"
+								}
+							}
+						},
+						{
+							"name": "Set next lines_to_skip",
+							"type": "SetVariable",
+							"dependsOn": [
+								{
+									"activity": "Set prev_lines_to_skip",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "lines_to_skip",
+								"value": {
+									"value": "@add(variables('prev_lines_to_skip'), pipeline().parameters.page_size)",
+									"type": "Expression"
+								}
+							}
+						}
+					],
+					"timeout": "0.12:00:00"
+				}
 			}
 		],
 		"parameters": {
@@ -354,13 +561,16 @@
 				"defaultValue": "cbs"
 			},
 			"dataset_name": {
-				"type": "string"
+				"type": "string",
+				"defaultValue": "cbs_kwb_2024_85984NED_nested"
 			},
 			"relative_url": {
-				"type": "string"
+				"type": "string",
+				"defaultValue": "85984NED"
 			},
 			"base_url": {
-				"type": "string"
+				"type": "string",
+				"defaultValue": "https://apim.dev.cloud.nibc.com/internal/cbs/kadaster-api/1.0/dataset"
 			},
 			"key_vault_secret_name": {
 				"type": "string",
@@ -375,7 +585,39 @@
 				"defaultValue": "0c28ca60-24cd-45bd-95f1-01fdaee9c41c/.default"
 			},
 			"column_mapping": {
-				"type": "string"
+				"type": "string",
+				"defaultValue": {
+					"type": "TabularTranslator",
+					"mappings": [
+						{
+							"source": {
+								"path": "$['value']"
+							},
+							"sink": {
+								"name": "$['value']"
+							}
+						}
+					],
+					"mapComplexValuesToString": true
+				}
+			},
+			"total_rows": {
+				"type": "int",
+				"defaultValue": 20
+			},
+			"page_size": {
+				"type": "int",
+				"defaultValue": 10
+			}
+		},
+		"variables": {
+			"lines_to_skip": {
+				"type": "Integer",
+				"defaultValue": 0
+			},
+			"prev_lines_to_skip": {
+				"type": "Integer",
+				"defaultValue": 0
 			}
 		},
 		"folder": {
