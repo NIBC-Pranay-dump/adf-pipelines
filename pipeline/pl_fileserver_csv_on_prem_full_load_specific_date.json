@@ -1,7 +1,7 @@
 {
 	"name": "pl_fileserver_csv_on_prem_full_load_specific_date",
 	"properties": {
-		"description": "ADF pipeline to copy files from a file server reachable through SHIR\nUsing full load ingestion pattern\nFor current date or functional date",
+		"description": "ADF pipeline to copy files from a file server reachable through SHIR.\nUsing full load ingestion pattern.\nFor current date or functional date.",
 		"activities": [
 			{
 				"name": "functional date",
