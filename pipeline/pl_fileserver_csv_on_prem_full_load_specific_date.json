@@ -292,11 +292,11 @@
 			},
 			"fileserver_user_name": {
 				"type": "string",
-				"defaultValue": "PRD\\SRV_AA_ACP"
+				"defaultValue": "PRD\\SRV_AA_DEV"
 			},
 			"fileserver_host_name": {
 				"type": "string",
-				"defaultValue": "\\\\SVNIBCFILA101\\E"
+				"defaultValue": "\\\\SVNIBCFILD101\\e$"
 			},
 			"fileserver_directory": {
 				"type": "string",
@@ -312,7 +312,7 @@
 			},
 			"functional_date": {
 				"type": "string",
-				"defaultValue": "20250414"
+				"defaultValue": "{yyyyMMdd}"
 			}
 		},
 		"variables": {
