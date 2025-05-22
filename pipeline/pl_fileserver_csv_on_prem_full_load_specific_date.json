@@ -1,0 +1,334 @@
+{
+	"name": "pl_fileserver_csv_on_prem_full_load_specific_date",
+	"properties": {
+		"description": "ADF pipeline to copy files from a file server reachable through SHIR.\nUsing full load ingestion pattern.\nFor current date or functional date.",
+		"activities": [
+			{
+				"name": "functional date",
+				"description": "Based on current date or provided parameter value, set functional date",
+				"type": "SetVariable",
+				"dependsOn": [],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "functional_date",
+					"value": {
+						"value": "@if(equals(pipeline().parameters.functional_date,'{yyyyMMdd}'), formatDateTime(convertTimeZone(pipeline().TriggerTime,'UTC','W. Europe Standard Time'), 'yyyyMMdd'), pipeline().parameters.functional_date)\n",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "file pattern specified",
+				"description": "Fill functional date placeholder with variable value",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "functional date",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "file_pattern_specified",
+					"value": {
+						"value": "@replace(\n    pipeline().parameters.source_file_name_pattern,\n    '{functional_date}',\n    variables('functional_date')\n)",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "Fileserver Has Data",
+				"description": "",
+				"type": "IfCondition",
+				"dependsOn": [
+					{
+						"activity": "Filter filenames of fileserver",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@greater(activity('Filter filenames of fileserver').output.FilteredItemsCount,0)",
+						"type": "Expression"
+					},
+					"ifTrueActivities": [
+						{
+							"name": "Copy csv data",
+							"description": "Copy csv data from file server",
+							"type": "Copy",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "DelimitedTextSource",
+									"additionalColumns": [
+										{
+											"name": "_adf_ingestion_file",
+											"value": "$$FILENAME"
+										}
+									],
+									"storeSettings": {
+										"type": "FileServerReadSettings",
+										"recursive": false,
+										"wildcardFileName": {
+											"value": "@variables('file_pattern_specified')",
+											"type": "Expression"
+										},
+										"enablePartitionDiscovery": false
+									},
+									"formatSettings": {
+										"type": "DelimitedTextReadSettings",
+										"skipLineCount": {
+											"value": "@pipeline().parameters.skip_line_count",
+											"type": "Expression"
+										}
+									}
+								},
+								"sink": {
+									"type": "ParquetSink",
+									"storeSettings": {
+										"type": "AzureBlobFSWriteSettings",
+										"copyBehavior": "MergeFiles"
+									},
+									"formatSettings": {
+										"type": "ParquetWriteSettings"
+									}
+								},
+								"enableStaging": false
+							},
+							"inputs": [
+								{
+									"referenceName": "ds_fileserver_csv_directory_on_prem",
+									"type": "DatasetReference",
+									"parameters": {
+										"user_name": {
+											"value": "@pipeline().parameters.fileserver_user_name",
+											"type": "Expression"
+										},
+										"host_name": {
+											"value": "@pipeline().parameters.fileserver_host_name",
+											"type": "Expression"
+										},
+										"key_vault_uri": {
+											"value": "@pipeline().globalParameters.key_vault_uri",
+											"type": "Expression"
+										},
+										"fileserver_password_secret_name": {
+											"value": "@pipeline().parameters.keyvault_secret_name",
+											"type": "Expression"
+										},
+										"directory": {
+											"value": "@pipeline().parameters.fileserver_directory",
+											"type": "Expression"
+										},
+										"column_delimiter": {
+											"value": "@pipeline().parameters.column_delimiter",
+											"type": "Expression"
+										}
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "ds_adls_parquet_auto_resolve",
+									"type": "DatasetReference",
+									"parameters": {
+										"datastore_name": {
+											"value": "@pipeline().parameters.datastore_name",
+											"type": "Expression"
+										},
+										"dataset_name": {
+											"value": "@pipeline().parameters.dataset_name",
+											"type": "Expression"
+										},
+										"storage_account_uri": {
+											"value": "@pipeline().globalParameters.storage_account_datalake_uri",
+											"type": "Expression"
+										},
+										"container_name": {
+											"value": "@pipeline().globalParameters.storage_container_datalake",
+											"type": "Expression"
+										},
+										"file_name": {
+											"value": "@pipeline().parameters.dataset_name",
+											"type": "Expression"
+										}
+									}
+								}
+							]
+						}
+					]
+				}
+			},
+			{
+				"name": "Get filenames on fileserver",
+				"description": "Retrieve each name of the file of the dataset to iterate over",
+				"type": "GetMetadata",
+				"dependsOn": [
+					{
+						"activity": "file pattern specified",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"dataset": {
+						"referenceName": "ds_fileserver_csv_directory_on_prem",
+						"type": "DatasetReference",
+						"parameters": {
+							"user_name": {
+								"value": "@pipeline().parameters.fileserver_user_name",
+								"type": "Expression"
+							},
+							"host_name": {
+								"value": "@pipeline().parameters.fileserver_host_name",
+								"type": "Expression"
+							},
+							"key_vault_uri": {
+								"value": "@pipeline().globalParameters.key_vault_uri",
+								"type": "Expression"
+							},
+							"fileserver_password_secret_name": {
+								"value": "@pipeline().parameters.keyvault_secret_name",
+								"type": "Expression"
+							},
+							"directory": {
+								"value": "@pipeline().parameters.fileserver_directory",
+								"type": "Expression"
+							},
+							"column_delimiter": {
+								"value": "@pipeline().parameters.column_delimiter",
+								"type": "Expression"
+							}
+						}
+					},
+					"fieldList": [
+						"childItems"
+					],
+					"storeSettings": {
+						"type": "FileServerReadSettings",
+						"recursive": true,
+						"enablePartitionDiscovery": false
+					},
+					"formatSettings": {
+						"type": "DelimitedTextReadSettings",
+						"skipLineCount": {
+							"value": "@pipeline().parameters.skip_line_count",
+							"type": "Expression"
+						}
+					}
+				}
+			},
+			{
+				"name": "Filter filenames of fileserver",
+				"description": "",
+				"type": "Filter",
+				"dependsOn": [
+					{
+						"activity": "Get filenames on fileserver",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('Get filenames on fileserver').output.childItems",
+						"type": "Expression"
+					},
+					"condition": {
+						"value": "@and(startswith(item().name, split(variables('file_pattern_specified'),'*')[0]), endswith(item().name,  split(variables('file_pattern_specified'),'*')[1]))",
+						"type": "Expression"
+					}
+				}
+			}
+		],
+		"parameters": {
+			"keyvault_secret_name": {
+				"type": "string",
+				"defaultValue": "fileserver-credentials-ods"
+			},
+			"datastore_name": {
+				"type": "string",
+				"defaultValue": "ods_savings"
+			},
+			"dataset_name": {
+				"type": "string",
+				"defaultValue": "hds_t_dim_client"
+			},
+			"source_file_name_pattern": {
+				"type": "string",
+				"defaultValue": "hds_t_dim_client_file_*{functional_date}.csv"
+			},
+			"fileserver_user_name": {
+				"type": "string",
+				"defaultValue": "PRD\\SRV_AA_DEV"
+			},
+			"fileserver_host_name": {
+				"type": "string",
+				"defaultValue": "\\\\SVNIBCFILD101\\e$"
+			},
+			"fileserver_directory": {
+				"type": "string",
+				"defaultValue": "Interfac\\Retail_ODS\\hds_mortgages\\Monthly"
+			},
+			"column_delimiter": {
+				"type": "string",
+				"defaultValue": "|&|"
+			},
+			"skip_line_count": {
+				"type": "int",
+				"defaultValue": 2
+			},
+			"functional_date": {
+				"type": "string",
+				"defaultValue": "{yyyyMMdd}"
+			}
+		},
+		"variables": {
+			"functional_date": {
+				"type": "String",
+				"defaultValue": "x"
+			},
+			"file_pattern_specified": {
+				"type": "String"
+			}
+		},
+		"folder": {
+			"name": "on_prem"
+		},
+		"annotations": [],
+		"lastPublishTime": "2025-05-08T12:57:23Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}
