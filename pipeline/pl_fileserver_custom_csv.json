@@ -6,6 +6,8 @@
 			{
 				"name": "Enable Delete",
 				"type": "IfCondition",
+				"state": "Inactive",
+				"onInactiveMarkAs": "Succeeded",
 				"dependsOn": [
 					{
 						"activity": "Copy csv from fileserver to blob",
@@ -131,6 +133,7 @@
 								"value": "@pipeline().globalParameters.storage_container_datalake",
 								"type": "Expression"
 							},
+							"file_name": "*",
 							"datastore_name": {
 								"value": "@pipeline().parameters.datastore_name",
 								"type": "Expression"
