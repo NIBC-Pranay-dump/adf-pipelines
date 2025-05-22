@@ -363,7 +363,7 @@
 			},
 			"base_url": {
 				"type": "string",
-				"defaultValue": "https://apim.dev.cloud.nibc.com/internal/salesforcemarketingcloud-api/1.0/"
+				"defaultValue": "https://apim.dev.cloud.nibc.com/internal/salesforcemarketingcloud-api/1.0"
 			},
 			"key_vault_secret_name": {
 				"type": "string",
