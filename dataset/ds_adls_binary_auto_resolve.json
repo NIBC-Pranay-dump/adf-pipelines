@@ -4,7 +4,13 @@
 		"description": "Dataset for providing non-parquet files to the datalake storage account",
 		"linkedServiceName": {
 			"referenceName": "ls_adls_auto_resolve",
-			"type": "LinkedServiceReference"
+			"type": "LinkedServiceReference",
+			"parameters": {
+				"storage_account_uri": {
+					"value": "@dataset().storage_account_uri",
+					"type": "Expression"
+				}
+			}
 		},
 		"parameters": {
 			"storage_account_uri": {
