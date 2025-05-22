@@ -113,7 +113,8 @@
 							"directory": {
 								"value": "@pipeline().parameters.fileserver_directory",
 								"type": "Expression"
-							}
+							},
+							"file_name": "*"
 						}
 					}
 				],
