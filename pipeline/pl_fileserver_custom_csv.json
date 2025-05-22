@@ -85,7 +85,7 @@
 								"type": "Expression"
 							},
 							"file_name": {
-								"value": "@pipeline().parameters.dataset_name",
+								"value": "@concat(pipeline().parameters.dataset_name,'.csv')",
 								"type": "Expression"
 							},
 							"datastore_name": {
