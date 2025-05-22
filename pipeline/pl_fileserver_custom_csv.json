@@ -4,58 +4,6 @@
 		"description": "used to copy csv from fileserver to csv in storage account",
 		"activities": [
 			{
-				"name": "Enable Delete",
-				"type": "IfCondition",
-				"state": "Inactive",
-				"onInactiveMarkAs": "Succeeded",
-				"dependsOn": [
-					{
-						"activity": "Copy csv from fileserver to blob",
-						"dependencyConditions": [
-							"Succeeded"
-						]
-					}
-				],
-				"userProperties": [],
-				"typeProperties": {
-					"expression": {
-						"value": "@equals(pipeline().parameters.enable_delete, 'true')",
-						"type": "Expression"
-					},
-					"ifTrueActivities": [
-						{
-							"name": "Delete csv",
-							"type": "Delete",
-							"dependsOn": [],
-							"policy": {
-								"timeout": "0.12:00:00",
-								"retry": 0,
-								"retryIntervalInSeconds": 30,
-								"secureOutput": false,
-								"secureInput": false
-							},
-							"userProperties": [],
-							"typeProperties": {
-								"dataset": {
-									"referenceName": "ds_fileserver_binary_on_prem",
-									"type": "DatasetReference"
-								},
-								"enableLogging": false,
-								"storeSettings": {
-									"type": "FileServerReadSettings",
-									"recursive": false,
-									"wildcardFileName": {
-										"value": "@{pipeline().parameters.source_file_name_pattern}",
-										"type": "Expression"
-									},
-									"enablePartitionDiscovery": false
-								}
-							}
-						}
-					]
-				}
-			},
-			{
 				"name": "Copy csv from fileserver to blob",
 				"type": "Copy",
 				"dependsOn": [],
