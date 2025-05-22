@@ -350,14 +350,16 @@
 		],
 		"parameters": {
 			"datastore_name": {
-				"type": "string"
+				"type": "string",
+				"defaultValue": "salesforce_marketing_cloud"
 			},
 			"dataset_name": {
-				"type": "string"
+				"type": "string",
+				"defaultValue": "customer_data"
 			},
 			"relative_url": {
 				"type": "string",
-				"defaultValue": "customer-data/"
+				"defaultValue": "customer-data"
 			},
 			"base_url": {
 				"type": "string",
