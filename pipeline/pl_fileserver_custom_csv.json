@@ -116,13 +116,16 @@
 								"value": "@pipeline().parameters.fileserver_directory",
 								"type": "Expression"
 							},
-							"file_name": "*"
+							"file_name": {
+								"value": "@pipeline().parameters.dataset_name",
+								"type": "Expression"
+							}
 						}
 					}
 				],
 				"outputs": [
 					{
-						"referenceName": "ds_adls_binary_azure_shir",
+						"referenceName": "ds_adls_binary_auto_resolve",
 						"type": "DatasetReference",
 						"parameters": {
 							"storage_account_uri": {
@@ -133,7 +136,10 @@
 								"value": "@pipeline().globalParameters.storage_container_datalake",
 								"type": "Expression"
 							},
-							"file_name": "*",
+							"file_name": {
+								"value": "@pipeline().parameters.dataset_name",
+								"type": "Expression"
+							},
 							"datastore_name": {
 								"value": "@pipeline().parameters.datastore_name",
 								"type": "Expression"
@@ -154,15 +160,15 @@
 			},
 			"datastore_name": {
 				"type": "string",
-				"defaultValue": "ods_mortgages"
+				"defaultValue": "dev"
 			},
 			"dataset_name": {
 				"type": "string",
-				"defaultValue": "hds_t_foreclosures"
+				"defaultValue": "IFRSPPMBSMortgages"
 			},
 			"source_file_name_pattern": {
 				"type": "string",
-				"defaultValue": "hds_t_foreclosures*"
+				"defaultValue": "IFRSPPMBSMortgages*"
 			},
 			"fileserver_user_name": {
 				"type": "string",
@@ -174,15 +180,7 @@
 			},
 			"fileserver_directory": {
 				"type": "string",
-				"defaultValue": "CDP\\Retail_ODS\\hds_mortgages"
-			},
-			"column_delimiter": {
-				"type": "string",
-				"defaultValue": "|&|"
-			},
-			"skip_line_count": {
-				"type": "int",
-				"defaultValue": 2
+				"defaultValue": "CDP"
 			},
 			"enable_delete": {
 				"type": "string",
