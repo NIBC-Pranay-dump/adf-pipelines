@@ -1,0 +1,390 @@
+{
+	"name": "pl_ab_orchestration",
+	"properties": {
+		"description": "The pipeline should be run to orchestrate a AB refresh.",
+		"activities": [
+			{
+				"name": "Run check job",
+				"description": "The job is maintained in the risk-model-run repository and will tell us if we should run the AB model.",
+				"type": "ExecutePipeline",
+				"dependsOn": [],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "pl_databricks_job",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true,
+					"parameters": {
+						"job_id": {
+							"value": "@pipeline().parameters.dbx_job_id_check",
+							"type": "Expression"
+						},
+						"workspace_url": {
+							"value": "@pipeline().parameters.dbx_workspace_url",
+							"type": "Expression"
+						},
+						"wait_seconds_between_polls": 5,
+						"job_parameters": {
+							"value": "@coalesce(pipeline().parameters.dbx_job_params_check, '{}')",
+							"type": "Expression"
+						}
+					}
+				}
+			},
+			{
+				"name": "Extract run_model boolean",
+				"description": "Use check job output to verify if model should run",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "Get check job output",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "run_model",
+					"value": {
+						"value": "@json(activity('Get check job output').output.notebook_output.result).run_model",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "Conditionally run model and export",
+				"type": "IfCondition",
+				"dependsOn": [
+					{
+						"activity": "Extract run_model boolean",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@variables('run_model')",
+						"type": "Expression"
+					},
+					"ifTrueActivities": [
+						{
+							"name": "Run model with databricks job",
+							"type": "ExecutePipeline",
+							"dependsOn": [],
+							"policy": {
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"pipeline": {
+									"referenceName": "pl_databricks_job",
+									"type": "PipelineReference"
+								},
+								"waitOnCompletion": true,
+								"parameters": {
+									"job_id": {
+										"value": "@pipeline().parameters.dbx_job_id_model",
+										"type": "Expression"
+									},
+									"workspace_url": {
+										"value": "@pipeline().parameters.dbx_workspace_url",
+										"type": "Expression"
+									},
+									"job_parameters": {
+										"value": "@coalesce(pipeline().parameters.dbx_job_params_model, '{}')",
+										"type": "Expression"
+									}
+								}
+							}
+						},
+						{
+							"name": "Export model to AA server",
+							"type": "ExecutePipeline",
+							"dependsOn": [
+								{
+									"activity": "Set sink_file_name",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								},
+								{
+									"activity": "Set adls_container",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								},
+								{
+									"activity": "Set adls_path",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"pipeline": {
+									"referenceName": "pl_adls_fileserver_parquet_on_prem",
+									"type": "PipelineReference"
+								},
+								"waitOnCompletion": true,
+								"parameters": {
+									"adls_container": {
+										"value": "@variables('adls_container')",
+										"type": "Expression"
+									},
+									"adls_folder_path": {
+										"value": "@variables('adls_path')",
+										"type": "Expression"
+									},
+									"fileserver_host_name": {
+										"value": "@pipeline().parameters.fileserver_host_name",
+										"type": "Expression"
+									},
+									"fileserver_user_name": {
+										"value": "@pipeline().parameters.fileserver_user_name",
+										"type": "Expression"
+									},
+									"fileserver_credentials_secret_name": {
+										"value": "@pipeline().parameters.fileserver_credentials_secret_name",
+										"type": "Expression"
+									},
+									"fileserver_directory": {
+										"value": "@pipeline().parameters.fileserver_directory",
+										"type": "Expression"
+									},
+									"sink_file_name": {
+										"value": "@variables('sink_file_name')",
+										"type": "Expression"
+									},
+									"column_delimiter": "|&|"
+								}
+							}
+						},
+						{
+							"name": "Set sink_file_name",
+							"description": "Use model job output to set variable",
+							"type": "SetVariable",
+							"dependsOn": [
+								{
+									"activity": "Get model job output",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "sink_file_name",
+								"value": {
+									"value": "@replace(\n    pipeline().parameters.sink_file_name_template,\n    '{period_end_date}',\n    string(json(\n        activity('Get model job output').output.notebook_output.result\n    ).period_end_date)\n)\n\n",
+									"type": "Expression"
+								}
+							}
+						},
+						{
+							"name": "Get model job output",
+							"description": "Call API to get model output",
+							"type": "WebActivity",
+							"dependsOn": [
+								{
+									"activity": "Run model with databricks job",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"method": "GET",
+								"url": {
+									"value": "@concat(\r\n    pipeline().parameters.dbx_workspace_url,\r\n    '/api/2.1/jobs/runs/get-output?run_id=',\r\n    activity('Run model with databricks job').output.pipelineReturnValue.first_task_run_id\r\n)",
+									"type": "Expression"
+								},
+								"connectVia": {
+									"referenceName": "cloud",
+									"type": "IntegrationRuntimeReference"
+								},
+								"authentication": {
+									"type": "MSI",
+									"resource": "2ff814a6-3304-4ab8-85cb-cd0e6f879c1d"
+								}
+							}
+						},
+						{
+							"name": "Set adls_path",
+							"description": "Use model job output to set variable",
+							"type": "SetVariable",
+							"dependsOn": [
+								{
+									"activity": "Get model job output",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "adls_path",
+								"value": {
+									"value": "@string(json(\n    activity('Get model job output').output.notebook_output.result\n).output_export_path)",
+									"type": "Expression"
+								}
+							}
+						},
+						{
+							"name": "Set adls_container",
+							"description": "Use model job output to set variable",
+							"type": "SetVariable",
+							"dependsOn": [
+								{
+									"activity": "Get model job output",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "adls_container",
+								"value": {
+									"value": "@string(json(\n    activity('Get model job output').output.notebook_output.result\n).export_container)\n\n",
+									"type": "Expression"
+								}
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "Get check job output",
+				"description": "Call API to get resulting boolean",
+				"type": "WebActivity",
+				"dependsOn": [
+					{
+						"activity": "Run check job",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"method": "GET",
+					"url": {
+						"value": "@concat(pipeline().parameters.dbx_workspace_url,'/api/2.1/jobs/runs/get-output?run_id=', activity('Run check job').output.pipelineReturnValue.first_task_run_id)",
+						"type": "Expression"
+					},
+					"connectVia": {
+						"referenceName": "cloud",
+						"type": "IntegrationRuntimeReference"
+					},
+					"authentication": {
+						"type": "MSI",
+						"resource": "2ff814a6-3304-4ab8-85cb-cd0e6f879c1d"
+					}
+				}
+			}
+		],
+		"parameters": {
+			"dbx_workspace_url": {
+				"type": "string",
+				"defaultValue": "https://adb-7348359736582708.8.azuredatabricks.net"
+			},
+			"dbx_job_id_check": {
+				"type": "string",
+				"defaultValue": "587733919011562"
+			},
+			"dbx_job_params_check": {
+				"type": "string"
+			},
+			"dbx_job_id_model": {
+				"type": "string",
+				"defaultValue": "922408450420182"
+			},
+			"dbx_job_params_model": {
+				"type": "string"
+			},
+			"fileserver_host_name": {
+				"type": "string",
+				"defaultValue": "\\\\SVNIBCFILD101\\e$"
+			},
+			"fileserver_user_name": {
+				"type": "string",
+				"defaultValue": "PRD\\SRV_AA_DEV"
+			},
+			"fileserver_credentials_secret_name": {
+				"type": "string",
+				"defaultValue": "fileserver-credentials-ods"
+			},
+			"fileserver_directory": {
+				"type": "string",
+				"defaultValue": "Interfac\\AA\\aa_retail\\Monthly\\IRB"
+			},
+			"sink_file_name_template": {
+				"type": "string",
+				"defaultValue": "basel_4_model_output_cdp_{period_end_date}.csv"
+			},
+			"annotations": {
+				"type": "string",
+				"defaultValue": "Manual Trigger"
+			}
+		},
+		"variables": {
+			"run_model": {
+				"type": "Boolean"
+			},
+			"sink_file_name": {
+				"type": "String"
+			},
+			"adls_container": {
+				"type": "String"
+			},
+			"adls_path": {
+				"type": "String"
+			}
+		},
+		"annotations": [
+			"@pipeline().parameters.annotations"
+		]
+	}
+}
