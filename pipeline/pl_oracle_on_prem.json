@@ -46,12 +46,12 @@
 						"referenceName": "ds_oracle_on_prem",
 						"type": "DatasetReference",
 						"parameters": {
-							"server_name": {
-								"value": "@pipeline().parameters.server_name",
+							"host_name": {
+								"value": "@pipeline().parameters.host_name",
 								"type": "Expression"
 							},
-							"user_name": {
-								"value": "@pipeline().parameters.user_name",
+							"port": {
+								"value": "@pipeline().parameters.port",
 								"type": "Expression"
 							},
 							"kevault_secret_name": {
@@ -68,6 +68,14 @@
 							},
 							"table_name": {
 								"value": "@pipeline().parameters.table_name",
+								"type": "Expression"
+							},
+							"service_name": {
+								"value": "@pipeline().parameters.service_name",
+								"type": "Expression"
+							},
+							"user_name": {
+								"value": "@pipeline().parameters.user_name",
 								"type": "Expression"
 							}
 						}
@@ -116,7 +124,7 @@
 				"type": "string",
 				"defaultValue": "test"
 			},
-			"server_name": {
+			"service_name": {
 				"type": "string",
 				"defaultValue": "(DESCRIPTION =(ADDRESS =(PROTOCOL =TCP)(HOST  SVNIBCORAA04)(PORT =1521))(CONNECT_DATA=(SERVICE_NAME=ACBSNBS.PRD.DOMAIN)"
 			},
@@ -135,6 +143,12 @@
 			"table_name": {
 				"type": "string",
 				"defaultValue": "CL_Transaction_Dimension"
+			},
+			"port": {
+				"type": "string"
+			},
+			"host_name": {
+				"type": "string"
 			}
 		},
 		"folder": {
