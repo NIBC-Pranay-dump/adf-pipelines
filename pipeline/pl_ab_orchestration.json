@@ -328,18 +328,18 @@
 		"parameters": {
 			"dbx_workspace_url": {
 				"type": "string",
-				"defaultValue": "https://adb-7348359736582708.8.azuredatabricks.net"
+				"defaultValue": "https://adb-1053042427915632.12.azuredatabricks.net/"
 			},
 			"dbx_job_id_check": {
 				"type": "string",
-				"defaultValue": "587733919011562"
+				"defaultValue": "1135469185769443"
 			},
 			"dbx_job_params_check": {
 				"type": "string"
 			},
 			"dbx_job_id_model": {
 				"type": "string",
-				"defaultValue": "922408450420182"
+				"defaultValue": "for ML model"
 			},
 			"dbx_job_params_model": {
 				"type": "string"
@@ -362,7 +362,7 @@
 			},
 			"sink_file_name_template": {
 				"type": "string",
-				"defaultValue": "basel_4_model_output_cdp_{period_end_date}.csv"
+				"defaultValue": "AB_model_output_cdp_{period_end_date}.csv"
 			},
 			"annotations": {
 				"type": "string",
