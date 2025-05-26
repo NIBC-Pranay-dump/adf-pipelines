@@ -1,8 +1,176 @@
 {
 	"name": "pl_fileserver_csv_on_prem_full_load_specific_date",
 	"properties": {
-		"description": "ADF pipeline to copy files from a file server reachable through SHIR.\nUsing full load ingestion pattern.\nFor current date or functional date.",
+		"description": "ADF pipeline to copy files from a file server:\n- ADF pipeline to copy files from a file server reachable through SHIR\n- Using full load ingestion pattern\n- For current date or functional date with addDays functionality\n- Test completeness based on metadata \n",
 		"activities": [
+			{
+				"name": "Check row count matches",
+				"description": "Check that the actual row count matches the expected row count as seen in metadata",
+				"type": "IfCondition",
+				"dependsOn": [
+					{
+						"activity": "Fileserver Has Data",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@variables('row_count_match')",
+						"type": "Expression"
+					},
+					"ifFalseActivities": [
+						{
+							"name": "Expected row count does not match actual",
+							"description": "The actual row count of the stored files doesn't match the actual row count as seen in the metadata",
+							"type": "Fail",
+							"dependsOn": [],
+							"userProperties": [],
+							"typeProperties": {
+								"message": {
+									"value": "@concat('Row count mismatch: Expected ', variables('total_record_count'), ' rows, but found ', activity('Copy csv data').output.rowsCopied)",
+									"type": "Expression"
+								},
+								"errorCode": "ROW_COUNT_MISMATCH"
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "Sum all record counts",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "Filter filenames of fileserver",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('Filter filenames of fileserver').output.value",
+						"type": "Expression"
+					},
+					"isSequential": true,
+					"activities": [
+						{
+							"name": "Extract temp count",
+							"description": "Variables in ADF cannot be self referencing, hence, if you want to add to a variable, first you need to create a second variable which stores the sum, and later, set the initial variable to the sum",
+							"type": "SetVariable",
+							"dependsOn": [
+								{
+									"activity": "Check single file metadata",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "partial_count",
+								"value": {
+									"value": "@add(variables('total_record_count'), int(activity('Check single file metadata').output.firstRow.RecordCount))",
+									"type": "Expression"
+								}
+							}
+						},
+						{
+							"name": "Check single file metadata",
+							"type": "Lookup",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "DelimitedTextSource",
+									"storeSettings": {
+										"type": "FileServerReadSettings",
+										"recursive": false,
+										"enablePartitionDiscovery": false
+									},
+									"formatSettings": {
+										"type": "DelimitedTextReadSettings"
+									}
+								},
+								"dataset": {
+									"referenceName": "ds_fileserver_csv_file_on_prem",
+									"type": "DatasetReference",
+									"parameters": {
+										"host_name": {
+											"value": "@pipeline().parameters.fileserver_host_name",
+											"type": "Expression"
+										},
+										"user_name": {
+											"value": "@pipeline().parameters.fileserver_user_name",
+											"type": "Expression"
+										},
+										"key_vault_uri": {
+											"value": "@pipeline().globalParameters.key_vault_uri",
+											"type": "Expression"
+										},
+										"fileserver_password_secret_name": {
+											"value": "@pipeline().parameters.keyvault_secret_name",
+											"type": "Expression"
+										},
+										"directory": {
+											"value": "@pipeline().parameters.fileserver_directory",
+											"type": "Expression"
+										},
+										"file_name": {
+											"value": "@item().name",
+											"type": "Expression"
+										},
+										"column_delimiter": {
+											"value": "@pipeline().parameters.metadata_column_delimiter",
+											"type": "Expression"
+										},
+										"quote_char": "\""
+									}
+								}
+							}
+						},
+						{
+							"name": "Update total count",
+							"type": "SetVariable",
+							"dependsOn": [
+								{
+									"activity": "Extract temp count",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "total_record_count",
+								"value": {
+									"value": "@variables('partial_count')",
+									"type": "Expression"
+								}
+							}
+						}
+					]
+				}
+			},
 			{
 				"name": "functional date",
 				"description": "Based on current date or provided parameter value, set functional date",
@@ -16,7 +184,7 @@
 				"typeProperties": {
 					"variableName": "functional_date",
 					"value": {
-						"value": "@if(equals(pipeline().parameters.functional_date,'{yyyyMMdd}'), formatDateTime(convertTimeZone(pipeline().TriggerTime,'UTC','W. Europe Standard Time'), 'yyyyMMdd'), pipeline().parameters.functional_date)\n",
+						"value": "@formatDateTime(if(equals(pipeline().parameters.functional_date,'{yyyy-MM-dd}'), adddays(convertTimeZone(pipeline().TriggerTime,'UTC','W. Europe Standard Time'),pipeline().parameters.delta_days), adddays(pipeline().parameters.functional_date,pipeline().parameters.delta_days)), 'yyyyMMdd')",
 						"type": "Expression"
 					}
 				}
@@ -52,7 +220,7 @@
 				"type": "IfCondition",
 				"dependsOn": [
 					{
-						"activity": "Filter filenames of fileserver",
+						"activity": "if copy binary data",
 						"dependencyConditions": [
 							"Succeeded"
 						]
@@ -83,8 +251,15 @@
 									"type": "DelimitedTextSource",
 									"additionalColumns": [
 										{
-											"name": "_adf_ingestion_file",
+											"name": "filename",
 											"value": "$$FILENAME"
+										},
+										{
+											"name": "download_timestamp",
+											"value": {
+												"value": "@formatDateTime(convertTimeZone(pipeline().TriggerTime,'UTC','W. Europe Standard Time'), 'yyyyMMdd_HHmmss')",
+												"type": "Expression"
+											}
 										}
 									],
 									"storeSettings": {
@@ -176,6 +351,30 @@
 									}
 								}
 							]
+						},
+						{
+							"name": "verify row count",
+							"type": "SetVariable",
+							"dependsOn": [
+								{
+									"activity": "Copy csv data",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "row_count_match",
+								"value": {
+									"value": "@equals(int(variables('total_record_count')), int(activity('Copy csv data').output.rowsCopied))",
+									"type": "Expression"
+								}
+							}
 						}
 					]
 				}
@@ -267,9 +466,120 @@
 						"type": "Expression"
 					},
 					"condition": {
-						"value": "@and(startswith(item().name, split(variables('file_pattern_specified'),'*')[0]), endswith(item().name,  split(variables('file_pattern_specified'),'*')[1]))",
+						"value": "@and(startswith(item().name, first(split(variables('file_pattern_specified'),'*'))), endswith(item().name,  last(split(variables('file_pattern_specified'),'*'))))",
 						"type": "Expression"
 					}
+				}
+			},
+			{
+				"name": "if copy binary data",
+				"type": "IfCondition",
+				"dependsOn": [
+					{
+						"activity": "Sum all record counts",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@pipeline().parameters.copy_binary_data",
+						"type": "Expression"
+					},
+					"ifTrueActivities": [
+						{
+							"name": "Copy binary data",
+							"type": "Copy",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "BinarySource",
+									"storeSettings": {
+										"type": "FileServerReadSettings",
+										"recursive": false,
+										"wildcardFileName": {
+											"value": "@variables('file_pattern_specified')",
+											"type": "Expression"
+										},
+										"deleteFilesAfterCompletion": false
+									},
+									"formatSettings": {
+										"type": "BinaryReadSettings"
+									}
+								},
+								"sink": {
+									"type": "BinarySink",
+									"storeSettings": {
+										"type": "AzureBlobStorageWriteSettings",
+										"copyBehavior": "PreserveHierarchy"
+									}
+								},
+								"enableStaging": false
+							},
+							"inputs": [
+								{
+									"referenceName": "ds_fileserver_binary_directory_on_prem",
+									"type": "DatasetReference",
+									"parameters": {
+										"user_name": {
+											"value": "@pipeline().parameters.fileserver_user_name",
+											"type": "Expression"
+										},
+										"host_name": {
+											"value": "@pipeline().parameters.fileserver_host_name",
+											"type": "Expression"
+										},
+										"key_vault_uri": {
+											"value": "@pipeline().globalParameters.key_vault_uri",
+											"type": "Expression"
+										},
+										"fileserver_password_secret_name": {
+											"value": "@pipeline().parameters.keyvault_secret_name",
+											"type": "Expression"
+										},
+										"directory": {
+											"value": "@pipeline().parameters.fileserver_directory",
+											"type": "Expression"
+										}
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "ds_blob_binary_directory_auto_resolve",
+									"type": "DatasetReference",
+									"parameters": {
+										"storage_account_uri": {
+											"value": "@pipeline().globalParameters.storage_account_data_factory_uri",
+											"type": "Expression"
+										},
+										"container_name": {
+											"value": "@pipeline().globalParameters.storage_container_data_factory",
+											"type": "Expression"
+										},
+										"datastore_name": {
+											"value": "@pipeline().parameters.datastore_name",
+											"type": "Expression"
+										},
+										"dataset_name": {
+											"value": "@pipeline().parameters.dataset_name",
+											"type": "Expression"
+										}
+									}
+								}
+							]
+						}
+					]
 				}
 			}
 		],
@@ -284,11 +594,11 @@
 			},
 			"dataset_name": {
 				"type": "string",
-				"defaultValue": "hds_t_dim_client"
+				"defaultValue": "hds_t_dim_account"
 			},
 			"source_file_name_pattern": {
 				"type": "string",
-				"defaultValue": "hds_t_dim_client_file_*{functional_date}.csv"
+				"defaultValue": "hds_t_dim_account_file_*{functional_date}.csv"
 			},
 			"fileserver_user_name": {
 				"type": "string",
@@ -310,25 +620,46 @@
 				"type": "int",
 				"defaultValue": 2
 			},
+			"metadata_column_delimiter": {
+				"type": "string",
+				"defaultValue": ","
+			},
 			"functional_date": {
 				"type": "string",
-				"defaultValue": "{yyyyMMdd}"
+				"defaultValue": "{yyyy-MM-dd}"
+			},
+			"delta_days": {
+				"type": "int",
+				"defaultValue": 0
+			},
+			"copy_binary_data": {
+				"type": "bool",
+				"defaultValue": false
 			}
 		},
 		"variables": {
+			"total_record_count": {
+				"type": "Integer",
+				"defaultValue": 0
+			},
+			"partial_count": {
+				"type": "Integer",
+				"defaultValue": 0
+			},
 			"functional_date": {
-				"type": "String",
-				"defaultValue": "x"
+				"type": "String"
 			},
 			"file_pattern_specified": {
 				"type": "String"
+			},
+			"row_count_match": {
+				"type": "Boolean",
+				"defaultValue": true
 			}
 		},
 		"folder": {
 			"name": "on_prem"
 		},
-		"annotations": [],
-		"lastPublishTime": "2025-05-08T12:57:23Z"
-	},
-	"type": "Microsoft.DataFactory/factories/pipelines"
+		"annotations": []
+	}
 }
