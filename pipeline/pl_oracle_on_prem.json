@@ -105,28 +105,36 @@
 		],
 		"parameters": {
 			"datastore_name": {
-				"type": "string"
+				"type": "string",
+				"defaultValue": "acbs_test"
 			},
 			"dataset_name": {
-				"type": "string"
+				"type": "string",
+				"defaultValue": "acbs_test"
 			},
 			"file_name": {
-				"type": "string"
+				"type": "string",
+				"defaultValue": "test"
 			},
 			"server_name": {
-				"type": "string"
+				"type": "string",
+				"defaultValue": "(DESCRIPTION =(ADDRESS =(PROTOCOL =TCP)(HOST  SVNIBCORAA04)(PORT =1521))(CONNECT_DATA=(SERVICE_NAME=ACBSNBS.PRD.DOMAIN)"
 			},
 			"user_name": {
-				"type": "string"
+				"type": "string",
+				"defaultValue": "SRV_CDP_ACBS_DEV"
 			},
 			"keyvault_secret_name": {
-				"type": "string"
+				"type": "string",
+				"defaultValue": "oracle-connection-string-acbs-dev"
 			},
 			"schema_name": {
-				"type": "string"
+				"type": "string",
+				"defaultValue": "DLS_DM"
 			},
 			"table_name": {
-				"type": "string"
+				"type": "string",
+				"defaultValue": "CL_Transaction_Dimension"
 			}
 		},
 		"folder": {
