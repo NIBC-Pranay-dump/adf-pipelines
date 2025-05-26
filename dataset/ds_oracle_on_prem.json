@@ -1,0 +1,63 @@
+{
+	"name": "ds_oracle_on_prem",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "ls_oracle_on_prem",
+			"type": "LinkedServiceReference",
+			"parameters": {
+				"server_name": {
+					"value": "@dataset().server_name",
+					"type": "Expression"
+				},
+				"user_name": {
+					"value": "@dataset().user_name",
+					"type": "Expression"
+				},
+				"kevault_secret_name": {
+					"value": "@dataset().kevault_secret_name",
+					"type": "Expression"
+				},
+				"keyvault_uri": {
+					"value": "@dataset().keyvault_uri",
+					"type": "Expression"
+				}
+			}
+		},
+		"parameters": {
+			"server_name": {
+				"type": "string"
+			},
+			"user_name": {
+				"type": "string"
+			},
+			"kevault_secret_name": {
+				"type": "string"
+			},
+			"keyvault_uri": {
+				"type": "string"
+			},
+			"schema_name": {
+				"type": "string"
+			},
+			"table_name": {
+				"type": "string"
+			}
+		},
+		"folder": {
+			"name": "on_prem"
+		},
+		"annotations": [],
+		"type": "OracleTable",
+		"schema": [],
+		"typeProperties": {
+			"schema": {
+				"value": "@dataset().schema_name",
+				"type": "Expression"
+			},
+			"table": {
+				"value": "@dataset().table_name",
+				"type": "Expression"
+			}
+		}
+	}
+}
