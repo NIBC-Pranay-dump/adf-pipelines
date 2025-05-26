@@ -1,0 +1,10 @@
+{
+	"name": "pl_oracle_on_prem",
+	"properties": {
+		"description": "With this pipeline, we'd like to connect to the NIBC's Oracle database.",
+		"folder": {
+			"name": "on_prem"
+		},
+		"annotations": []
+	}
+}
