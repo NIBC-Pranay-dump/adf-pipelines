@@ -17,6 +17,11 @@
 				},
 				"userProperties": [],
 				"typeProperties": {
+					"source": {
+						"type": "OracleSource",
+						"partitionOption": "None",
+						"queryTimeout": "02:00:00"
+					},
 					"sink": {
 						"type": "ParquetSink",
 						"storeSettings": {
@@ -26,8 +31,48 @@
 							"type": "ParquetWriteSettings"
 						}
 					},
-					"enableStaging": false
+					"enableStaging": false,
+					"translator": {
+						"type": "TabularTranslator",
+						"typeConversion": true,
+						"typeConversionSettings": {
+							"allowDataTruncation": true,
+							"treatBooleanAsNumber": false
+						}
+					}
 				},
+				"inputs": [
+					{
+						"referenceName": "ds_oracle_on_prem",
+						"type": "DatasetReference",
+						"parameters": {
+							"server_name": {
+								"value": "@pipeline().parameters.server_name",
+								"type": "Expression"
+							},
+							"user_name": {
+								"value": "@pipeline().parameters.user_name",
+								"type": "Expression"
+							},
+							"kevault_secret_name": {
+								"value": "@pipeline().parameters.keyvault_secret_name",
+								"type": "Expression"
+							},
+							"keyvault_uri": {
+								"value": "@pipeline().globalParameters.key_vault_uri",
+								"type": "Expression"
+							},
+							"schema_name": {
+								"value": "@pipeline().parameters.schema_name",
+								"type": "Expression"
+							},
+							"table_name": {
+								"value": "@pipeline().parameters.table_name",
+								"type": "Expression"
+							}
+						}
+					}
+				],
 				"outputs": [
 					{
 						"referenceName": "ds_adls_parquet_auto_resolve",
@@ -66,6 +111,21 @@
 				"type": "string"
 			},
 			"file_name": {
+				"type": "string"
+			},
+			"server_name": {
+				"type": "string"
+			},
+			"user_name": {
+				"type": "string"
+			},
+			"keyvault_secret_name": {
+				"type": "string"
+			},
+			"schema_name": {
+				"type": "string"
+			},
+			"table_name": {
 				"type": "string"
 			}
 		},
