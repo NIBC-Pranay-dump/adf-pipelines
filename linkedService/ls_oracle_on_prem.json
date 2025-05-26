@@ -3,7 +3,16 @@
 	"properties": {
 		"description": "TODO: fill in this description",
 		"parameters": {
-			"server_name": {
+			"host_name": {
+				"type": "string"
+			},
+			"port": {
+				"type": "string"
+			},
+			"service_name": {
+				"type": "string"
+			},
+			"keyvault_uri": {
 				"type": "string"
 			},
 			"user_name": {
@@ -11,18 +20,12 @@
 			},
 			"kevault_secret_name": {
 				"type": "string"
-			},
-			"keyvault_uri": {
-				"type": "string"
 			}
 		},
 		"annotations": [],
 		"type": "Oracle",
-		"version": "2.0",
 		"typeProperties": {
-			"server": "@{linkedService().server_name}",
-			"authenticationType": "Basic",
-			"username": "@{linkedService().user_name}",
+			"connectionString": "host=@{linkedService().host_name};port=@{linkedService().port};serviceName=@{linkedService().service_name};user id=@{linkedService().user_name}",
 			"password": {
 				"type": "AzureKeyVaultSecret",
 				"store": {
@@ -40,6 +43,10 @@
 					"type": "Expression"
 				}
 			}
+		},
+		"connectVia": {
+			"referenceName": "on-premises",
+			"type": "IntegrationRuntimeReference"
 		}
 	}
 }
