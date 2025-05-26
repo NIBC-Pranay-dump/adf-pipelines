@@ -63,6 +63,8 @@
 			{
 				"name": "Conditionally run model and export",
 				"type": "IfCondition",
+				"state": "Inactive",
+				"onInactiveMarkAs": "Succeeded",
 				"dependsOn": [
 					{
 						"activity": "Extract run_model boolean",
@@ -339,7 +341,7 @@
 			},
 			"dbx_job_id_model": {
 				"type": "string",
-				"defaultValue": "for ML model"
+				"defaultValue": "4368209764159784"
 			},
 			"dbx_job_params_model": {
 				"type": "string"
