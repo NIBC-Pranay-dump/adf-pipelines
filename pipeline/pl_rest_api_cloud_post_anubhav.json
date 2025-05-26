@@ -186,9 +186,6 @@
 			},
 			"column_mapping": {
 				"type": "string"
-			},
-			"message_body": {
-				"type": "string"
 			}
 		},
 		"folder": {
