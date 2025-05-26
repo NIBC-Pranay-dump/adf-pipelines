@@ -5,7 +5,7 @@
 		"activities": [
 			{
 				"name": "Run check job",
-				"description": "The job is maintained in the risk-model-run repository and will tell us if we should run the AB model.",
+				"description": "The job is maintained in the risk-actief-beheer repository and will tell us if we should run the AB model.",
 				"type": "ExecutePipeline",
 				"dependsOn": [],
 				"policy": {
