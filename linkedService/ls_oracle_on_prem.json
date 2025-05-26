@@ -1,0 +1,45 @@
+{
+	"name": "ls_oracle_on_prem",
+	"properties": {
+		"description": "TODO: fill in this description",
+		"parameters": {
+			"server_name": {
+				"type": "string"
+			},
+			"user_name": {
+				"type": "string"
+			},
+			"kevault_secret_name": {
+				"type": "string"
+			},
+			"keyvault_uri": {
+				"type": "string"
+			}
+		},
+		"annotations": [],
+		"type": "Oracle",
+		"version": "2.0",
+		"typeProperties": {
+			"server": "@{linkedService().server_name}",
+			"authenticationType": "Basic",
+			"username": "@{linkedService().user_name}",
+			"password": {
+				"type": "AzureKeyVaultSecret",
+				"store": {
+					"referenceName": "ls_key_vault_no_shir",
+					"type": "LinkedServiceReference",
+					"parameters": {
+						"key_vault_uri": {
+							"value": "@linkedService().keyvault_uri",
+							"type": "Expression"
+						}
+					}
+				},
+				"secretName": {
+					"value": "@linkedService().kevault_secret_name",
+					"type": "Expression"
+				}
+			}
+		}
+	}
+}
