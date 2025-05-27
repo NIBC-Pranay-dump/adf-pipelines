@@ -330,7 +330,7 @@
 		"parameters": {
 			"dbx_workspace_url": {
 				"type": "string",
-				"defaultValue": "https://adb-7348359736582708.8.azuredatabricks.net/"
+				"defaultValue": "https://adb-7348359736582708.8.azuredatabricks.net"
 			},
 			"dbx_job_id_check": {
 				"type": "string",
