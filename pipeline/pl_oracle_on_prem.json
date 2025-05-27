@@ -126,7 +126,7 @@
 			},
 			"service_name": {
 				"type": "string",
-				"defaultValue": "(DESCRIPTION =(ADDRESS =(PROTOCOL =TCP)(HOST  SVNIBCORAA04)(PORT =1521))(CONNECT_DATA=(SERVICE_NAME=ACBSNBS.PRD.DOMAIN)"
+				"defaultValue": "ACBSNBS.PRD.DOMAIN"
 			},
 			"user_name": {
 				"type": "string",
@@ -145,10 +145,12 @@
 				"defaultValue": "CL_Transaction_Dimension"
 			},
 			"port": {
-				"type": "string"
+				"type": "string",
+				"defaultValue": "1521"
 			},
 			"host_name": {
-				"type": "string"
+				"type": "string",
+				"defaultValue": "SVNIBCORAA04"
 			}
 		},
 		"folder": {
