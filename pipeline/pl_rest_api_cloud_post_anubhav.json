@@ -4,95 +4,6 @@
 		"description": "Use this pipeline to connect the the API managed services REST API",
 		"activities": [
 			{
-				"name": "copy json to data_factory",
-				"description": "copy json to data_factory",
-				"type": "Copy",
-				"dependsOn": [
-					{
-						"activity": "set file_name",
-						"dependencyConditions": [
-							"Succeeded"
-						]
-					}
-				],
-				"policy": {
-					"timeout": "0.12:00:00",
-					"retry": 0,
-					"retryIntervalInSeconds": 30,
-					"secureOutput": false,
-					"secureInput": false
-				},
-				"userProperties": [],
-				"typeProperties": {
-					"source": {
-						"type": "BinarySource",
-						"storeSettings": {
-							"type": "HttpReadSettings",
-							"requestMethod": "GET",
-							"additionalHeaders": {
-								"value": "Authorization: Bearer @{activity('Get access token').output['access_token']}",
-								"type": "Expression"
-							},
-							"requestTimeout": ""
-						},
-						"formatSettings": {
-							"type": "BinaryReadSettings"
-						}
-					},
-					"sink": {
-						"type": "BinarySink",
-						"storeSettings": {
-							"type": "AzureBlobStorageWriteSettings"
-						}
-					},
-					"enableStaging": false
-				},
-				"inputs": [
-					{
-						"referenceName": "ds_anonymous_http_binary_cloud",
-						"type": "DatasetReference",
-						"parameters": {
-							"base_url": {
-								"value": "@pipeline().parameters.base_url",
-								"type": "Expression"
-							},
-							"relative_url": {
-								"value": "@pipeline().parameters.relative_url",
-								"type": "Expression"
-							}
-						}
-					}
-				],
-				"outputs": [
-					{
-						"referenceName": "ds_blob_binary_azure_shir",
-						"type": "DatasetReference",
-						"parameters": {
-							"storage_account_uri": {
-								"value": "@pipeline().globalParameters.storage_account_data_factory_uri",
-								"type": "Expression"
-							},
-							"container_name": {
-								"value": "@pipeline().globalParameters.storage_container_data_factory",
-								"type": "Expression"
-							},
-							"datastore_name": {
-								"value": "@pipeline().parameters.datastore_name",
-								"type": "Expression"
-							},
-							"dataset_name": {
-								"value": "@pipeline().parameters.dataset_name",
-								"type": "Expression"
-							},
-							"file_name": {
-								"value": "@variables('file_name')",
-								"type": "Expression"
-							}
-						}
-					}
-				]
-			},
-			{
 				"name": "Get access token",
 				"type": "WebActivity",
 				"dependsOn": [
@@ -201,7 +112,7 @@
 				"type": "Copy",
 				"dependsOn": [
 					{
-						"activity": "copy json to data_factory",
+						"activity": "set file_name",
 						"dependencyConditions": [
 							"Succeeded"
 						]
