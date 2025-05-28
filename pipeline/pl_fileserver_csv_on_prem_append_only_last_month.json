@@ -399,10 +399,6 @@
 			"enable_delete": {
 				"type": "string",
 				"defaultValue": "false"
-			},
-			"row_delimiter": {
-				"type": "string",
-				"defaultValue": "@concat('\\r\\n')"
 			}
 		},
 		"variables": {

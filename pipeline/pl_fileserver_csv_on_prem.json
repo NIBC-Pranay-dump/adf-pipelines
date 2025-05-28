@@ -159,8 +159,7 @@
 										"column_delimiter": {
 											"value": "@pipeline().parameters.column_delimiter",
 											"type": "Expression"
-										},
-										"row_delimiter": "@concat('\\r\\n')"
+										}
 									}
 								}
 							],
