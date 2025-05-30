@@ -1,0 +1,393 @@
+{
+	"name": "pl_fileserver_csv_on_prem_append_only_last_month_default_row_delimiter",
+	"properties": {
+		"description": "ADF pipeline to copy files from a file server reachable through dev SHIR\nUsing append only ingestion pattern\nGetting only last month's data, this pipeline uses the default row delimiter provided by ADF",
+		"activities": [
+			{
+				"name": "Detect Available Data",
+				"type": "Lookup",
+				"dependsOn": [
+					{
+						"activity": "Include functional date in file pattern",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "DelimitedTextSource",
+						"storeSettings": {
+							"type": "FileServerReadSettings",
+							"recursive": false,
+							"wildcardFileName": {
+								"value": "@variables('file_pattern_specified')",
+								"type": "Expression"
+							},
+							"enablePartitionDiscovery": false
+						},
+						"formatSettings": {
+							"type": "DelimitedTextReadSettings",
+							"skipLineCount": {
+								"value": "@pipeline().parameters.skip_line_count",
+								"type": "Expression"
+							}
+						}
+					},
+					"dataset": {
+						"referenceName": "ds_fileserver_csv_directory_on_prem_default_row_delimiter",
+						"type": "DatasetReference",
+						"parameters": {
+							"user_name": "@pipeline().parameters.fileserver_user_name",
+							"host_name": "@pipeline().parameters.fileserver_host_name",
+							"key_vault_uri": "@pipeline().globalParameters.key_vault_uri",
+							"fileserver_password_secret_name": "@pipeline().parameters.keyvault_secret_name",
+							"directory": "@pipeline().parameters.fileserver_directory",
+							"column_delimiter": "@pipeline().parameters.column_delimiter"
+						}
+					}
+				}
+			},
+			{
+				"name": "Has Data",
+				"description": "We check if the lookup found any data",
+				"type": "IfCondition",
+				"dependsOn": [
+					{
+						"activity": "Detect Available Data",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@contains(activity('Detect Available Data').output, 'firstRow')",
+						"type": "Expression"
+					},
+					"ifTrueActivities": [
+						{
+							"name": "Copy csv data",
+							"description": "Copy csv data from file server",
+							"type": "Copy",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "DelimitedTextSource",
+									"additionalColumns": [
+										{
+											"name": "_adf_ingestion_file",
+											"value": {
+												"value": "@concat(pipeline().parameters.dataset_name, '_', variables('functional_date'))",
+												"type": "Expression"
+											}
+										}
+									],
+									"storeSettings": {
+										"type": "FileServerReadSettings",
+										"recursive": false,
+										"wildcardFileName": {
+											"value": "@variables('file_pattern_specified')",
+											"type": "Expression"
+										},
+										"enablePartitionDiscovery": false
+									},
+									"formatSettings": {
+										"type": "DelimitedTextReadSettings",
+										"skipLineCount": {
+											"value": "@pipeline().parameters.skip_line_count",
+											"type": "Expression"
+										}
+									}
+								},
+								"sink": {
+									"type": "ParquetSink",
+									"storeSettings": {
+										"type": "AzureBlobFSWriteSettings",
+										"copyBehavior": "MergeFiles"
+									},
+									"formatSettings": {
+										"type": "ParquetWriteSettings"
+									}
+								},
+								"enableStaging": false,
+								"translator": {
+									"type": "TabularTranslator",
+									"typeConversion": true,
+									"typeConversionSettings": {
+										"allowDataTruncation": true,
+										"treatBooleanAsNumber": false
+									}
+								}
+							},
+							"inputs": [
+								{
+									"referenceName": "ds_fileserver_csv_directory_on_prem_default_row_delimiter",
+									"type": "DatasetReference",
+									"parameters": {
+										"user_name": "@pipeline().parameters.fileserver_user_name",
+										"host_name": "@pipeline().parameters.fileserver_host_name",
+										"key_vault_uri": "@pipeline().globalParameters.key_vault_uri",
+										"fileserver_password_secret_name": "@pipeline().parameters.keyvault_secret_name",
+										"directory": "@pipeline().parameters.fileserver_directory",
+										"column_delimiter": "@pipeline().parameters.column_delimiter"
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "ds_adls_parquet_auto_resolve",
+									"type": "DatasetReference",
+									"parameters": {
+										"datastore_name": {
+											"value": "@pipeline().parameters.datastore_name",
+											"type": "Expression"
+										},
+										"dataset_name": {
+											"value": "@pipeline().parameters.dataset_name",
+											"type": "Expression"
+										},
+										"storage_account_uri": {
+											"value": "@pipeline().globalParameters.storage_account_datalake_uri",
+											"type": "Expression"
+										},
+										"container_name": {
+											"value": "@pipeline().globalParameters.storage_container_datalake",
+											"type": "Expression"
+										},
+										"file_name": {
+											"value": "@concat(pipeline().parameters.dataset_name, '_', variables('functional_date'))",
+											"type": "Expression"
+										}
+									}
+								}
+							]
+						}
+					]
+				}
+			},
+			{
+				"name": "Use trigger date to set functional date",
+				"description": "Based on current date or provided parameter value, set functional date",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "Set trigger date",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "functional_date",
+					"value": {
+						"value": "@addDays(startOfMonth(\n\n     concat(substring(variables('trigger_date'),0,4 ),'-',substring(variables('trigger_date'),4,2),'-',substring(variables('trigger_date'),6,2))\n), -1, 'yyyyMMdd')",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "Set trigger date",
+				"description": "Use pipeline trigger time, unless a value is provided in the trigger_date parameter",
+				"type": "SetVariable",
+				"dependsOn": [],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "trigger_date",
+					"value": {
+						"value": "@if(empty(pipeline().parameters.trigger_date), formatDateTime(pipeline().TriggerTime, 'yyyyMMdd'), pipeline().parameters.trigger_date)",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "Include functional date in file pattern",
+				"description": "Fill functional date placeholder with variable value",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "Use trigger date to set functional date",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "file_pattern_specified",
+					"value": {
+						"value": "@replace(\n    pipeline().parameters.source_file_name_pattern,\n    '{functional_date}',\n    variables('functional_date')\n)",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "Enable Delete",
+				"type": "IfCondition",
+				"dependsOn": [
+					{
+						"activity": "Has Data",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@equals(pipeline().parameters.enable_delete, 'true')",
+						"type": "Expression"
+					},
+					"ifTrueActivities": [
+						{
+							"name": "Delete csv",
+							"type": "Delete",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"dataset": {
+									"referenceName": "ds_fileserver_csv_directory_on_prem",
+									"type": "DatasetReference",
+									"parameters": {
+										"user_name": {
+											"value": "@pipeline().parameters.fileserver_user_name",
+											"type": "Expression"
+										},
+										"host_name": {
+											"value": "@pipeline().parameters.fileserver_host_name",
+											"type": "Expression"
+										},
+										"key_vault_uri": {
+											"value": "@pipeline().globalParameters.key_vault_uri",
+											"type": "Expression"
+										},
+										"fileserver_password_secret_name": {
+											"value": "@pipeline().parameters.keyvault_secret_name",
+											"type": "Expression"
+										},
+										"directory": {
+											"value": "@pipeline().parameters.fileserver_directory",
+											"type": "Expression"
+										},
+										"column_delimiter": {
+											"value": "@pipeline().parameters.column_delimiter",
+											"type": "Expression"
+										}
+									}
+								},
+								"enableLogging": false,
+								"storeSettings": {
+									"type": "FileServerReadSettings",
+									"recursive": false,
+									"wildcardFileName": {
+										"value": "@{variables('file_pattern_specified')}",
+										"type": "Expression"
+									},
+									"enablePartitionDiscovery": false
+								}
+							}
+						}
+					]
+				}
+			}
+		],
+		"parameters": {
+			"keyvault_secret_name": {
+				"type": "string",
+				"defaultValue": "fileserver-credentials-ods-dev"
+			},
+			"datastore_name": {
+				"type": "string",
+				"defaultValue": "prepayments"
+			},
+			"dataset_name": {
+				"type": "string",
+				"defaultValue": "CPRcurves"
+			},
+			"source_file_name_pattern": {
+				"type": "string",
+				"defaultValue": "CPRcurves_{functional_date}.csv"
+			},
+			"fileserver_user_name": {
+				"type": "string",
+				"defaultValue": "PRD\\SRV_AA_DEV"
+			},
+			"fileserver_host_name": {
+				"type": "string",
+				"defaultValue": "\\\\SVNIBCFILD101\\e$"
+			},
+			"fileserver_directory": {
+				"type": "string",
+				"defaultValue": "AA_Processed\\PRIMA\\CDP\\CPRcurves"
+			},
+			"column_delimiter": {
+				"type": "string",
+				"defaultValue": ";"
+			},
+			"skip_line_count": {
+				"type": "int",
+				"defaultValue": 0
+			},
+			"trigger_date": {
+				"type": "string"
+			},
+			"enable_delete": {
+				"type": "string",
+				"defaultValue": "false"
+			}
+		},
+		"variables": {
+			"functional_date": {
+				"type": "String",
+				"defaultValue": "x"
+			},
+			"trigger_date": {
+				"type": "String"
+			},
+			"file_pattern_specified": {
+				"type": "String"
+			}
+		},
+		"folder": {
+			"name": "on_prem"
+		},
+		"annotations": []
+	}
+}
