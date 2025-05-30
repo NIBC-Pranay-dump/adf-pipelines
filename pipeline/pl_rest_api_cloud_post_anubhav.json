@@ -298,14 +298,6 @@
 				}
 			}
 		},
-		"variables": {
-			"download_timestamp": {
-				"type": "String"
-			},
-			"file_name": {
-				"type": "String"
-			}
-		},
 		"folder": {
 			"name": "cloud"
 		},
