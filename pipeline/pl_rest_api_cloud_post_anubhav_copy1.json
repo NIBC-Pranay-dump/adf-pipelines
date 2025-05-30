@@ -1,5 +1,5 @@
 {
-	"name": "pl_rest_api_cloud_post_anubhav",
+	"name": "pl_rest_api_cloud_post_anubhav_copy1",
 	"properties": {
 		"description": "Use this pipeline to connect the the API managed services REST API",
 		"activities": [
@@ -57,12 +57,62 @@
 				}
 			},
 			{
+				"name": "set file_name",
+				"description": "Set file name using download timestamp",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "set download timestamp",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "file_name",
+					"value": {
+						"value": "@replace(\n    pipeline().parameters.file_name_template, \n    '{timestamp}', \n    variables('download_timestamp')\n)",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "set download timestamp",
+				"description": "Set download timestamp in west europe timezone",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "Get access token",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "download_timestamp",
+					"value": {
+						"value": "@formatDateTime(convertTimeZone(pipeline().TriggerTime,'UTC','W. Europe Standard Time'), 'yyyyMMdd_HHmmss')",
+						"type": "Expression"
+					}
+				}
+			},
+			{
 				"name": "convert json to parquet",
 				"description": "Copy json data to a flattened parquet file, selecting items, adding the file_name and download_timestamp columns",
 				"type": "Copy",
 				"dependsOn": [
 					{
-						"activity": "Get access token",
+						"activity": "set file_name",
 						"dependencyConditions": [
 							"Succeeded"
 						]
@@ -100,7 +150,7 @@
 						"requestMethod": "GET",
 						"additionalHeaders": {
 							"Authorization": {
-								"value": "Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsIng1dCI6IkNOdjBPSTNSd3FsSEZFVm5hb01Bc2hDSDJYRSIsImtpZCI6IkNOdjBPSTNSd3FsSEZFVm5hb01Bc2hDSDJYRSJ9.eyJhdWQiOiJodHRwczovL2FwaW0uZGV2LmNsb3VkLm5pYmMuY29tIiwiaXNzIjoiaHR0cHM6Ly9zdHMud2luZG93cy5uZXQvODYxNGQ5NWYtNzYyYi00Nzg5LWE3NDEtMjU4OWUzZDBiMDhiLyIsImlhdCI6MTc0ODYxMjE4MSwibmJmIjoxNzQ4NjEyMTgxLCJleHAiOjE3NDg2MTYwODEsImFpbyI6ImsyUmdZT0F0WGhxMmJLSnJTdjZEV1gvLyt3WS9CQUE9IiwiYXBwaWQiOiJhMWJiNjFjMS1kN2M2LTQ2OGItOWU2YS03MjBkY2Q2M2NlOTEiLCJhcHBpZGFjciI6IjEiLCJpZHAiOiJodHRwczovL3N0cy53aW5kb3dzLm5ldC84NjE0ZDk1Zi03NjJiLTQ3ODktYTc0MS0yNTg5ZTNkMGIwOGIvIiwib2lkIjoiN2RmODc3MTItNjE1MC00MjU1LThhOWQtNTYzZTVmYjY2MzQ2IiwicmgiOiIxLkFTRUFYOWtVaGl0MmlVZW5RU1dKNDlDd2kyREtLQXpOSkwxRmxmRUJfYTdweEJ5R0FBQWhBQS4iLCJyb2xlcyI6WyJtb25leXZpZXctYXBpIiwiY2Rkbi1iYWdwcm8tYXBpIiwiZ29vZ2xlLWFuYWx5dGljcy1hcGkiLCJtb2NlYW4tYXBpLWVzZyIsIm1vY2Vhbi1hcGktcGFydHkiLCJoZG4tYXBpIiwiY2JzLWthZGFzdGVyIiwic2FsZXNmb3JjZW1hcmtldGluZ2Nsb3VkLWFwaSIsImNvbnN1bWVyLWNvbm5lY3RvciIsIm1vY2Vhbi1hcGktYW5hY3JlZGl0Iiwic2FsZXNmb3JjZS1hcGkiLCJzcGFhcmdpZHMtYXBpIl0sInN1YiI6IjdkZjg3NzEyLTYxNTAtNDI1NS04YTlkLTU2M2U1ZmI2NjM0NiIsInRpZCI6Ijg2MTRkOTVmLTc2MmItNDc4OS1hNzQxLTI1ODllM2QwYjA4YiIsInV0aSI6IjQybnJIbUhNa0VHOTNXSjlJWXNSQUEiLCJ2ZXIiOiIxLjAiLCJ4bXNfZnRkIjoiSHJZX05KUWhxaGgwM2RYNDdyc3pkY1NPMGZBdjZsb1pzR0FOZFVHU09aZ0JabkpoYm1ObFl5MWtjMjF6In0.NSn0pLkLICa0MrsreX6tiWBbhjTv0aMj_KRSSYWbNZFYIkBZu_HKYstZM4fPRrMzere1cpxpSlP-XHyVCZ5g7yzJG0yH2PXY_cFJkJ6YdtzOJa8ZGHE9C3POx5aXY3CxobTsr9dhNKbdYFCNC5NI_3SKXgAw3CnXc1q1ZC1w-3o10tFQPZkouXMzW5j-kXcgNUmYgv01K79qPtpjFshaZ4cMsUCBDbWh42fg5C6jC4_ni6Fuu9C6-CaoHR38luwVhnZD8eCapTKYc0NPZ3-ivDcLPhv616yGndIZGJTg3ospIukciUQ1uvom60x5DPlYpJn34s4O09z1JqKs4_9Gow",
+								"value": "@concat('Bearer ', activity('Get access token').output['access_token'])",
 								"type": "Expression"
 							}
 						},
