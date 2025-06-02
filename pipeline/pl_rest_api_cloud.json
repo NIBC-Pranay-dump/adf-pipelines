@@ -317,7 +317,16 @@
 			{
 				"name": "from temp to actual target, overwrite 1 file",
 				"type": "Copy",
-				"dependsOn": [],
+				"state": "Inactive",
+				"onInactiveMarkAs": "Succeeded",
+				"dependsOn": [
+					{
+						"activity": "CHANGE Loop until all data is copied",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
 				"policy": {
 					"timeout": "0.12:00:00",
 					"retry": 0,
@@ -379,11 +388,11 @@
 			},
 			"total_rows": {
 				"type": "int",
-				"defaultValue": 39996
+				"defaultValue": 35000
 			},
 			"page_size": {
 				"type": "int",
-				"defaultValue": 9999
+				"defaultValue": 5000
 			}
 		},
 		"variables": {
