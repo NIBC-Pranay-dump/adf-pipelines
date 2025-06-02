@@ -97,7 +97,8 @@
 				}
 			},
 			{
-				"name": "Loop until all data is copied - change to write to temp dir",
+				"name": "CHANGE Loop until all data is copied",
+				"description": "change to write to temp dir\nand have loop end condition",
 				"type": "Until",
 				"dependsOn": [
 					{
