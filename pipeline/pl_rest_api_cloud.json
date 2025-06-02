@@ -315,7 +315,8 @@
 				}
 			},
 			{
-				"name": "from temp to actual target, overwrite 1 file",
+				"name": "CHANGE from temp to actual target",
+				"description": "from temp to actual target, overwrite 1 file",
 				"type": "Copy",
 				"state": "Inactive",
 				"onInactiveMarkAs": "Succeeded",
