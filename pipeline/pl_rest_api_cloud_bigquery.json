@@ -359,7 +359,7 @@
 			},
 			"dataset_name": {
 				"type": "string",
-				"defaultValue": "google_analytics"
+				"defaultValue": "google_analytics_test"
 			},
 			"project_id": {
 				"type": "string",
@@ -367,7 +367,7 @@
 			},
 			"base_url": {
 				"type": "string",
-				"defaultValue": "https://apim.dev.cloud.nibc.com/external/google/analytics-api/1.0"
+				"defaultValue": "https://apim.dev.cloud.nibc.com/internal/google/analytics-api/1.0"
 			},
 			"key_vault_secret_name": {
 				"type": "string",
