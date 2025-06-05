@@ -152,215 +152,24 @@
 						}
 					}
 				}
-			},
-			{
-				"name": "copy REST API dataset part 1",
-				"description": "Copies the REST API dataset to datalake.",
-				"type": "Copy",
-				"dependsOn": [
-					{
-						"activity": "copy REST API dataset",
-						"dependencyConditions": [
-							"Failed"
-						]
-					}
-				],
-				"policy": {
-					"timeout": "0.12:00:00",
-					"retry": 0,
-					"retryIntervalInSeconds": 30,
-					"secureOutput": false,
-					"secureInput": false
-				},
-				"userProperties": [],
-				"typeProperties": {
-					"source": {
-						"type": "RestSource",
-						"httpRequestTimeout": "00:01:40",
-						"requestInterval": "00.00:00:00.010",
-						"requestMethod": "GET",
-						"additionalHeaders": {
-							"Authorization": {
-								"value": "@concat('Bearer ', activity('Get access token').output['access_token'])",
-								"type": "Expression"
-							}
-						},
-						"paginationRules": {
-							"supportRFC5988": "true"
-						}
-					},
-					"sink": {
-						"type": "ParquetSink",
-						"storeSettings": {
-							"type": "AzureBlobFSWriteSettings",
-							"copyBehavior": "FlattenHierarchy"
-						},
-						"formatSettings": {
-							"type": "ParquetWriteSettings"
-						}
-					},
-					"enableStaging": false,
-					"translator": {
-						"value": "@json(string(pipeline().parameters.column_mapping))",
-						"type": "Expression"
-					}
-				},
-				"inputs": [
-					{
-						"referenceName": "ds_rest_api_cloud",
-						"type": "DatasetReference",
-						"parameters": {
-							"relative_url": {
-								"value": "@concat(pipeline().parameters.relative_url,'?$top=9999')",
-								"type": "Expression"
-							},
-							"base_url": {
-								"value": "@pipeline().parameters.base_url",
-								"type": "Expression"
-							}
-						}
-					}
-				],
-				"outputs": [
-					{
-						"referenceName": "ds_adls_parquet_auto_resolve",
-						"type": "DatasetReference",
-						"parameters": {
-							"datastore_name": {
-								"value": "@pipeline().parameters.datastore_name",
-								"type": "Expression"
-							},
-							"dataset_name": {
-								"value": "@pipeline().parameters.dataset_name",
-								"type": "Expression"
-							},
-							"storage_account_uri": {
-								"value": "@pipeline().globalParameters.storage_account_datalake_uri",
-								"type": "Expression"
-							},
-							"container_name": {
-								"value": "@pipeline().globalParameters.storage_container_datalake",
-								"type": "Expression"
-							},
-							"file_name": {
-								"value": "@pipeline().parameters.dataset_name",
-								"type": "Expression"
-							}
-						}
-					}
-				]
-			},
-			{
-				"name": "copy REST API dataset part 2",
-				"description": "Copies the REST API dataset to datalake.",
-				"type": "Copy",
-				"dependsOn": [
-					{
-						"activity": "copy REST API dataset",
-						"dependencyConditions": [
-							"Failed"
-						]
-					}
-				],
-				"policy": {
-					"timeout": "0.12:00:00",
-					"retry": 0,
-					"retryIntervalInSeconds": 30,
-					"secureOutput": false,
-					"secureInput": false
-				},
-				"userProperties": [],
-				"typeProperties": {
-					"source": {
-						"type": "RestSource",
-						"httpRequestTimeout": "00:01:40",
-						"requestInterval": "00.00:00:00.010",
-						"requestMethod": "GET",
-						"additionalHeaders": {
-							"Authorization": {
-								"value": "@concat('Bearer ', activity('Get access token').output['access_token'])",
-								"type": "Expression"
-							}
-						},
-						"paginationRules": {
-							"supportRFC5988": "true"
-						}
-					},
-					"sink": {
-						"type": "ParquetSink",
-						"storeSettings": {
-							"type": "AzureBlobFSWriteSettings",
-							"copyBehavior": "FlattenHierarchy"
-						},
-						"formatSettings": {
-							"type": "ParquetWriteSettings"
-						}
-					},
-					"enableStaging": false,
-					"translator": {
-						"value": "@json(string(pipeline().parameters.column_mapping))",
-						"type": "Expression"
-					}
-				},
-				"inputs": [
-					{
-						"referenceName": "ds_rest_api_cloud",
-						"type": "DatasetReference",
-						"parameters": {
-							"relative_url": {
-								"value": "@concat(pipeline().parameters.relative_url,'?$skip=9999')",
-								"type": "Expression"
-							},
-							"base_url": {
-								"value": "@pipeline().parameters.base_url",
-								"type": "Expression"
-							}
-						}
-					}
-				],
-				"outputs": [
-					{
-						"referenceName": "ds_adls_parquet_auto_resolve",
-						"type": "DatasetReference",
-						"parameters": {
-							"datastore_name": {
-								"value": "@pipeline().parameters.datastore_name",
-								"type": "Expression"
-							},
-							"dataset_name": {
-								"value": "@pipeline().parameters.dataset_name",
-								"type": "Expression"
-							},
-							"storage_account_uri": {
-								"value": "@pipeline().globalParameters.storage_account_datalake_uri",
-								"type": "Expression"
-							},
-							"container_name": {
-								"value": "@pipeline().globalParameters.storage_container_datalake",
-								"type": "Expression"
-							},
-							"file_name": {
-								"value": "@concat(pipeline().parameters.dataset_name,'_2')",
-								"type": "Expression"
-							}
-						}
-					}
-				]
 			}
 		],
 		"parameters": {
 			"datastore_name": {
 				"type": "string",
-				"defaultValue": "cbs"
+				"defaultValue": "salesforce_marketing_cloud"
 			},
 			"dataset_name": {
-				"type": "string"
+				"type": "string",
+				"defaultValue": "customer_data"
 			},
 			"relative_url": {
-				"type": "string"
+				"type": "string",
+				"defaultValue": "customer-data"
 			},
 			"base_url": {
-				"type": "string"
+				"type": "string",
+				"defaultValue": "https://apim.dev.cloud.nibc.com/internal/salesforcemarketingcloud-api/1.0"
 			},
 			"key_vault_secret_name": {
 				"type": "string",
