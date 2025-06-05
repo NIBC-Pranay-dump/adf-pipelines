@@ -36,7 +36,7 @@
 							}
 						},
 						"paginationRules": {
-							"supportRFC5988": "true"
+							"AbsoluteUrl.$.link.next": ""
 						}
 					},
 					"sink": {
@@ -157,19 +157,19 @@
 		"parameters": {
 			"datastore_name": {
 				"type": "string",
-				"defaultValue": "test_marta"
+				"defaultValue": "salesforce_marketing_cloud"
 			},
 			"dataset_name": {
 				"type": "string",
-				"defaultValue": "facility"
+				"defaultValue": "customer_data"
 			},
 			"relative_url": {
 				"type": "string",
-				"defaultValue": "anacredit"
+				"defaultValue": "customer-data"
 			},
 			"base_url": {
 				"type": "string",
-				"defaultValue": "https://apim.dev.cloud.nibc.com/internal/mocean-api/1.0"
+				"defaultValue": "https://apim.dev.cloud.nibc.com/internal/salesforcemarketingcloud-customer-data-api/1.0"
 			},
 			"key_vault_secret_name": {
 				"type": "string",
@@ -182,55 +182,102 @@
 					"mappings": [
 						{
 							"source": {
-								"path": "['Id']",
-								"type": "String"
+								"path": "$['links']"
 							},
 							"sink": {
-								"name": "id",
-								"type": "String"
+								"name": "links"
 							}
 						},
 						{
 							"source": {
-								"path": "['MOJO_FacilityID__c']",
-								"type": "String"
+								"path": "$['requestToken']"
 							},
 							"sink": {
-								"name": "mojo_facilityid_c",
-								"type": "String"
+								"name": "requestToken"
 							}
 						},
 						{
 							"source": {
-								"path": "['MOJO_Purpose__c']",
-								"type": "String"
+								"path": "$['tokenExpireDateUtc']"
 							},
 							"sink": {
-								"name": "mojo_purpose_c",
-								"type": "String"
+								"name": "tokenExpireDateUtc"
 							}
 						},
 						{
 							"source": {
-								"path": "['attributes']['type']",
-								"type": "String"
+								"path": "$['customObjectId']"
 							},
 							"sink": {
-								"name": "attributes_type",
-								"type": "String"
+								"name": "customObjectId"
 							}
 						},
 						{
 							"source": {
-								"path": "['attributes']['url']",
-								"type": "String"
+								"path": "$['customObjectKey']"
 							},
 							"sink": {
-								"name": "attributes_url",
-								"type": "String"
+								"name": "customObjectKey"
+							}
+						},
+						{
+							"source": {
+								"path": "$['pageSize']"
+							},
+							"sink": {
+								"name": "pageSize"
+							}
+						},
+						{
+							"source": {
+								"path": "$['page']"
+							},
+							"sink": {
+								"name": "page"
+							}
+						},
+						{
+							"source": {
+								"path": "$['count']"
+							},
+							"sink": {
+								"name": "count"
+							}
+						},
+						{
+							"source": {
+								"path": "$['top']"
+							},
+							"sink": {
+								"name": "top"
+							}
+						},
+						{
+							"source": {
+								"path": "$['items']"
+							},
+							"sink": {
+								"name": "items"
+							}
+						},
+						{
+							"source": {
+								"path": "file_name"
+							},
+							"sink": {
+								"name": "file_name"
+							}
+						},
+						{
+							"source": {
+								"path": "download_timestamp"
+							},
+							"sink": {
+								"name": "download_timestamp"
 							}
 						}
-					]
+					],
+					"mapComplexValuesToString": true
 				}
 			}
 		},
