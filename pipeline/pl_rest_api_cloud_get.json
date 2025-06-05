@@ -34,6 +34,9 @@
 								"value": "@concat('Bearer ', activity('Get access token').output['access_token'])",
 								"type": "Expression"
 							}
+						},
+						"paginationRules": {
+							"supportRFC5988": "true"
 						}
 					},
 					"sink": {
@@ -90,7 +93,7 @@
 								"type": "Expression"
 							},
 							"file_name": {
-								"value": "@pipeline().parameters.dataset_name",
+								"value": "@replace(variables('file_name'),'.json','')",
 								"type": "Expression"
 							}
 						}
