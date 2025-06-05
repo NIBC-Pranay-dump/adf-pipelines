@@ -49,11 +49,7 @@
 							"type": "ParquetWriteSettings"
 						}
 					},
-					"enableStaging": false,
-					"translator": {
-						"value": "@json(string(pipeline().parameters.column_mapping))",
-						"type": "Expression"
-					}
+					"enableStaging": false
 				},
 				"inputs": [
 					{
@@ -61,7 +57,7 @@
 						"type": "DatasetReference",
 						"parameters": {
 							"relative_url": {
-								"value": "@concat('projects/',pipeline().parameters.project_id,'/datasets/',pipeline().parameters.dataset_id)",
+								"value": "@concat('projects/',pipeline().parameters.project_id,'/datasets/',pipeline().parameters.dataset_id,'/tables/',pipeline().parameters.table_id,'/data')",
 								"type": "Expression"
 							},
 							"base_url": {
@@ -404,7 +400,7 @@
 			},
 			"table_id": {
 				"type": "string",
-				"defaultValue": "events_*"
+				"defaultValue": "events_20250604"
 			}
 		},
 		"folder": {
