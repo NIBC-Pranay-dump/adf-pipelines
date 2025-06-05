@@ -1,0 +1,599 @@
+{
+	"name": "pl_cbs_through_cip_cloud",
+	"properties": {
+		"description": "Use this pipeline to connect the the API managed services REST API. The API used in this pipeline requires the use of skip and top arguments in the URL to paginate through the results.",
+		"activities": [
+			{
+				"name": "Get access token",
+				"type": "WebActivity",
+				"dependsOn": [
+					{
+						"activity": "Get secret",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": true,
+					"secureInput": true
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"method": "POST",
+					"headers": {
+						"Content-Type": "application/x-www-form-urlencoded"
+					},
+					"url": "https://login.microsoftonline.com/8614d95f-762b-4789-a741-2589e3d0b08b/oauth2/v2.0/token",
+					"body": {
+						"value": "@concat('client_id=', pipeline().globalParameters.cip_client_id, '&scope=', pipeline().globalParameters.cip_scope, '&client_secret=', activity('Get secret').output.pipelineReturnValue.keyvault_secret_value, '&grant_type=client_credentials')",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "Get secret",
+				"type": "ExecutePipeline",
+				"dependsOn": [],
+				"policy": {
+					"secureInput": true
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "pl_util_get_keyvault_secret",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true,
+					"parameters": {
+						"keyvault_secret_name": {
+							"value": "@pipeline().parameters.key_vault_secret_name",
+							"type": "Expression"
+						}
+					}
+				}
+			},
+			{
+				"name": "Iterate download until empty file is saved",
+				"description": "We will make a GET request for 9999 rows at the time and stop if the saved parquet file is empty",
+				"type": "Until",
+				"dependsOn": [
+					{
+						"activity": "Empty internal storage before download",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@variables('stop_iterate')",
+						"type": "Expression"
+					},
+					"activities": [
+						{
+							"name": "copy iteration",
+							"type": "Copy",
+							"dependsOn": [
+								{
+									"activity": "Set file name for the iteration",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								},
+								{
+									"activity": "Set lines to skip",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "0.01:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": true
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "RestSource",
+									"httpRequestTimeout": "00:01:40",
+									"requestInterval": "00.00:00:00.010",
+									"requestMethod": "GET",
+									"additionalHeaders": {
+										"Authorization": {
+											"value": "@concat('Bearer ', activity('Get access token').output['access_token'])",
+											"type": "Expression"
+										}
+									},
+									"paginationRules": {
+										"supportRFC5988": "true"
+									}
+								},
+								"sink": {
+									"type": "ParquetSink",
+									"storeSettings": {
+										"type": "AzureBlobStorageWriteSettings"
+									},
+									"formatSettings": {
+										"type": "ParquetWriteSettings"
+									}
+								},
+								"enableStaging": false,
+								"translator": {
+									"value": "@json(string(pipeline().parameters.column_mapping))",
+									"type": "Expression"
+								}
+							},
+							"inputs": [
+								{
+									"referenceName": "ds_rest_api_cloud",
+									"type": "DatasetReference",
+									"parameters": {
+										"relative_url": {
+											"value": "@concat(     pipeline().parameters.relative_url,     '?$skip=', string(variables('lines_to_skip')),     '&$top=', string(pipeline().parameters.page_size) )",
+											"type": "Expression"
+										},
+										"base_url": {
+											"value": "@pipeline().parameters.base_url",
+											"type": "Expression"
+										}
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "ds_blob_parquet_cloud",
+									"type": "DatasetReference",
+									"parameters": {
+										"storage_account_uri": {
+											"value": "@pipeline().globalParameters.storage_account_data_factory_uri",
+											"type": "Expression"
+										},
+										"container_name": {
+											"value": "@pipeline().globalParameters.storage_container_data_factory",
+											"type": "Expression"
+										},
+										"datastore_name": {
+											"value": "@pipeline().parameters.datastore_name",
+											"type": "Expression"
+										},
+										"dataset_name": {
+											"value": "@pipeline().parameters.dataset_name",
+											"type": "Expression"
+										},
+										"file_name": {
+											"value": "@variables('interation_file_name')",
+											"type": "Expression"
+										}
+									}
+								}
+							]
+						},
+						{
+							"name": "Get first row of saved file",
+							"type": "Lookup",
+							"dependsOn": [
+								{
+									"activity": "copy iteration",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "ParquetSource",
+									"storeSettings": {
+										"type": "AzureBlobStorageReadSettings",
+										"recursive": false,
+										"enablePartitionDiscovery": false
+									},
+									"formatSettings": {
+										"type": "ParquetReadSettings"
+									}
+								},
+								"dataset": {
+									"referenceName": "ds_blob_parquet_cloud",
+									"type": "DatasetReference",
+									"parameters": {
+										"storage_account_uri": {
+											"value": "@pipeline().globalParameters.storage_account_data_factory_uri",
+											"type": "Expression"
+										},
+										"container_name": {
+											"value": "@pipeline().globalParameters.storage_container_data_factory",
+											"type": "Expression"
+										},
+										"datastore_name": {
+											"value": "@pipeline().parameters.datastore_name",
+											"type": "Expression"
+										},
+										"dataset_name": {
+											"value": "@pipeline().parameters.dataset_name",
+											"type": "Expression"
+										},
+										"file_name": {
+											"value": "@variables('interation_file_name')",
+											"type": "Expression"
+										}
+									}
+								}
+							}
+						},
+						{
+							"name": "Is saved file is empty",
+							"description": "We check if the latest file copied from the CBS is empty. If so, that means we should stop iterating.\nThe check depends on the structure of the file we get, where we either expect:\n- a $['value'] column with an empty list, or\n- an empty file with no \"first row\" when there is no more data to fetch",
+							"type": "IfCondition",
+							"dependsOn": [
+								{
+									"activity": "Get first row of saved file",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"userProperties": [],
+							"typeProperties": {
+								"expression": {
+									"value": "@or(\n    not(contains(activity('Get first row of saved file').output, 'firstRow')),\n    and(\n        contains(activity('Get first row of saved file').output.firstRow, '$[''value'']'),\n        equals(activity('Get first row of saved file').output.firstRow['$[''value'']'],  '[]')\n    )\n)",
+									"type": "Expression"
+								},
+								"ifTrueActivities": [
+									{
+										"name": "Set variable to finish looping",
+										"type": "SetVariable",
+										"dependsOn": [],
+										"policy": {
+											"secureOutput": false,
+											"secureInput": false
+										},
+										"userProperties": [],
+										"typeProperties": {
+											"variableName": "stop_iterate",
+											"value": {
+												"value": "@bool(true)",
+												"type": "Expression"
+											}
+										}
+									}
+								]
+							}
+						},
+						{
+							"name": "Set lines to skip",
+							"description": "Set lines to skip to know what page number to start iteration on",
+							"type": "SetVariable",
+							"dependsOn": [],
+							"policy": {
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "lines_to_skip",
+								"value": {
+									"value": "@mul(pipeline().parameters.page_size, variables('iteration_counter'))",
+									"type": "Expression"
+								}
+							}
+						},
+						{
+							"name": "Set file name for the iteration",
+							"type": "SetVariable",
+							"dependsOn": [],
+							"policy": {
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "interation_file_name",
+								"value": {
+									"value": "@concat(pipeline().parameters.dataset_name, '_part_', variables('iteration_counter'))",
+									"type": "Expression"
+								}
+							}
+						},
+						{
+							"name": "Set variable loop iteration part 1",
+							"description": "Because we cannot self update variables, I need to make a dummy variable to store the value of the iteration counter",
+							"type": "SetVariable",
+							"dependsOn": [
+								{
+									"activity": "copy iteration",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "iter_counter_copy",
+								"value": {
+									"value": "@string(add(variables('iteration_counter'), 1))",
+									"type": "Expression"
+								}
+							}
+						},
+						{
+							"name": "Set variable loop iteration part 2",
+							"description": "Because we cannot self update variables, I need to make a dummy variable to store the value of the iteration counter",
+							"type": "SetVariable",
+							"dependsOn": [
+								{
+									"activity": "Set variable loop iteration part 1",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "iteration_counter",
+								"value": {
+									"value": "@int(variables('iter_counter_copy'))",
+									"type": "Expression"
+								}
+							}
+						}
+					],
+					"timeout": "0.3:00:00"
+				}
+			},
+			{
+				"name": "Copy data to ADLS",
+				"description": "Get all files from the temp directory and save them as 1 file in ADLS to avoid partial overwrites of the data in ADLS when the newly refreshed file contains less rows than before ",
+				"type": "Copy",
+				"dependsOn": [
+					{
+						"activity": "Iterate download until empty file is saved",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": true
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "ParquetSource",
+						"storeSettings": {
+							"type": "AzureBlobStorageReadSettings",
+							"recursive": true,
+							"wildcardFileName": "*",
+							"enablePartitionDiscovery": false
+						},
+						"formatSettings": {
+							"type": "ParquetReadSettings"
+						}
+					},
+					"sink": {
+						"type": "ParquetSink",
+						"storeSettings": {
+							"type": "AzureBlobFSWriteSettings",
+							"copyBehavior": "MergeFiles"
+						},
+						"formatSettings": {
+							"type": "ParquetWriteSettings"
+						}
+					},
+					"enableStaging": false,
+					"translator": {
+						"type": "TabularTranslator",
+						"typeConversion": true,
+						"typeConversionSettings": {
+							"allowDataTruncation": true,
+							"treatBooleanAsNumber": false
+						}
+					}
+				},
+				"inputs": [
+					{
+						"referenceName": "ds_blob_parquet_cloud",
+						"type": "DatasetReference",
+						"parameters": {
+							"storage_account_uri": {
+								"value": "@pipeline().globalParameters.storage_account_data_factory_uri",
+								"type": "Expression"
+							},
+							"container_name": {
+								"value": "@pipeline().globalParameters.storage_container_data_factory",
+								"type": "Expression"
+							},
+							"datastore_name": {
+								"value": "@pipeline().parameters.datastore_name",
+								"type": "Expression"
+							},
+							"dataset_name": {
+								"value": "@pipeline().parameters.dataset_name",
+								"type": "Expression"
+							},
+							"file_name": {
+								"value": "*",
+								"type": "Expression"
+							}
+						}
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "ds_adls_parquet_auto_resolve",
+						"type": "DatasetReference",
+						"parameters": {
+							"datastore_name": {
+								"value": "@pipeline().parameters.datastore_name",
+								"type": "Expression"
+							},
+							"dataset_name": {
+								"value": "@pipeline().parameters.dataset_name",
+								"type": "Expression"
+							},
+							"storage_account_uri": {
+								"value": "@pipeline().globalParameters.storage_account_datalake_uri",
+								"type": "Expression"
+							},
+							"container_name": {
+								"value": "@pipeline().globalParameters.storage_container_datalake",
+								"type": "Expression"
+							},
+							"file_name": {
+								"value": "@pipeline().parameters.dataset_name",
+								"type": "Expression"
+							}
+						}
+					}
+				]
+			},
+			{
+				"name": "Empty internal storage before download",
+				"description": "This step will empty the blob storage directory before the download of all files is done to ensure we don't copy over old data in the Copy to ADLS step.",
+				"type": "Delete",
+				"dependsOn": [
+					{
+						"activity": "Get access token",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"dataset": {
+						"referenceName": "ds_blob_parquet_cloud",
+						"type": "DatasetReference",
+						"parameters": {
+							"storage_account_uri": {
+								"value": "@pipeline().globalParameters.storage_account_data_factory_uri",
+								"type": "Expression"
+							},
+							"container_name": {
+								"value": "@pipeline().globalParameters.storage_container_data_factory",
+								"type": "Expression"
+							},
+							"datastore_name": {
+								"value": "@pipeline().parameters.datastore_name",
+								"type": "Expression"
+							},
+							"dataset_name": {
+								"value": "@pipeline().parameters.dataset_name",
+								"type": "Expression"
+							},
+							"file_name": "*"
+						}
+					},
+					"enableLogging": false,
+					"storeSettings": {
+						"type": "AzureBlobStorageReadSettings",
+						"recursive": true,
+						"wildcardFileName": "*",
+						"enablePartitionDiscovery": false
+					}
+				}
+			}
+		],
+		"parameters": {
+			"datastore_name": {
+				"type": "string",
+				"defaultValue": "test_marta"
+			},
+			"dataset_name": {
+				"type": "string",
+				"defaultValue": "cbs_kwb_2024_85984NED_nested"
+			},
+			"relative_url": {
+				"type": "string",
+				"defaultValue": "85984NED"
+			},
+			"base_url": {
+				"type": "string",
+				"defaultValue": "https://apim.dev.cloud.nibc.com/internal/cbs/kadaster-api/1.0/dataset"
+			},
+			"key_vault_secret_name": {
+				"type": "string",
+				"defaultValue": "apim-authorization-access-token"
+			},
+			"column_mapping": {
+				"type": "string",
+				"defaultValue": {
+					"type": "TabularTranslator",
+					"mappings": [
+						{
+							"source": {
+								"path": "$['value']"
+							},
+							"sink": {
+								"name": "$['value']"
+							}
+						}
+					],
+					"mapComplexValuesToString": true
+				}
+			},
+			"page_size": {
+				"type": "int",
+				"defaultValue": 9999
+			}
+		},
+		"variables": {
+			"stop_iterate": {
+				"type": "Boolean",
+				"defaultValue": false
+			},
+			"iteration_counter": {
+				"type": "Integer",
+				"defaultValue": 0
+			},
+			"lines_to_skip": {
+				"type": "Integer",
+				"defaultValue": 0
+			},
+			"interation_file_name": {
+				"type": "String"
+			},
+			"iter_counter_copy": {
+				"type": "String",
+				"defaultValue": "0"
+			}
+		},
+		"folder": {
+			"name": "cloud"
+		},
+		"annotations": []
+	}
+}
