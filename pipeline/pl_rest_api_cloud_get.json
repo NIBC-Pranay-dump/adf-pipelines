@@ -36,7 +36,7 @@
 							}
 						},
 						"paginationRules": {
-							"AbsoluteUrl.AbsoluteUrl": "$.$.link.next"
+							"AbsoluteUrl": "$.$.link.next"
 						}
 					},
 					"sink": {
