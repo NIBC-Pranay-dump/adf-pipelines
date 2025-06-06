@@ -1,0 +1,45 @@
+{
+	"name": "ds_blob_folder_cloud",
+	"properties": {
+		"description": "Point to a folder on the Azure Cloud",
+		"linkedServiceName": {
+			"referenceName": "ls_blob_cloud",
+			"type": "LinkedServiceReference",
+			"parameters": {
+				"storage_account_uri": {
+					"value": "@dataset().storage_account_uri",
+					"type": "Expression"
+				}
+			}
+		},
+		"parameters": {
+			"storage_account_uri": {
+				"type": "string"
+			},
+			"container_name": {
+				"type": "string"
+			},
+			"datastore_name": {
+				"type": "string"
+			},
+			"dataset_name": {
+				"type": "string"
+			}
+		},
+		"folder": {
+			"name": "cloud"
+		},
+		"annotations": [],
+		"type": "Binary",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobStorageLocation",
+				"folderPath": "@concat('datastore_', dataset().datastore_name, '/dataset_', dataset().dataset_name)",
+				"container": {
+					"value": "@dataset().container_name",
+					"type": "Expression"
+				}
+			}
+		}
+	}
+}

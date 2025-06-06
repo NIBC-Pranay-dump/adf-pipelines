@@ -62,7 +62,7 @@
 				"type": "Until",
 				"dependsOn": [
 					{
-						"activity": "Empty internal storage before download",
+						"activity": "If internal folder exists then delete it",
 						"dependencyConditions": [
 							"Succeeded"
 						]
@@ -474,9 +474,8 @@
 				]
 			},
 			{
-				"name": "Empty internal storage before download",
-				"description": "This step will empty the blob storage directory before the download of all files is done to ensure we don't copy over old data in the Copy to ADLS step.",
-				"type": "Delete",
+				"name": "Check internal folder content",
+				"type": "GetMetadata",
 				"dependsOn": [
 					{
 						"activity": "Get access token",
@@ -495,7 +494,7 @@
 				"userProperties": [],
 				"typeProperties": {
 					"dataset": {
-						"referenceName": "ds_blob_parquet_cloud",
+						"referenceName": "ds_blob_folder_cloud",
 						"type": "DatasetReference",
 						"parameters": {
 							"storage_account_uri": {
@@ -513,17 +512,85 @@
 							"dataset_name": {
 								"value": "@pipeline().parameters.dataset_name",
 								"type": "Expression"
-							},
-							"file_name": "*"
+							}
 						}
 					},
-					"enableLogging": false,
+					"fieldList": [
+						"exists"
+					],
 					"storeSettings": {
 						"type": "AzureBlobStorageReadSettings",
-						"recursive": true,
-						"wildcardFileName": "*",
 						"enablePartitionDiscovery": false
+					},
+					"formatSettings": {
+						"type": "BinaryReadSettings"
 					}
+				}
+			},
+			{
+				"name": "If internal folder exists then delete it",
+				"type": "IfCondition",
+				"dependsOn": [
+					{
+						"activity": "Check internal folder content",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@bool(activity('Check internal folder content').output.exists)",
+						"type": "Expression"
+					},
+					"ifTrueActivities": [
+						{
+							"name": "Delete internal folder content",
+							"description": "To avoid partial overwrite, we want to delete the internal folder content before starting a new download in case of the number of files being different. ",
+							"type": "Delete",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"dataset": {
+									"referenceName": "ds_blob_folder_cloud",
+									"type": "DatasetReference",
+									"parameters": {
+										"storage_account_uri": {
+											"value": "@pipeline().globalParameters.storage_account_data_factory_uri",
+											"type": "Expression"
+										},
+										"container_name": {
+											"value": "@pipeline().globalParameters.storage_container_data_factory",
+											"type": "Expression"
+										},
+										"datastore_name": {
+											"value": "@pipeline().parameters.datastore_name",
+											"type": "Expression"
+										},
+										"dataset_name": {
+											"value": "@pipeline().parameters.dataset_name",
+											"type": "Expression"
+										}
+									}
+								},
+								"enableLogging": false,
+								"storeSettings": {
+									"type": "AzureBlobStorageReadSettings",
+									"recursive": true,
+									"wildcardFileName": "*",
+									"enablePartitionDiscovery": false
+								}
+							}
+						}
+					]
 				}
 			}
 		],
