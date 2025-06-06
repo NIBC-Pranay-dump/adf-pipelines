@@ -329,7 +329,7 @@
 							"typeProperties": {
 								"variableName": "iter_counter_copy",
 								"value": {
-									"value": "@string(add(variables('iteration_counter'), 1))",
+									"value": "@add(variables('iteration_counter'), 1)",
 									"type": "Expression"
 								}
 							}
@@ -520,6 +520,7 @@
 					],
 					"storeSettings": {
 						"type": "AzureBlobStorageReadSettings",
+						"recursive": true,
 						"enablePartitionDiscovery": false
 					},
 					"formatSettings": {
@@ -654,8 +655,8 @@
 				"type": "String"
 			},
 			"iter_counter_copy": {
-				"type": "String",
-				"defaultValue": "0"
+				"type": "Integer",
+				"defaultValue": 0
 			}
 		},
 		"folder": {
