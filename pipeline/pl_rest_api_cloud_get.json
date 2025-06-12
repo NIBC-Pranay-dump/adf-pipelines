@@ -182,15 +182,296 @@
 					"mappings": [
 						{
 							"source": {
-								"path": "item.keys.sf_id_18",
+								"path": "['keys']['sf_id_18']",
 								"type": "String"
 							},
 							"sink": {
 								"name": "sf_id_18",
 								"type": "String"
 							}
+						},
+						{
+							"source": {
+								"path": "['values']['account_id']",
+								"type": "String"
+							},
+							"sink": {
+								"name": "account_id",
+								"type": "String"
+							}
+						},
+						{
+							"source": {
+								"path": "['values']['ods_id']",
+								"type": "String"
+							},
+							"sink": {
+								"name": "ods_id",
+								"type": "String"
+							}
+						},
+						{
+							"source": {
+								"path": "['values']['email']",
+								"type": "String"
+							},
+							"sink": {
+								"name": "email",
+								"type": "String"
+							}
+						},
+						{
+							"source": {
+								"path": "['values']['firstname']",
+								"type": "String"
+							},
+							"sink": {
+								"name": "firstname",
+								"type": "String"
+							}
+						},
+						{
+							"source": {
+								"path": "['values']['prefix']",
+								"type": "String"
+							},
+							"sink": {
+								"name": "prefix",
+								"type": "String"
+							}
+						},
+						{
+							"source": {
+								"path": "['values']['lastname']",
+								"type": "String"
+							},
+							"sink": {
+								"name": "lastname",
+								"type": "String"
+							}
+						},
+						{
+							"source": {
+								"path": "['values']['salutation']",
+								"type": "String"
+							},
+							"sink": {
+								"name": "salutation",
+								"type": "String"
+							}
+						},
+						{
+							"source": {
+								"path": "['values']['gender']",
+								"type": "String"
+							},
+							"sink": {
+								"name": "gender",
+								"type": "String"
+							}
+						},
+						{
+							"source": {
+								"path": "['values']['birthdate']",
+								"type": "String"
+							},
+							"sink": {
+								"name": "birthdate",
+								"type": "String"
+							}
+						},
+						{
+							"source": {
+								"path": "['values']['languagecode']",
+								"type": "String"
+							},
+							"sink": {
+								"name": "languagecode",
+								"type": "String"
+							}
+						},
+						{
+							"source": {
+								"path": "['values']['startdate_client']",
+								"type": "String"
+							},
+							"sink": {
+								"name": "startdate_client",
+								"type": "String"
+							}
+						},
+						{
+							"source": {
+								"path": "['values']['street']",
+								"type": "String"
+							},
+							"sink": {
+								"name": "street",
+								"type": "String"
+							}
+						},
+						{
+							"source": {
+								"path": "['values']['state']",
+								"type": "String"
+							},
+							"sink": {
+								"name": "state",
+								"type": "String"
+							}
+						},
+						{
+							"source": {
+								"path": "['values']['city']",
+								"type": "String"
+							},
+							"sink": {
+								"name": "city",
+								"type": "String"
+							}
+						},
+						{
+							"source": {
+								"path": "['values']['country']",
+								"type": "String"
+							},
+							"sink": {
+								"name": "country",
+								"type": "String"
+							}
+						},
+						{
+							"source": {
+								"path": "['values']['phonenumber']",
+								"type": "String"
+							},
+							"sink": {
+								"name": "phonenumber",
+								"type": "String"
+							}
+						},
+						{
+							"source": {
+								"path": "['values']['mobilenumber']",
+								"type": "String"
+							},
+							"sink": {
+								"name": "mobilenumber",
+								"type": "String"
+							}
+						},
+						{
+							"source": {
+								"path": "['values']['lastmodified']",
+								"type": "String"
+							},
+							"sink": {
+								"name": "lastmodified",
+								"type": "String"
+							}
+						},
+						{
+							"source": {
+								"path": "['values']['deceaseindicator']",
+								"type": "String"
+							},
+							"sink": {
+								"name": "deceaseindicator",
+								"type": "String"
+							}
+						},
+						{
+							"source": {
+								"path": "['values']['newsletter_optin']",
+								"type": "String"
+							},
+							"sink": {
+								"name": "newsletter_optin",
+								"type": "String"
+							}
+						},
+						{
+							"source": {
+								"path": "['values']['newsletter_optout_date']",
+								"type": "String"
+							},
+							"sink": {
+								"name": "newsletter_optout_date",
+								"type": "String"
+							}
+						},
+						{
+							"source": {
+								"path": "['values']['nps_optin']",
+								"type": "String"
+							},
+							"sink": {
+								"name": "nps_optin",
+								"type": "String"
+							}
+						},
+						{
+							"source": {
+								"path": "['values']['nps_optout_date']",
+								"type": "String"
+							},
+							"sink": {
+								"name": "nps_optout_date",
+								"type": "String"
+							}
+						},
+						{
+							"source": {
+								"path": "['values']['activeclient']",
+								"type": "String"
+							},
+							"sink": {
+								"name": "activeclient",
+								"type": "String"
+							}
+						},
+						{
+							"source": {
+								"path": "['values']['signicat_status__c']",
+								"type": "String"
+							},
+							"sink": {
+								"name": "signicat_status__c",
+								"type": "String"
+							}
+						},
+						{
+							"source": {
+								"path": "['values']['signicatlastmodifieddate']",
+								"type": "String"
+							},
+							"sink": {
+								"name": "signicatlastmodifieddate",
+								"type": "String"
+							}
+						},
+						{
+							"source": {
+								"path": "['values']['signicattype']",
+								"type": "String"
+							},
+							"sink": {
+								"name": "signicattype",
+								"type": "String"
+							}
+						},
+						{
+							"source": {
+								"path": "['values']['signicatesource']",
+								"type": "String"
+							},
+							"sink": {
+								"name": "signicatesource",
+								"type": "String"
+							}
 						}
-					]
+					],
+					"collectionReference": "$['items']"
 				}
 			}
 		},
