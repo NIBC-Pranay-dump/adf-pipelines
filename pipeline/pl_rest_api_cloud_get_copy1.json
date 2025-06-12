@@ -36,7 +36,7 @@
 							}
 						},
 						"paginationRules": {
-							"supportRFC5988": "true"
+							"AbsoluteUrl": "$.links.next.href"
 						}
 					},
 					"sink": {
@@ -177,128 +177,7 @@
 			},
 			"column_mapping": {
 				"type": "string",
-				"defaultValue": [
-					{
-						"source": "item",
-						"sink": "item"
-					},
-					{
-						"source": "item.keys.sf_id_18",
-						"sink": "sf_id_18"
-					},
-					{
-						"source": "item.values.account_id",
-						"sink": "account_id"
-					},
-					{
-						"source": "item.values.ods_id",
-						"sink": "ods_id"
-					},
-					{
-						"source": "item.values.email",
-						"sink": "email"
-					},
-					{
-						"source": "item.values.firstname",
-						"sink": "firstname"
-					},
-					{
-						"source": "item.values.prefix",
-						"sink": "prefix"
-					},
-					{
-						"source": "item.values.lastname",
-						"sink": "lastname"
-					},
-					{
-						"source": "item.values.salutation",
-						"sink": "salutation"
-					},
-					{
-						"source": "item.values.gender",
-						"sink": "gender"
-					},
-					{
-						"source": "item.values.birthdate",
-						"sink": "birthdate"
-					},
-					{
-						"source": "item.values.languagecode",
-						"sink": "languagecode"
-					},
-					{
-						"source": "item.values.startdate_client",
-						"sink": "startdate_client"
-					},
-					{
-						"source": "item.values.street",
-						"sink": "street"
-					},
-					{
-						"source": "item.values.state",
-						"sink": "state"
-					},
-					{
-						"source": "item.values.city",
-						"sink": "city"
-					},
-					{
-						"source": "item.values.country",
-						"sink": "country"
-					},
-					{
-						"source": "item.values.phonenumber",
-						"sink": "phonenumber"
-					},
-					{
-						"source": "item.values.mobilenumber",
-						"sink": "mobilenumber"
-					},
-					{
-						"source": "item.values.lastmodified",
-						"sink": "lastmodified"
-					},
-					{
-						"source": "item.values.deceaseindicator",
-						"sink": "deceaseindicator"
-					},
-					{
-						"source": "item.values.newsletter_optin",
-						"sink": "newsletter_optin"
-					},
-					{
-						"source": "item.values.newsletter_optout_date",
-						"sink": "newsletter_optout_date"
-					},
-					{
-						"source": "item.values.nps_optin",
-						"sink": "nps_optin"
-					},
-					{
-						"source": "item.values.nps_optout_date",
-						"sink": "nps_optout_date"
-					},
-					{
-						"source": "item.values.activeclient",
-						"sink": "activeclient"
-					},
-					{
-						"source": "item.values.signicat_status__c",
-						"sink": "signicat_status__c"
-					},
-					{
-						"source": "item.values.signicatlastmodifieddate",
-						"sink": "signicatlastmodifieddate"
-					},
-					{
-						"source": "item.values.signicattype",
-						"sink": "signicattype"
-					},
-					{
-						"source": "item.values.signicatesource",
-						"sink": "signicatesource"
-					}
-				]
+				"defaultValue": "{ \t\"type\": \"TabularTranslator\", \t\"mappings\": [ \t\t{ \t\t\t\"source\": { \t\t\t\t\"path\": \"$['links']\" \t\t\t}, \t\t\t\"sink\": { \t\t\t\t\"name\": \"links\" \t\t\t} \t\t}, \t\t{ \t\t\t\"source\": { \t\t\t\t\"path\": \"$['requestToken']\" \t\t\t}, \t\t\t\"sink\": { \t\t\t\t\"name\": \"requestToken\" \t\t\t} \t\t}, \t\t{ \t\t\t\"source\": { \t\t\t\t\"path\": \"$['tokenExpireDateUtc']\" \t\t\t}, \t\t\t\"sink\": { \t\t\t\t\"name\": \"tokenExpireDateUtc\" \t\t\t} \t\t}, \t\t{ \t\t\t\"source\": { \t\t\t\t\"path\": \"$['customObjectId']\" \t\t\t}, \t\t\t\"sink\": { \t\t\t\t\"name\": \"customObjectId\" \t\t\t} \t\t}, \t\t{ \t\t\t\"source\": { \t\t\t\t\"path\": \"$['customObjectKey']\" \t\t\t}, \t\t\t\"sink\": { \t\t\t\t\"name\": \"customObjectKey\" \t\t\t} \t\t}, \t\t{ \t\t\t\"source\": { \t\t\t\t\"path\": \"$['pageSize']\" \t\t\t}, \t\t\t\"sink\": { \t\t\t\t\"name\": \"pageSize\" \t\t\t} \t\t}, \t\t{ \t\t\t\"source\": { \t\t\t\t\"path\": \"$['page']\" \t\t\t}, \t\t\t\"sink\": { \t\t\t\t\"name\": \"page\" \t\t\t} \t\t}, \t\t{ \t\t\t\"source\": { \t\t\t\t\"path\": \"$['count']\" \t\t\t}, \t\t\t\"sink\": { \t\t\t\t\"name\": \"count\" \t\t\t} \t\t}, \t\t{ \t\t\t\"source\": { \t\t\t\t\"path\": \"$['top']\" \t\t\t}, \t\t\t\"sink\": { \t\t\t\t\"name\": \"top\" \t\t\t} \t\t}, \t\t{ \t\t\t\"source\": { \t\t\t\t\"path\": \"$['items']\" \t\t\t}, \t\t\t\"sink\": { \t\t\t\t\"name\": \"items\" \t\t\t} \t\t}, \t], \t\"mapComplexValuesToString\": true }"
 			}
 		},
 		"folder": {
