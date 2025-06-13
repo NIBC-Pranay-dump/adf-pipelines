@@ -30,7 +30,7 @@
 						"requestInterval": "00.00:00:00.010",
 						"requestMethod": "GET",
 						"paginationRules": {
-							"AbsoluteUrl": "$.\"$.links.next\""
+							"AbsoluteUrl": "$.\"$.links.next//data\""
 						}
 					},
 					"sink": {
