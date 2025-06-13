@@ -1,0 +1,188 @@
+{
+	"name": "pl_rest_api_cloud_get_copy2",
+	"properties": {
+		"description": "Use this pipeline to connect the the API managed services REST API GET method",
+		"activities": [
+			{
+				"name": "copy REST API dataset",
+				"description": "Copies the REST API dataset to datalake.",
+				"type": "Copy",
+				"dependsOn": [
+					{
+						"activity": "Get access token",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": true
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "RestSource",
+						"httpRequestTimeout": "00:01:40",
+						"requestInterval": "00.00:00:00.010",
+						"requestMethod": "GET",
+						"additionalHeaders": {
+							"Authorization": {
+								"value": "@concat('Bearer ', activity('Get access token').output['access_token'])",
+								"type": "Expression"
+							}
+						},
+						"paginationRules": {
+							"supportRFC5988": "true"
+						}
+					},
+					"sink": {
+						"type": "ParquetSink",
+						"storeSettings": {
+							"type": "AzureBlobFSWriteSettings",
+							"copyBehavior": "FlattenHierarchy"
+						},
+						"formatSettings": {
+							"type": "ParquetWriteSettings"
+						}
+					},
+					"enableStaging": false,
+					"translator": {
+						"value": "@json(string(pipeline().parameters.column_mapping))",
+						"type": "Expression"
+					}
+				},
+				"inputs": [
+					{
+						"referenceName": "ds_rest_api_cloud",
+						"type": "DatasetReference",
+						"parameters": {
+							"relative_url": {
+								"value": "@pipeline().parameters.relative_url",
+								"type": "Expression"
+							},
+							"base_url": {
+								"value": "@pipeline().parameters.base_url",
+								"type": "Expression"
+							}
+						}
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "ds_adls_parquet_auto_resolve",
+						"type": "DatasetReference",
+						"parameters": {
+							"datastore_name": {
+								"value": "@pipeline().parameters.datastore_name",
+								"type": "Expression"
+							},
+							"dataset_name": {
+								"value": "@pipeline().parameters.dataset_name",
+								"type": "Expression"
+							},
+							"storage_account_uri": {
+								"value": "@pipeline().globalParameters.storage_account_datalake_uri",
+								"type": "Expression"
+							},
+							"container_name": {
+								"value": "@pipeline().globalParameters.storage_container_datalake",
+								"type": "Expression"
+							},
+							"file_name": {
+								"value": "@pipeline().parameters.dataset_name",
+								"type": "Expression"
+							}
+						}
+					}
+				]
+			},
+			{
+				"name": "Get access token",
+				"type": "WebActivity",
+				"dependsOn": [
+					{
+						"activity": "Get secret",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"method": "POST",
+					"headers": {
+						"Content-Type": "application/x-www-form-urlencoded"
+					},
+					"url": "https://login.microsoftonline.com/8614d95f-762b-4789-a741-2589e3d0b08b/oauth2/v2.0/token",
+					"body": {
+						"value": "@concat('client_id=', pipeline().globalParameters.cip_client_id, '&scope=', pipeline().globalParameters.cip_scope, '&client_secret=', activity('Get secret').output.pipelineReturnValue.keyvault_secret_value, '&grant_type=client_credentials')",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "Get secret",
+				"type": "ExecutePipeline",
+				"dependsOn": [],
+				"policy": {
+					"secureInput": true
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "pl_util_get_keyvault_secret",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true,
+					"parameters": {
+						"keyvault_secret_name": {
+							"value": "@pipeline().parameters.key_vault_secret_name",
+							"type": "Expression"
+						}
+					}
+				}
+			}
+		],
+		"parameters": {
+			"datastore_name": {
+				"type": "string",
+				"defaultValue": "salesforce_marketing_cloud"
+			},
+			"dataset_name": {
+				"type": "string",
+				"defaultValue": "customer_data"
+			},
+			"relative_url": {
+				"type": "string",
+				"defaultValue": "customer-data"
+			},
+			"base_url": {
+				"type": "string",
+				"defaultValue": "https://apim.dev.cloud.nibc.com/internal/salesforcemarketingcloud-customer-data-api/1.0"
+			},
+			"key_vault_secret_name": {
+				"type": "string",
+				"defaultValue": "apim-authorization-access-token"
+			},
+			"column_mapping": {
+				"type": "string",
+				"defaultValue": "{ \t\"type\": \"TabularTranslator\", \t\"mappings\": [ \t\t{ \t\t\t\"source\": { \t\t\t\t\"path\": \"$['links']\" \t\t\t}, \t\t\t\"sink\": { \t\t\t\t\"name\": \"links\" \t\t\t} \t\t}, \t\t{ \t\t\t\"source\": { \t\t\t\t\"path\": \"$['requestToken']\" \t\t\t}, \t\t\t\"sink\": { \t\t\t\t\"name\": \"requestToken\" \t\t\t} \t\t}, \t\t{ \t\t\t\"source\": { \t\t\t\t\"path\": \"$['tokenExpireDateUtc']\" \t\t\t}, \t\t\t\"sink\": { \t\t\t\t\"name\": \"tokenExpireDateUtc\" \t\t\t} \t\t}, \t\t{ \t\t\t\"source\": { \t\t\t\t\"path\": \"$['customObjectId']\" \t\t\t}, \t\t\t\"sink\": { \t\t\t\t\"name\": \"customObjectId\" \t\t\t} \t\t}, \t\t{ \t\t\t\"source\": { \t\t\t\t\"path\": \"$['customObjectKey']\" \t\t\t}, \t\t\t\"sink\": { \t\t\t\t\"name\": \"customObjectKey\" \t\t\t} \t\t}, \t\t{ \t\t\t\"source\": { \t\t\t\t\"path\": \"$['pageSize']\" \t\t\t}, \t\t\t\"sink\": { \t\t\t\t\"name\": \"pageSize\" \t\t\t} \t\t}, \t\t{ \t\t\t\"source\": { \t\t\t\t\"path\": \"$['page']\" \t\t\t}, \t\t\t\"sink\": { \t\t\t\t\"name\": \"page\" \t\t\t} \t\t}, \t\t{ \t\t\t\"source\": { \t\t\t\t\"path\": \"$['count']\" \t\t\t}, \t\t\t\"sink\": { \t\t\t\t\"name\": \"count\" \t\t\t} \t\t}, \t\t{ \t\t\t\"source\": { \t\t\t\t\"path\": \"$['top']\" \t\t\t}, \t\t\t\"sink\": { \t\t\t\t\"name\": \"top\" \t\t\t} \t\t}, \t\t{ \t\t\t\"source\": { \t\t\t\t\"path\": \"$['items']\" \t\t\t}, \t\t\t\"sink\": { \t\t\t\t\"name\": \"items\" \t\t\t} \t\t}, \t], \t\"mapComplexValuesToString\": true }"
+			}
+		},
+		"folder": {
+			"name": "cloud"
+		},
+		"annotations": []
+	}
+}
