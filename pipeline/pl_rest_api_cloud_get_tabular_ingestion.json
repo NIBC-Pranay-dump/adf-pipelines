@@ -1,5 +1,5 @@
 {
-	"name": "pl_rest_api_cloud_get",
+	"name": "pl_rest_api_cloud_get_tabular_ingestion",
 	"properties": {
 		"description": "Use this pipeline to connect the the API managed services REST API GET method",
 		"activities": [
@@ -36,7 +36,7 @@
 							}
 						},
 						"paginationRules": {
-							"supportRFC5988": "true"
+							"AbsoluteUrl": ""
 						}
 					},
 					"sink": {
