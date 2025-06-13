@@ -159,7 +159,7 @@
 			},
 			"relative_url": {
 				"type": "string",
-				"defaultValue": "customer-data?$page=2"
+				"defaultValue": "customer-data"
 			},
 			"base_url": {
 				"type": "string",
