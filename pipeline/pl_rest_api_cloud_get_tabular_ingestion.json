@@ -36,7 +36,7 @@
 							}
 						},
 						"paginationRules": {
-							"AbsoluteUrl": ""
+							"supportRFC5988": "true"
 						}
 					},
 					"sink": {
