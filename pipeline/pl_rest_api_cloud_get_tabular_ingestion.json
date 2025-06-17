@@ -36,7 +36,8 @@
 							}
 						},
 						"paginationRules": {
-							"supportRFC5988": "true"
+							"AbsoluteUrl.{page_number}": "RANGE:1:10000:1",
+							"EndCondition:$links.next": "NonExist"
 						}
 					},
 					"sink": {
