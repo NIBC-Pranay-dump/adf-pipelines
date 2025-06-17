@@ -62,7 +62,7 @@
 						"type": "DatasetReference",
 						"parameters": {
 							"relative_url": {
-								"value": "@pipeline().parameters.relative_url",
+								"value": "@concat(pipeline().parameters.relative_url, '?$page={page_number}')",
 								"type": "Expression"
 							},
 							"base_url": {
