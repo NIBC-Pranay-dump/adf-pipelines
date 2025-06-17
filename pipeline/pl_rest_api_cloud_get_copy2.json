@@ -36,7 +36,8 @@
 							}
 						},
 						"paginationRules": {
-							"supportRFC5988": "true"
+							"AbsoluteUrl.{page_number}": "RANGE:1:10000:1",
+							"EndCondition:$links.next": "NonExist"
 						}
 					},
 					"sink": {
@@ -61,7 +62,7 @@
 						"type": "DatasetReference",
 						"parameters": {
 							"relative_url": {
-								"value": "@pipeline().parameters.relative_url",
+								"value": "@concat(pipeline().parameters.relative_url, '?$page={page_number}')",
 								"type": "Expression"
 							},
 							"base_url": {
@@ -161,7 +162,7 @@
 			},
 			"dataset_name": {
 				"type": "string",
-				"defaultValue": "customer_data"
+				"defaultValue": "customer_data_json"
 			},
 			"relative_url": {
 				"type": "string",
