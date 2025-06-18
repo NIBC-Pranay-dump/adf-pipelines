@@ -18,7 +18,7 @@
 				"userProperties": [],
 				"typeProperties": {
 					"expression": {
-						"value": "@variables('row_count_match')",
+						"value": "@bool(variables('row_count_match'))",
 						"type": "Expression"
 					},
 					"ifFalseActivities": [
@@ -30,7 +30,7 @@
 							"userProperties": [],
 							"typeProperties": {
 								"message": {
-									"value": "@concat('Row count mismatch: Expected ', variables('total_record_count'), ' rows, but found ', activity('Copy as parquet data').output.rowsCopied)",
+									"value": "@concat('Row count mismatch: Expected ', string(variables('total_record_count')), ' rows, but found ', string(activity('Copy as parquet data').output.rowsCopied))",
 									"type": "Expression"
 								},
 								"errorCode": "ROW_COUNT_MISMATCH"
@@ -78,7 +78,7 @@
 							"typeProperties": {
 								"variableName": "partial_count",
 								"value": {
-									"value": "@add(variables('total_record_count'), int(activity('Check single file metadata').output.firstRow.RecordCount))",
+									"value": "@add(int(variables('total_record_count')), int(activity('Check single file metadata').output.firstRow.RecordCount))",
 									"type": "Expression"
 								}
 							}
@@ -163,7 +163,7 @@
 							"typeProperties": {
 								"variableName": "total_record_count",
 								"value": {
-									"value": "@variables('partial_count')",
+									"value": "@int(variables('partial_count'))",
 									"type": "Expression"
 								}
 							}
@@ -184,7 +184,7 @@
 				"typeProperties": {
 					"variableName": "functional_date",
 					"value": {
-						"value": "@formatDateTime(\n    adddays(startOfMonth(\n\n\n    if(equals(pipeline().parameters.functional_date,'{yyyy-MM-dd}'), adddays(convertTimeZone(pipeline().TriggerTime,'UTC','W. Europe Standard Time'),pipeline().parameters.delta_days), adddays(pipeline().parameters.functional_date,pipeline().parameters.delta_days))\n    \n), -1)\n    \n    , 'yyyyMMdd')",
+						"value": "@formatDateTime(\n    adddays(startOfMonth(\n\n\n    if(equals(pipeline().parameters.functional_date,'{yyyy-MM-dd}'), adddays(convertTimeZone(pipeline().TriggerTime,'UTC','W. Europe Standard Time'),int(pipeline().parameters.delta_days)), adddays(pipeline().parameters.functional_date,int(pipeline().parameters.delta_days)))\n    \n), -1)\n    \n    , 'yyyyMMdd')",
 						"type": "Expression"
 					}
 				}
@@ -276,7 +276,7 @@
 					"formatSettings": {
 						"type": "DelimitedTextReadSettings",
 						"skipLineCount": {
-							"value": "@pipeline().parameters.skip_line_count",
+							"value": "@int(pipeline().parameters.skip_line_count)",
 							"type": "Expression"
 						}
 					}
@@ -321,7 +321,7 @@
 				"userProperties": [],
 				"typeProperties": {
 					"expression": {
-						"value": "@and(pipeline().parameters.copy_binary_data, greater(activity('Filter filenames of fileserver').output.FilteredItemsCount,0))",
+						"value": "@and(bool(pipeline().parameters.copy_binary_data), greater(activity('Filter filenames of fileserver').output.FilteredItemsCount,0))",
 						"type": "Expression"
 					},
 					"ifTrueActivities": [
@@ -432,7 +432,7 @@
 				"userProperties": [],
 				"typeProperties": {
 					"expression": {
-						"value": "@and(pipeline().parameters.delete_data_on_fileserver, greater(activity('Filter filenames of fileserver').output.FilteredItemsCount,0))",
+						"value": "@and(bool(pipeline().parameters.delete_data_on_fileserver), greater(activity('Filter filenames of fileserver').output.FilteredItemsCount,0))",
 						"type": "Expression"
 					},
 					"ifTrueActivities": [
@@ -553,7 +553,7 @@
 									"formatSettings": {
 										"type": "DelimitedTextReadSettings",
 										"skipLineCount": {
-											"value": "@pipeline().parameters.skip_line_count",
+											"value": "@int(pipeline().parameters.skip_line_count)",
 											"type": "Expression"
 										}
 									}
