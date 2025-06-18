@@ -63,8 +63,6 @@
 			{
 				"name": "Conditionally run model and export",
 				"type": "IfCondition",
-				"state": "Inactive",
-				"onInactiveMarkAs": "Succeeded",
 				"dependsOn": [
 					{
 						"activity": "Extract run_model boolean",
@@ -104,7 +102,7 @@
 										"type": "Expression"
 									},
 									"job_parameters": {
-										"value": "@coalesce(pipeline().parameters.dbx_job_params_model, '{}')",
+										"value": "@activity('Get check job output').output",
 										"type": "Expression"
 									}
 								}
@@ -113,6 +111,8 @@
 						{
 							"name": "Export model to AA server",
 							"type": "ExecutePipeline",
+							"state": "Inactive",
+							"onInactiveMarkAs": "Skipped",
 							"dependsOn": [
 								{
 									"activity": "Set sink_file_name",
@@ -180,6 +180,8 @@
 							"name": "Set sink_file_name",
 							"description": "Use model job output to set variable",
 							"type": "SetVariable",
+							"state": "Inactive",
+							"onInactiveMarkAs": "Skipped",
 							"dependsOn": [
 								{
 									"activity": "Get model job output",
@@ -205,6 +207,8 @@
 							"name": "Get model job output",
 							"description": "Call API to get model output",
 							"type": "WebActivity",
+							"state": "Inactive",
+							"onInactiveMarkAs": "Skipped",
 							"dependsOn": [
 								{
 									"activity": "Run model with databricks job",
@@ -241,6 +245,8 @@
 							"name": "Set adls_path",
 							"description": "Use model job output to set variable",
 							"type": "SetVariable",
+							"state": "Inactive",
+							"onInactiveMarkAs": "Skipped",
 							"dependsOn": [
 								{
 									"activity": "Get model job output",
@@ -266,6 +272,8 @@
 							"name": "Set adls_container",
 							"description": "Use model job output to set variable",
 							"type": "SetVariable",
+							"state": "Inactive",
+							"onInactiveMarkAs": "Skipped",
 							"dependsOn": [
 								{
 									"activity": "Get model job output",
@@ -382,6 +390,9 @@
 				"type": "String"
 			},
 			"adls_path": {
+				"type": "String"
+			},
+			"period_to_run": {
 				"type": "String"
 			}
 		},
