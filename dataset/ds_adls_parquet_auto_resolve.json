@@ -23,9 +23,6 @@
 			},
 			"container_name": {
 				"type": "string"
-			},
-			"file_name": {
-				"type": "string"
 			}
 		},
 		"folder": {
