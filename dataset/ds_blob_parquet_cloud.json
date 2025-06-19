@@ -30,7 +30,7 @@
 			}
 		},
 		"folder": {
-			"name": "azure_shir"
+			"name": "cloud"
 		},
 		"annotations": [],
 		"type": "Parquet",
