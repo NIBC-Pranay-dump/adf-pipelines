@@ -81,7 +81,14 @@
 						{
 							"name": "Run model with databricks job",
 							"type": "ExecutePipeline",
-							"dependsOn": [],
+							"dependsOn": [
+								{
+									"activity": "Set period_to_run",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
 							"policy": {
 								"secureInput": false
 							},
@@ -102,7 +109,7 @@
 										"type": "Expression"
 									},
 									"job_parameters": {
-										"value": "@activity('Get check job output').output",
+										"value": "@json(concat('{\"period\": ', string(variables('period_to_run')), '}'))",
 										"type": "Expression"
 									}
 								}
@@ -291,6 +298,24 @@
 								"variableName": "adls_container",
 								"value": {
 									"value": "@string(json(\n    activity('Get model job output').output.notebook_output.result\n).export_container)\n\n",
+									"type": "Expression"
+								}
+							}
+						},
+						{
+							"name": "Set period_to_run",
+							"description": "Provide period_id for the model to run",
+							"type": "SetVariable",
+							"dependsOn": [],
+							"policy": {
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "period_to_run",
+								"value": {
+									"value": "@json(activity('Get check job output').output.notebook_output.result).period_to_run",
 									"type": "Expression"
 								}
 							}
