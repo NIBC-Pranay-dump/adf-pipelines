@@ -102,6 +102,12 @@
 						"dependencyConditions": [
 							"Succeeded"
 						]
+					},
+					{
+						"activity": "Get access token",
+						"dependencyConditions": [
+							"Succeeded"
+						]
 					}
 				],
 				"policy": {
@@ -263,6 +269,59 @@
 					},
 					"firstRowOnly": false
 				}
+			},
+			{
+				"name": "Get secret for CIP",
+				"type": "ExecutePipeline",
+				"dependsOn": [],
+				"policy": {
+					"secureInput": true
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "pl_util_get_keyvault_secret",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true,
+					"parameters": {
+						"keyvault_secret_name": {
+							"value": "@pipeline().parameters.key_vault_secret_name",
+							"type": "Expression"
+						}
+					}
+				}
+			},
+			{
+				"name": "Get access token",
+				"type": "WebActivity",
+				"dependsOn": [
+					{
+						"activity": "Get secret for CIP",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": true,
+					"secureInput": true
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"method": "POST",
+					"headers": {
+						"Content-Type": "application/x-www-form-urlencoded"
+					},
+					"url": "https://login.microsoftonline.com/8614d95f-762b-4789-a741-2589e3d0b08b/oauth2/v2.0/token",
+					"body": {
+						"value": "@concat('client_id=', pipeline().globalParameters.cip_client_id, '&scope=', pipeline().globalParameters.cip_scope, '&client_secret=', activity('Get secret for CIP').output.pipelineReturnValue.keyvault_secret_value, '&grant_type=client_credentials')",
+						"type": "Expression"
+					}
+				}
 			}
 		],
 		"parameters": {
@@ -277,6 +336,9 @@
 			"salesfoce_close_job_id_url": {
 				"type": "string",
 				"defaultValue": "https://apim.acp.cloud.nibc.com/internal/salesforce-api/1.0/close-job/"
+			},
+			"key_vault_secret_name": {
+				"type": "string"
 			}
 		},
 		"variables": {
