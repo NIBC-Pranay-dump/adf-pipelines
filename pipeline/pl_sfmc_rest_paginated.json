@@ -58,7 +58,7 @@
 			},
 			{
 				"name": "rest to parquet",
-				"description": "Copy rest json data to a flattened parquet file, selecting items, adding the file_name and download_timestamp columns",
+				"description": "Copy rest json data to a flattened parquet file, selecting items" 
 				"type": "Copy",
 				"dependsOn": [
 					{
@@ -143,10 +143,7 @@
 							"container_name": {
 								"value": "@pipeline().globalParameters.storage_container_datalake",
 								"type": "Expression"
-							},
-							"file_name": {
-								"value": "@replace(variables('file_name'),'.json','')",
-								"type": "Expression"
+							}
 							}
 						}
 					}
