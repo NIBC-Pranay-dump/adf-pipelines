@@ -121,11 +121,16 @@
 				"typeProperties": {
 					"method": "POST",
 					"headers": {
-						"Content-Type": "application/json"
+						"Content-Type": "application/json",
+						"Authorization": "@concat('Bearer ', activity('Get access token').output['access_token'])"
 					},
 					"url": {
 						"value": "@pipeline().parameters.salesfoce_create_job_id_url",
 						"type": "Expression"
+					},
+					"connectVia": {
+						"referenceName": "cloud",
+						"type": "IntegrationRuntimeReference"
 					},
 					"body": {
 						"value": "@json('{\"object\": \"OnlineTooling__c\", \"operation\": \"upsert\", \"externalIdFieldName\": \"External_ODS_Id__c\", \"lineEnding\": \"LF\", \"contentType\": \"CSV\"}')",
@@ -161,6 +166,9 @@
 				"userProperties": [],
 				"typeProperties": {
 					"method": "PUT",
+					"headers": {
+						"Authorization": "@concat('Bearer ', activity('Get access token').output['access_token'])"
+					},
 					"url": {
 						"value": "@concat(pipeline().parameters.salesfoce_update_job_id_url, '', variables('job_id'))",
 						"type": "Expression"
@@ -193,6 +201,9 @@
 				"userProperties": [],
 				"typeProperties": {
 					"method": "PATCH",
+					"headers": {
+						"Authorization": "@concat('Bearer ', activity('Get access token').output['access_token'])"
+					},
 					"url": {
 						"value": "@concat(pipeline().parameters.salesfoce_close_job_id_url, variables('job_id'))",
 						"type": "Expression"
