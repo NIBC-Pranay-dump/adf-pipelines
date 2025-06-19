@@ -1,0 +1,292 @@
+{
+	"name": "pl_adls_salesfoce_api",
+	"properties": {
+		"description": "This pipeline will push the data from our ADLS to salesforce API",
+		"activities": [
+			{
+				"name": "Execute the AB pipeline",
+				"type": "ExecutePipeline",
+				"state": "Inactive",
+				"onInactiveMarkAs": "Succeeded",
+				"dependsOn": [],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "pl_basel_iv_orchestration",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true
+				}
+			},
+			{
+				"name": "Copy table to CSV format",
+				"type": "Copy",
+				"state": "Inactive",
+				"onInactiveMarkAs": "Succeeded",
+				"dependsOn": [
+					{
+						"activity": "Execute the AB pipeline",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "ParquetSource",
+						"storeSettings": {
+							"type": "AzureBlobFSReadSettings",
+							"recursive": true,
+							"enablePartitionDiscovery": false
+						},
+						"formatSettings": {
+							"type": "ParquetReadSettings"
+						}
+					},
+					"sink": {
+						"type": "DelimitedTextSink",
+						"storeSettings": {
+							"type": "AzureBlobStorageWriteSettings"
+						},
+						"formatSettings": {
+							"type": "DelimitedTextWriteSettings",
+							"quoteAllText": true,
+							"fileExtension": ".txt"
+						}
+					},
+					"enableStaging": false,
+					"translator": {
+						"type": "TabularTranslator",
+						"typeConversion": true,
+						"typeConversionSettings": {
+							"allowDataTruncation": true,
+							"treatBooleanAsNumber": false
+						}
+					}
+				},
+				"inputs": [
+					{
+						"referenceName": "ds_adls_parquet_auto_resolve",
+						"type": "DatasetReference"
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "ds_blob_csv_cloud",
+						"type": "DatasetReference",
+						"parameters": {
+							"column_delimiter": ",",
+							"encoding": "UTF-8",
+							"first_row_as_header": true
+						}
+					}
+				]
+			},
+			{
+				"name": "Create SalesForce Job ID",
+				"type": "WebActivity",
+				"dependsOn": [
+					{
+						"activity": "Copy table to CSV format",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"method": "POST",
+					"headers": {
+						"Content-Type": "application/json"
+					},
+					"url": {
+						"value": "@pipeline().parameters.salesfoce_create_job_id_url",
+						"type": "Expression"
+					},
+					"body": {
+						"value": "@json('{\"object\": \"OnlineTooling__c\", \"operation\": \"upsert\", \"externalIdFieldName\": \"External_ODS_Id__c\", \"lineEnding\": \"LF\", \"contentType\": \"CSV\"}')",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "Update SalesFoce Job ID",
+				"description": "This part actually pushes the data to salesfoce",
+				"type": "WebActivity",
+				"dependsOn": [
+					{
+						"activity": "Set Job ID",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					},
+					{
+						"activity": "Get CSV data",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"method": "PUT",
+					"url": {
+						"value": "@concat(pipeline().parameters.salesfoce_update_job_id_url, '', variables('job_id'))",
+						"type": "Expression"
+					},
+					"body": {
+						"value": "@activity('Get CSV data').output.value",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "Close SalesForce Job ID",
+				"type": "WebActivity",
+				"dependsOn": [
+					{
+						"activity": "Update SalesFoce Job ID",
+						"dependencyConditions": [
+							"Succeeded",
+							"Failed"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"method": "PATCH",
+					"url": {
+						"value": "@concat(pipeline().parameters.salesfoce_close_job_id_url, variables('job_id'))",
+						"type": "Expression"
+					},
+					"body": {
+						"state": "UploadComplete"
+					}
+				}
+			},
+			{
+				"name": "Set Job ID",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "Create SalesForce Job ID",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "job_id",
+					"value": {
+						"value": "@activity('Create SalesForce Job ID').output.id",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "Get CSV data",
+				"description": "TODO: secure the output",
+				"type": "Lookup",
+				"dependsOn": [
+					{
+						"activity": "Copy table to CSV format",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "DelimitedTextSource",
+						"storeSettings": {
+							"type": "AzureBlobStorageReadSettings",
+							"recursive": true,
+							"enablePartitionDiscovery": false
+						},
+						"formatSettings": {
+							"type": "DelimitedTextReadSettings"
+						}
+					},
+					"dataset": {
+						"referenceName": "ds_blob_csv_cloud",
+						"type": "DatasetReference",
+						"parameters": {
+							"column_delimiter": ",",
+							"encoding": "UTF-8",
+							"first_row_as_header": true
+						}
+					},
+					"firstRowOnly": false
+				}
+			}
+		],
+		"parameters": {
+			"salesfoce_create_job_id_url": {
+				"type": "string",
+				"defaultValue": "https://apim.acp.cloud.nibc.com/internal/salesforce-api/1.0/create-job"
+			},
+			"salesfoce_update_job_id_url": {
+				"type": "string",
+				"defaultValue": "https://apim.acp.cloud.nibc.com/internal/salesforce-api/1.0/update-job/"
+			},
+			"salesfoce_close_job_id_url": {
+				"type": "string",
+				"defaultValue": "https://apim.acp.cloud.nibc.com/internal/salesforce-api/1.0/close-job/"
+			}
+		},
+		"variables": {
+			"job_id": {
+				"type": "String"
+			}
+		},
+		"folder": {
+			"name": "cloud"
+		},
+		"annotations": []
+	}
+}
