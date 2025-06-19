@@ -225,7 +225,7 @@
             },
             "dataset_name": {
                 "type": "string",
-                "defaultValue": "customer_data_test"
+                "defaultValue": "customer_data"
             },
             "relative_url": {
                 "type": "string",
