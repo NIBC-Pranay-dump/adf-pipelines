@@ -494,23 +494,21 @@
 			},
 			"dbx_workspace_url": {
 				"type": "string",
-				"defaultValue": "TBA"
+				"defaultValue": "https://adb-7348359736582708.8.azuredatabricks.net"
 			},
 			"dbx_job_id_check": {
 				"type": "string",
-				"defaultValue": "TBA"
+				"defaultValue": "989977599629678"
 			},
 			"dbx_job_params_check": {
-				"type": "string",
-				"defaultValue": "TBA"
+				"type": "string"
 			},
 			"dbx_job_id_model": {
 				"type": "string",
-				"defaultValue": "TBA"
+				"defaultValue": "690063773422149"
 			},
 			"dbx_job_params_model": {
-				"type": "string",
-				"defaultValue": "TBA"
+				"type": "string"
 			},
 			"azure_domain": {
 				"type": "string",
