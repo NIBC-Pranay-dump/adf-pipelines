@@ -1,0 +1,184 @@
+{
+	"name": "pl_ab_orchestration",
+	"properties": {
+		"description": "The pipeline should be run to orchestrate a AB refresh.",
+		"activities": [
+			{
+				"name": "Run check job",
+				"description": "The job is maintained in the risk-actief-beheer repository and will tell us if we should run the AB model.",
+				"type": "ExecutePipeline",
+				"dependsOn": [],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "pl_databricks_job",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true,
+					"parameters": {
+						"job_id": {
+							"value": "@pipeline().parameters.dbx_job_id_check",
+							"type": "Expression"
+						},
+						"workspace_url": {
+							"value": "@pipeline().parameters.dbx_workspace_url",
+							"type": "Expression"
+						},
+						"wait_seconds_between_polls": 5,
+						"job_parameters": {
+							"value": "@coalesce(pipeline().parameters.dbx_job_params_check, '{}')",
+							"type": "Expression"
+						}
+					}
+				}
+			},
+			{
+				"name": "Extract run_model boolean",
+				"description": "Use check job output to verify if model should run",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "Get check job output",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "run_model",
+					"value": {
+						"value": "@json(activity('Get check job output').output.notebook_output.result).run_model",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "Conditionally run model and export",
+				"type": "IfCondition",
+				"dependsOn": [
+					{
+						"activity": "Extract run_model boolean",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@variables('run_model')",
+						"type": "Expression"
+					},
+					"ifTrueActivities": [
+						{
+							"name": "Run model with databricks job",
+							"type": "ExecutePipeline",
+							"dependsOn": [],
+							"policy": {
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"pipeline": {
+									"referenceName": "pl_databricks_job",
+									"type": "PipelineReference"
+								},
+								"waitOnCompletion": true,
+								"parameters": {
+									"job_id": {
+										"value": "@pipeline().parameters.dbx_job_id_model",
+										"type": "Expression"
+									},
+									"workspace_url": {
+										"value": "@pipeline().parameters.dbx_workspace_url",
+										"type": "Expression"
+									},
+									"job_parameters": {
+										"value": "@coalesce(pipeline().parameters.dbx_job_params_model, '{}')",
+										"type": "Expression"
+									}
+								}
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "Get check job output",
+				"description": "Call API to get resulting boolean",
+				"type": "WebActivity",
+				"dependsOn": [
+					{
+						"activity": "Run check job",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"method": "GET",
+					"url": {
+						"value": "@concat(pipeline().parameters.dbx_workspace_url,'/api/2.1/jobs/runs/get-output?run_id=', activity('Run check job').output.pipelineReturnValue.first_task_run_id)",
+						"type": "Expression"
+					},
+					"connectVia": {
+						"referenceName": "cloud",
+						"type": "IntegrationRuntimeReference"
+					},
+					"authentication": {
+						"type": "MSI",
+						"resource": "2ff814a6-3304-4ab8-85cb-cd0e6f879c1d"
+					}
+				}
+			}
+		],
+		"parameters": {
+			"dbx_workspace_url": {
+				"type": "string",
+				"defaultValue": "https://adb-7348359736582708.8.azuredatabricks.net"
+			},
+			"dbx_job_id_check": {
+				"type": "string",
+				"defaultValue": "989977599629678"
+			},
+			"dbx_job_params_check": {
+				"type": "string"
+			},
+			"dbx_job_id_model": {
+				"type": "string",
+				"defaultValue": "690063773422149"
+			},
+			"dbx_job_params_model": {
+				"type": "string"
+			},
+			"annotations": {
+				"type": "string",
+				"defaultValue": "Manual Trigger"
+			}
+		},
+		"variables": {
+			"run_model": {
+				"type": "Boolean"
+			}
+		},
+		"annotations": [
+			"@pipeline().parameters.annotations"
+		]
+	}
+}
