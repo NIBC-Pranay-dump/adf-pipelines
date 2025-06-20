@@ -1,0 +1,42 @@
+{
+	"name": "ds_delta_table_dbx",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "ls_databricks",
+			"type": "LinkedServiceReference"
+		},
+		"parameters": {
+			"azure_domain": {
+				"type": "string"
+			},
+			"dbx_cluster_id": {
+				"type": "string"
+			},
+			"dbx_workspace_resouce_id": {
+				"type": "string"
+			},
+			"database": {
+				"type": "string"
+			},
+			"table": {
+				"type": "string"
+			}
+		},
+		"folder": {
+			"name": "cloud"
+		},
+		"annotations": [],
+		"type": "AzureDatabricksDeltaLakeDataset",
+		"typeProperties": {
+			"database": {
+				"value": "@dataset().database",
+				"type": "Expression"
+			},
+			"table": {
+				"value": "@dataset().table",
+				"type": "Expression"
+			}
+		},
+		"schema": []
+	}
+}
