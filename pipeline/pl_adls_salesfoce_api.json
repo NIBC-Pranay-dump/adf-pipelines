@@ -15,10 +15,32 @@
 				"userProperties": [],
 				"typeProperties": {
 					"pipeline": {
-						"referenceName": "pl_basel_iv_orchestration",
+						"referenceName": "pl_ab_orchestration",
 						"type": "PipelineReference"
 					},
-					"waitOnCompletion": true
+					"waitOnCompletion": true,
+					"parameters": {
+						"dbx_workspace_url": {
+							"value": "@pipeline().parameters.dbx_workspace_url",
+							"type": "Expression"
+						},
+						"dbx_job_id_check": {
+							"value": "@pipeline().parameters.dbx_job_id_check",
+							"type": "Expression"
+						},
+						"dbx_job_params_check": {
+							"value": "@pipeline().parameters.dbx_job_params_check",
+							"type": "Expression"
+						},
+						"dbx_job_id_model": {
+							"value": "@pipeline().parameters.dbx_job_id_model",
+							"type": "Expression"
+						},
+						"dbx_job_params_model": {
+							"value": "@pipeline().parameters.dbx_job_params_model",
+							"type": "Expression"
+						}
+					}
 				}
 			},
 			{
@@ -44,14 +66,9 @@
 				"userProperties": [],
 				"typeProperties": {
 					"source": {
-						"type": "ParquetSource",
-						"storeSettings": {
-							"type": "AzureBlobFSReadSettings",
-							"recursive": true,
-							"enablePartitionDiscovery": false
-						},
-						"formatSettings": {
-							"type": "ParquetReadSettings"
+						"type": "AzureDatabricksDeltaLakeSource",
+						"exportSettings": {
+							"type": "AzureDatabricksDeltaLakeExportCommand"
 						}
 					},
 					"sink": {
@@ -65,19 +82,11 @@
 							"fileExtension": ".txt"
 						}
 					},
-					"enableStaging": false,
-					"translator": {
-						"type": "TabularTranslator",
-						"typeConversion": true,
-						"typeConversionSettings": {
-							"allowDataTruncation": true,
-							"treatBooleanAsNumber": false
-						}
-					}
+					"enableStaging": false
 				},
 				"inputs": [
 					{
-						"referenceName": "ds_adls_parquet_auto_resolve",
+						"referenceName": "ds_delta_table_dbx",
 						"type": "DatasetReference"
 					}
 				],
@@ -122,7 +131,10 @@
 					"method": "POST",
 					"headers": {
 						"Content-Type": "application/json",
-						"Authorization": "@concat('Bearer ', activity('Get access token').output['access_token'])"
+						"Authorization": {
+							"value": "@concat('Bearer ', activity('Get access token').output['access_token'])",
+							"type": "Expression"
+						}
 					},
 					"url": {
 						"value": "@pipeline().parameters.salesfoce_create_job_id_url",
@@ -167,7 +179,10 @@
 				"typeProperties": {
 					"method": "PUT",
 					"headers": {
-						"Authorization": "@concat('Bearer ', activity('Get access token').output['access_token'])"
+						"Authorization": {
+							"value": "@concat('Bearer ', activity('Get access token').output['access_token'])",
+							"type": "Expression"
+						}
 					},
 					"url": {
 						"value": "@concat(pipeline().parameters.salesfoce_update_job_id_url, '', variables('job_id'))",
@@ -202,7 +217,10 @@
 				"typeProperties": {
 					"method": "PATCH",
 					"headers": {
-						"Authorization": "@concat('Bearer ', activity('Get access token').output['access_token'])"
+						"Authorization": {
+							"value": "@concat('Bearer ', activity('Get access token').output['access_token'])",
+							"type": "Expression"
+						}
 					},
 					"url": {
 						"value": "@concat(pipeline().parameters.salesfoce_close_job_id_url, variables('job_id'))",
@@ -349,6 +367,21 @@
 				"defaultValue": "https://apim.acp.cloud.nibc.com/internal/salesforce-api/1.0/close-job/"
 			},
 			"key_vault_secret_name": {
+				"type": "string"
+			},
+			"dbx_workspace_url": {
+				"type": "string"
+			},
+			"dbx_job_id_check": {
+				"type": "string"
+			},
+			"dbx_job_params_check": {
+				"type": "string"
+			},
+			"dbx_job_id_model": {
+				"type": "string"
+			},
+			"dbx_job_params_model": {
 				"type": "string"
 			}
 		},
