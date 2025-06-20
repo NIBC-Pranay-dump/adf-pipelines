@@ -514,23 +514,23 @@
 			},
 			"azure_domain": {
 				"type": "string",
-				"defaultValue": "TBA"
+				"defaultValue": "https://adb-1053042427915632.12.azuredatabricks.net"
 			},
 			"dbx_cluster_id": {
 				"type": "string",
-				"defaultValue": "TBA"
+				"defaultValue": "1220-112536-2dhkacra"
 			},
 			"dbx_workspace_resouce_id": {
 				"type": "string",
-				"defaultValue": "TBA"
+				"defaultValue": "1053042427915632"
 			},
 			"datastore_name": {
 				"type": "string",
-				"defaultValue": "TBA"
+				"defaultValue": "test_marta"
 			},
 			"dataset_name": {
 				"type": "string",
-				"defaultValue": "TBA"
+				"defaultValue": "test_marta"
 			}
 		},
 		"variables": {
