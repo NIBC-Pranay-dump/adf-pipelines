@@ -494,38 +494,43 @@
 			},
 			"dbx_workspace_url": {
 				"type": "string",
-				"defaultValue": "test"
+				"defaultValue": "TBA"
 			},
 			"dbx_job_id_check": {
 				"type": "string",
-				"defaultValue": "test"
+				"defaultValue": "TBA"
 			},
 			"dbx_job_params_check": {
 				"type": "string",
-				"defaultValue": "test"
+				"defaultValue": "TBA"
 			},
 			"dbx_job_id_model": {
 				"type": "string",
-				"defaultValue": "test"
+				"defaultValue": "TBA"
 			},
 			"dbx_job_params_model": {
 				"type": "string",
-				"defaultValue": "test"
+				"defaultValue": "TBA"
 			},
 			"azure_domain": {
-				"type": "string"
+				"type": "string",
+				"defaultValue": "TBA"
 			},
 			"dbx_cluster_id": {
-				"type": "string"
+				"type": "string",
+				"defaultValue": "TBA"
 			},
 			"dbx_workspace_resouce_id": {
-				"type": "string"
+				"type": "string",
+				"defaultValue": "TBA"
 			},
 			"datastore_name": {
-				"type": "string"
+				"type": "string",
+				"defaultValue": "TBA"
 			},
 			"dataset_name": {
-				"type": "string"
+				"type": "string",
+				"defaultValue": "TBA"
 			}
 		},
 		"variables": {
