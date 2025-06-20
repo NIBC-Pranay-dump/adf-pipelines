@@ -50,7 +50,13 @@
 				"onInactiveMarkAs": "Succeeded",
 				"dependsOn": [
 					{
-						"activity": "Execute the AB pipeline",
+						"activity": "Set dbx database value",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					},
+					{
+						"activity": "Set dbx table value",
 						"dependencyConditions": [
 							"Succeeded"
 						]
@@ -87,7 +93,29 @@
 				"inputs": [
 					{
 						"referenceName": "ds_delta_table_dbx",
-						"type": "DatasetReference"
+						"type": "DatasetReference",
+						"parameters": {
+							"azure_domain": {
+								"value": "@pipeline().parameters.azure_domain",
+								"type": "Expression"
+							},
+							"dbx_cluster_id": {
+								"value": "@pipeline().parameters.dbx_cluster_id",
+								"type": "Expression"
+							},
+							"dbx_workspace_resouce_id": {
+								"value": "@pipeline().parameters.dbx_workspace_resouce_id",
+								"type": "Expression"
+							},
+							"database": {
+								"value": "@variables('database')",
+								"type": "Expression"
+							},
+							"table": {
+								"value": "@variables('table')",
+								"type": "Expression"
+							}
+						}
 					}
 				],
 				"outputs": [
@@ -95,6 +123,26 @@
 						"referenceName": "ds_blob_csv_cloud",
 						"type": "DatasetReference",
 						"parameters": {
+							"storage_account_uri": {
+								"value": "@pipeline().globalParameters.storage_account_data_factory_uri",
+								"type": "Expression"
+							},
+							"container_name": {
+								"value": "@pipeline().globalParameters.storage_container_data_factory",
+								"type": "Expression"
+							},
+							"datastore_name": {
+								"value": "@pipeline().parameters.datastore_name",
+								"type": "Expression"
+							},
+							"dataset_name": {
+								"value": "@pipeline().parameters.dataset_name",
+								"type": "Expression"
+							},
+							"file_name": {
+								"value": "@pipeline().parameters.dataset_name",
+								"type": "Expression"
+							},
 							"column_delimiter": ",",
 							"encoding": "UTF-8",
 							"first_row_as_header": true
@@ -293,6 +341,26 @@
 						"referenceName": "ds_blob_csv_cloud",
 						"type": "DatasetReference",
 						"parameters": {
+							"storage_account_uri": {
+								"value": "@pipeline().globalParameters.storage_account_data_factory_uri",
+								"type": "Expression"
+							},
+							"container_name": {
+								"value": "@pipeline().globalParameters.storage_container_data_factory",
+								"type": "Expression"
+							},
+							"datastore_name": {
+								"value": "@pipeline().parameters.datastore_name",
+								"type": "Expression"
+							},
+							"dataset_name": {
+								"value": "@pipeline().parameters.dataset_name",
+								"type": "Expression"
+							},
+							"file_name": {
+								"value": "@pipeline().parameters.dataset_name",
+								"type": "Expression"
+							},
 							"column_delimiter": ",",
 							"encoding": "UTF-8",
 							"first_row_as_header": true
@@ -353,6 +421,58 @@
 						"type": "Expression"
 					}
 				}
+			},
+			{
+				"name": "Set dbx database value",
+				"type": "SetVariable",
+				"state": "Inactive",
+				"onInactiveMarkAs": "Succeeded",
+				"dependsOn": [
+					{
+						"activity": "Execute the AB pipeline",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "database",
+					"value": {
+						"value": "@activity('Execute the AB pipeline').output.database",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "Set dbx table value",
+				"type": "SetVariable",
+				"state": "Inactive",
+				"onInactiveMarkAs": "Succeeded",
+				"dependsOn": [
+					{
+						"activity": "Execute the AB pipeline",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "table",
+					"value": {
+						"value": "@activity('Execute the AB pipeline').output.table",
+						"type": "Expression"
+					}
+				}
 			}
 		],
 		"parameters": {
@@ -391,10 +511,31 @@
 			"dbx_job_params_model": {
 				"type": "string",
 				"defaultValue": "test"
+			},
+			"azure_domain": {
+				"type": "string"
+			},
+			"dbx_cluster_id": {
+				"type": "string"
+			},
+			"dbx_workspace_resouce_id": {
+				"type": "string"
+			},
+			"datastore_name": {
+				"type": "string"
+			},
+			"dataset_name": {
+				"type": "string"
 			}
 		},
 		"variables": {
 			"job_id": {
+				"type": "String"
+			},
+			"database": {
+				"type": "String"
+			},
+			"table": {
 				"type": "String"
 			}
 		},
