@@ -140,10 +140,6 @@
 						"value": "@pipeline().parameters.salesfoce_create_job_id_url",
 						"type": "Expression"
 					},
-					"connectVia": {
-						"referenceName": "cloud",
-						"type": "IntegrationRuntimeReference"
-					},
 					"body": {
 						"value": "@json('{\"object\": \"OnlineTooling__c\", \"operation\": \"upsert\", \"externalIdFieldName\": \"External_ODS_Id__c\", \"lineEnding\": \"LF\", \"contentType\": \"CSV\"}')",
 						"type": "Expression"
@@ -362,15 +358,15 @@
 		"parameters": {
 			"salesfoce_create_job_id_url": {
 				"type": "string",
-				"defaultValue": "https://apim.acp.cloud.nibc.com/internal/salesforce-api/1.0/create-job"
+				"defaultValue": "https://apim.dev.cloud.nibc.com/internal/salesforce-api/1.0/create-job"
 			},
 			"salesfoce_update_job_id_url": {
 				"type": "string",
-				"defaultValue": "https://apim.acp.cloud.nibc.com/internal/salesforce-api/1.0/update-job/"
+				"defaultValue": "https://apim.dev.cloud.nibc.com/internal/salesforce-api/1.0/update-job/"
 			},
 			"salesfoce_close_job_id_url": {
 				"type": "string",
-				"defaultValue": "https://apim.acp.cloud.nibc.com/internal/salesforce-api/1.0/close-job/"
+				"defaultValue": "https://apim.dev.cloud.nibc.com/internal/salesforce-api/1.0/close-job/"
 			},
 			"cip_auth_key_vault_secret_name": {
 				"type": "string",
