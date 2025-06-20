@@ -154,6 +154,8 @@
 				"name": "Update SalesFoce Job ID",
 				"description": "This part actually pushes the data to salesfoce",
 				"type": "WebActivity",
+				"state": "Inactive",
+				"onInactiveMarkAs": "Succeeded",
 				"dependsOn": [
 					{
 						"activity": "Set Job ID",
@@ -197,6 +199,8 @@
 			{
 				"name": "Close SalesForce Job ID",
 				"type": "WebActivity",
+				"state": "Inactive",
+				"onInactiveMarkAs": "Succeeded",
 				"dependsOn": [
 					{
 						"activity": "Update SalesFoce Job ID",
@@ -259,6 +263,8 @@
 				"name": "Get CSV data",
 				"description": "TODO: secure the output",
 				"type": "Lookup",
+				"state": "Inactive",
+				"onInactiveMarkAs": "Succeeded",
 				"dependsOn": [
 					{
 						"activity": "Copy table to CSV format",
@@ -315,7 +321,7 @@
 					"waitOnCompletion": true,
 					"parameters": {
 						"keyvault_secret_name": {
-							"value": "@pipeline().parameters.key_vault_secret_name",
+							"value": "@pipeline().parameters.cip_auth_key_vault_secret_name",
 							"type": "Expression"
 						}
 					}
@@ -366,23 +372,29 @@
 				"type": "string",
 				"defaultValue": "https://apim.acp.cloud.nibc.com/internal/salesforce-api/1.0/close-job/"
 			},
-			"key_vault_secret_name": {
-				"type": "string"
+			"cip_auth_key_vault_secret_name": {
+				"type": "string",
+				"defaultValue": "apim-authorization-access-token"
 			},
 			"dbx_workspace_url": {
-				"type": "string"
+				"type": "string",
+				"defaultValue": "test"
 			},
 			"dbx_job_id_check": {
-				"type": "string"
+				"type": "string",
+				"defaultValue": "test"
 			},
 			"dbx_job_params_check": {
-				"type": "string"
+				"type": "string",
+				"defaultValue": "test"
 			},
 			"dbx_job_id_model": {
-				"type": "string"
+				"type": "string",
+				"defaultValue": "test"
 			},
 			"dbx_job_params_model": {
-				"type": "string"
+				"type": "string",
+				"defaultValue": "test"
 			}
 		},
 		"variables": {
