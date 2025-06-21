@@ -1,7 +1,7 @@
 {
 	"name": "pl_sfmc_rest_paginated",
 	"properties": {
-		"description": "Use this pipeline to connect the the API managed services REST API",
+		"description": "The pipeline should run to ingest customer data from Salesforce Marketing Cloud Rest api",
 		"activities": [
 			{
 				"name": "Get access token",
