@@ -20,75 +20,60 @@
 					"retry": 0,
 					"retryIntervalInSeconds": 30,
 					"secureOutput": false,
-					"secureInput": true
+					"secureInput": false
 				},
 				"userProperties": [],
 				"typeProperties": {
 					"source": {
-						"type": "BinarySource",
-						"storeSettings": {
-							"type": "HttpReadSettings",
-							"requestMethod": "POST",
-							"additionalHeaders": {
-								"value": "Content-Type: text/xml",
-								"type": "Expression"
-							},
-							"requestBody": "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n<soapenv:Header>\n<fueloauth xmlns=\"http://exacttarget.com\">xxx</fueloauth>\n</soapenv:Header>\n<soapenv:Body>\n<RetrieveRequestMsg xmlns=\"http://exacttarget.com/wsdl/partnerAPI\">\n<RetrieveRequest>\n<ObjectType>BounceEvent</ObjectType>\n<Properties>Client.ID</Properties>\n<Properties>TriggeredSendDefinitionObjectID</Properties>\n<Properties>SendID</Properties>\n<Properties>SubscriberKey</Properties>\n<Properties>EventDate</Properties>\n<Properties>EventType</Properties>\n<Properties>BatchID</Properties>\n<Filter xsi:type=\"ns1:SimpleFilterPart\" xmlns:ns1=\"http://exacttarget.com/wsdl/partnerAPI\">\n<Property>EventDate</Property>\n<SimpleOperator>between</SimpleOperator>\n            <DateValue>2025-04-02T03:00:00.000Z</DateValue>\n            <DateValue>2025-04-24T02:59:59.999Z</DateValue>\n</Filter>\n</RetrieveRequest>\n</RetrieveRequestMsg>\n</soapenv:Body>\n</soapenv:Envelope>",
-							"requestTimeout": ""
+						"type": "RestSource",
+						"httpRequestTimeout": "00:01:40",
+						"requestInterval": "00.00:00:00.010",
+						"requestMethod": "POST",
+						"requestBody": "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n<soapenv:Header>\n<fueloauth xmlns=\"http://exacttarget.com\">xxx</fueloauth>\n</soapenv:Header>\n<soapenv:Body>\n<RetrieveRequestMsg xmlns=\"http://exacttarget.com/wsdl/partnerAPI\">\n<RetrieveRequest>\n<ObjectType>BounceEvent</ObjectType>\n<Properties>Client.ID</Properties>\n<Properties>TriggeredSendDefinitionObjectID</Properties>\n<Properties>SendID</Properties>\n<Properties>SubscriberKey</Properties>\n<Properties>EventDate</Properties>\n<Properties>EventType</Properties>\n<Properties>BatchID</Properties>\n<Filter xsi:type=\"ns1:SimpleFilterPart\" xmlns:ns1=\"http://exacttarget.com/wsdl/partnerAPI\">\n<Property>EventDate</Property>\n<SimpleOperator>between</SimpleOperator>\n            <DateValue>2025-04-02T03:00:00.000Z</DateValue>\n            <DateValue>2025-04-24T02:59:59.999Z</DateValue>\n</Filter>\n</RetrieveRequest>\n</RetrieveRequestMsg>\n</soapenv:Body>\n</soapenv:Envelope>",
+						"additionalHeaders": {
+							"Authorization": "@concat('Bearer ', activity('Get access token').output['access_token'])\n",
+							"Content-Type": "text/xml",
+							"Soapaction": "Retrieve"
 						},
-						"formatSettings": {
-							"type": "BinaryReadSettings"
+						"paginationRules": {
+							"supportRFC5988": "true"
 						}
 					},
 					"sink": {
-						"type": "BinarySink",
+						"type": "ParquetSink",
 						"storeSettings": {
-							"type": "AzureBlobStorageWriteSettings"
+							"type": "AzureBlobFSWriteSettings"
+						},
+						"formatSettings": {
+							"type": "ParquetWriteSettings"
 						}
 					},
-					"enableStaging": false
+					"enableStaging": false,
+					"translator": {
+						"value": "@json(string(pipeline().parameters.column_mapping))",
+						"type": "Expression"
+					}
 				},
 				"inputs": [
 					{
-						"referenceName": "ds_anonymous_http_binary_cloud",
+						"referenceName": "ds_rest_api_cloud",
 						"type": "DatasetReference",
 						"parameters": {
-							"base_url": {
-								"value": "@pipeline().parameters.base_url\n",
-								"type": "Expression"
-							},
-							"relative_url": {
-								"value": "@pipeline().parameters.relative_url",
-								"type": "Expression"
-							}
+							"relative_url": "1.0",
+							"base_url": "https://apim.dev.cloud.nibc.com/internal/salesforcemarketingcloud-event-data-api"
 						}
 					}
 				],
 				"outputs": [
 					{
-						"referenceName": "ds_blob_binary_cloud",
+						"referenceName": "ds_adls_parquet_auto_resolve",
 						"type": "DatasetReference",
 						"parameters": {
-							"storage_account_uri": {
-								"value": "@pipeline().globalParameters.storage_account_data_factory_uri",
-								"type": "Expression"
-							},
-							"container_name": {
-								"value": "@pipeline().globalParameters.storage_container_data_factory",
-								"type": "Expression"
-							},
-							"datastore_name": {
-								"value": "@pipeline().parameters.datastore_name",
-								"type": "Expression"
-							},
-							"dataset_name": {
-								"value": "@pipeline().parameters.dataset_name",
-								"type": "Expression"
-							},
-							"file_name": {
-								"value": "@variables('file_name')",
-								"type": "Expression"
-							}
+							"datastore_name": "@pipeline().parameters.datastore_name",
+							"dataset_name": "@pipeline().parameters.dataset_name",
+							"storage_account_uri": "@pipeline().globalParameters.storage_account_datalake_uri",
+							"container_name": "@pipeline().globalParameters.storage_container_datalake",
+							"file_name": "@pipeline().parameters.dataset_name"
 						}
 					}
 				]
