@@ -371,6 +371,7 @@
 			},
 			{
 				"name": "Get secret for CIP",
+				"description": "",
 				"type": "ExecutePipeline",
 				"dependsOn": [],
 				"policy": {
@@ -393,10 +394,17 @@
 			},
 			{
 				"name": "Get access token",
+				"description": "This activity depends on the copy job as the secret we get as the output - used in all 3 following web steps - might expire if the model doesn't output the tables fast.",
 				"type": "WebActivity",
 				"dependsOn": [
 					{
 						"activity": "Get secret for CIP",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					},
+					{
+						"activity": "Copy table to CSV format",
 						"dependencyConditions": [
 							"Succeeded"
 						]
