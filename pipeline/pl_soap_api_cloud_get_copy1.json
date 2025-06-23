@@ -41,13 +41,9 @@
 						}
 					},
 					"sink": {
-						"type": "ParquetSink",
+						"type": "BinarySink",
 						"storeSettings": {
-							"type": "AzureBlobFSWriteSettings",
-							"copyBehavior": "FlattenHierarchy"
-						},
-						"formatSettings": {
-							"type": "ParquetWriteSettings"
+							"type": "AzureBlobStorageWriteSettings"
 						}
 					},
 					"enableStaging": false
@@ -70,30 +66,8 @@
 				],
 				"outputs": [
 					{
-						"referenceName": "ds_adls_parquet_auto_resolve",
-						"type": "DatasetReference",
-						"parameters": {
-							"datastore_name": {
-								"value": "@pipeline().parameters.datastore_name",
-								"type": "Expression"
-							},
-							"dataset_name": {
-								"value": "@pipeline().parameters.dataset_name",
-								"type": "Expression"
-							},
-							"storage_account_uri": {
-								"value": "@pipeline().globalParameters.storage_account_datalake_uri",
-								"type": "Expression"
-							},
-							"container_name": {
-								"value": "@pipeline().globalParameters.storage_container_datalake",
-								"type": "Expression"
-							},
-							"file_name": {
-								"value": "@pipeline().parameters.dataset_name",
-								"type": "Expression"
-							}
-						}
+						"referenceName": "ds_blob_binary_cloud",
+						"type": "DatasetReference"
 					}
 				]
 			},
