@@ -31,7 +31,10 @@
 						"requestMethod": "POST",
 						"requestBody": "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n<soapenv:Header>\n<fueloauth xmlns=\"http://exacttarget.com\">xxx</fueloauth>\n</soapenv:Header>\n<soapenv:Body>\n<RetrieveRequestMsg xmlns=\"http://exacttarget.com/wsdl/partnerAPI\">\n<RetrieveRequest>\n<ObjectType>BounceEvent</ObjectType>\n<Properties>Client.ID</Properties>\n<Properties>TriggeredSendDefinitionObjectID</Properties>\n<Properties>SendID</Properties>\n<Properties>SubscriberKey</Properties>\n<Properties>EventDate</Properties>\n<Properties>EventType</Properties>\n<Properties>BatchID</Properties>\n<Filter xsi:type=\"ns1:SimpleFilterPart\" xmlns:ns1=\"http://exacttarget.com/wsdl/partnerAPI\">\n<Property>EventDate</Property>\n<SimpleOperator>between</SimpleOperator>\n            <DateValue>2025-04-02T03:00:00.000Z</DateValue>\n            <DateValue>2025-04-24T02:59:59.999Z</DateValue>\n</Filter>\n</RetrieveRequest>\n</RetrieveRequestMsg>\n</soapenv:Body>\n</soapenv:Envelope>",
 						"additionalHeaders": {
-							"Authorization": "@concat('Bearer ', activity('Get access token').output['access_token'])\n",
+							"Authorization": {
+								"value": "@concat('Bearer ', activity('Get access token').output['access_token'])\n",
+								"type": "Expression"
+							},
 							"Content-Type": "text/xml",
 							"Soapaction": "Retrieve"
 						},
@@ -129,25 +132,33 @@
 			}
 		],
 		"parameters": {
-			"datastore_name": {
+			"start_date": {
 				"type": "string",
-				"defaultValue": "test_event_sfmc"
+				"defaultValue": "@formatDateTime(addDays(utcNow(), -1), 'yyyy-MM-ddT00:00:00.000Z')"
 			},
-			"dataset_name": {
+			"end_date": {
 				"type": "string",
-				"defaultValue": "event_sfmc"
+				"defaultValue": "@formatDateTime(addDays(utcNow(), -1), 'yyyy-MM-ddT23:59:59.999Z')"
+			},
+			"base_url": {
+				"type": "string",
+				"defaultValue": "https://apim.dev.cloud.nibc.com/internal/salesforcemarketingcloud-event-data-api"
 			},
 			"relative_url": {
 				"type": "string",
 				"defaultValue": "1.0"
 			},
-			"base_url": {
+			"dataset_name": {
 				"type": "string",
-				"defaultValue": "https://apim.dev.cloud.nibc.com/internal/salesforcemarketingcloud-event-data-api/"
+				"defaultValue": "bounceevent"
 			},
 			"key_vault_secret_name": {
 				"type": "string",
 				"defaultValue": "apim-authorization-access-token"
+			},
+			"datastore_name": {
+				"type": "string",
+				"defaultValue": "sfmc"
 			}
 		},
 		"variables": {
