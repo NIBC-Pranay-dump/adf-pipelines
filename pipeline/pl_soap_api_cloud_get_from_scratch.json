@@ -1,5 +1,5 @@
 {
-	"name": "pl_soap_api_cloud_get_copy1",
+	"name": "pl_soap_api_cloud_get_from_scratch",
 	"properties": {
 		"description": "Use this pipeline to connect the the API managed services SOAP API method",
 		"activities": [
@@ -9,7 +9,7 @@
 				"type": "Copy",
 				"dependsOn": [
 					{
-						"activity": "Get access token",
+						"activity": "Build SOAP activity",
 						"dependencyConditions": [
 							"Succeeded"
 						]
@@ -29,10 +29,13 @@
 						"httpRequestTimeout": "00:01:40",
 						"requestInterval": "00.00:00:00.010",
 						"requestMethod": "POST",
-						"requestBody": "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n<soapenv:Header>\n<fueloauth xmlns=\"http://exacttarget.com\">xxx</fueloauth>\n</soapenv:Header>\n<soapenv:Body>\n<RetrieveRequestMsg xmlns=\"http://exacttarget.com/wsdl/partnerAPI\">\n<RetrieveRequest>\n<ObjectType>BounceEvent</ObjectType>\n<Properties>Client.ID</Properties>\n<Properties>TriggeredSendDefinitionObjectID</Properties>\n<Properties>SendID</Properties>\n<Properties>SubscriberKey</Properties>\n<Properties>EventDate</Properties>\n<Properties>EventType</Properties>\n<Properties>BatchID</Properties>\n<Filter xsi:type=\"ns1:SimpleFilterPart\" xmlns:ns1=\"http://exacttarget.com/wsdl/partnerAPI\">\n<Property>EventDate</Property>\n<SimpleOperator>between</SimpleOperator>\n            <DateValue>2025-04-02T03:00:00.000Z</DateValue>\n            <DateValue>2025-04-24T02:59:59.999Z</DateValue>\n</Filter>\n</RetrieveRequest>\n</RetrieveRequestMsg>\n</soapenv:Body>\n</soapenv:Envelope>",
+						"requestBody": {
+							"value": "@variables('soap_body')",
+							"type": "Expression"
+						},
 						"additionalHeaders": {
 							"Authorization": {
-								"value": "@concat('Bearer ', activity('Get access token').output['access_token'])\n",
+								"value": "@concat('Bearer ', activity('Get access token').output['access_token'])",
 								"type": "Expression"
 							},
 							"Content-Type": "text/xml",
@@ -129,6 +132,30 @@
 						}
 					}
 				}
+			},
+			{
+				"name": "Build SOAP activity",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "Get access token",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "soap_body",
+					"value": {
+						"value": "@concat(\n  '<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">',\n    '<soapenv:Header>',\n      '<fueloauth xmlns=\"http://exacttarget.com\">xxx</fueloauth>',\n    '</soapenv:Header>',\n    '<soapenv:Body>',\n      '<RetrieveRequestMsg xmlns=\"http://exacttarget.com/wsdl/partnerAPI\">',\n        '<RetrieveRequest>',\n          '<ObjectType>BounceEvent</ObjectType>',\n          '<Properties>EventDate</Properties>',\n          '<Properties>EventType</Properties>',\n          '<Properties>BatchID</Properties>',\n          '<Filter xsi:type=\"SimpleFilterPart\">',\n            '<Property>EventDate</Property>',\n            '<SimpleOperator>between</SimpleOperator>',\n            '<DateValue>', pipeline().parameters.start_date, '</DateValue>',\n            '<DateValue>', pipeline().parameters.end_date, '</DateValue>',\n          '</Filter>',\n        '</RetrieveRequest>',\n      '</RetrieveRequestMsg>',\n    '</soapenv:Body>',\n  '</soapenv:Envelope>'\n)\n",
+						"type": "Expression"
+					}
+				}
 			}
 		],
 		"parameters": {
@@ -163,6 +190,9 @@
 		},
 		"variables": {
 			"file_name": {
+				"type": "String"
+			},
+			"soap_body": {
 				"type": "String"
 			}
 		},
