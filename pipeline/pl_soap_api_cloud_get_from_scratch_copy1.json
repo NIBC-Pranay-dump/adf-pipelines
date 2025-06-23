@@ -1,0 +1,196 @@
+{
+	"name": "pl_soap_api_cloud_get_from_scratch_copy1",
+	"properties": {
+		"description": "Use this pipeline to connect the the API managed services SOAP API method",
+		"activities": [
+			{
+				"name": "copy SOAP API dataset",
+				"description": "Copies the SOAP API dataset to datalake.",
+				"type": "Copy",
+				"dependsOn": [
+					{
+						"activity": "Build SOAP activity",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "RestSource",
+						"httpRequestTimeout": "00:01:40",
+						"requestInterval": "00.00:00:00.010",
+						"requestMethod": "POST",
+						"requestBody": {
+							"value": "@variables('soap_body')",
+							"type": "Expression"
+						},
+						"additionalHeaders": {
+							"Authorization": {
+								"value": "@concat('Bearer ', activity('Get access token').output['access_token'])",
+								"type": "Expression"
+							},
+							"Content-Type": "text/xml",
+							"Soapaction": "Retrieve"
+						},
+						"paginationRules": {
+							"supportRFC5988": "true"
+						}
+					},
+					"sink": {
+						"type": "ParquetSink",
+						"storeSettings": {
+							"type": "AzureBlobFSWriteSettings"
+						},
+						"formatSettings": {
+							"type": "ParquetWriteSettings"
+						}
+					},
+					"enableStaging": false
+				},
+				"inputs": [
+					{
+						"referenceName": "ds_rest_api_cloud",
+						"type": "DatasetReference",
+						"parameters": {
+							"relative_url": "1.0",
+							"base_url": "https://apim.dev.cloud.nibc.com/internal/salesforcemarketingcloud-event-data-api"
+						}
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "ds_adls_parquet_auto_resolve",
+						"type": "DatasetReference",
+						"parameters": {
+							"datastore_name": "@pipeline().parameters.datastore_name",
+							"dataset_name": "@pipeline().parameters.dataset_name",
+							"storage_account_uri": "@pipeline().globalParameters.storage_account_datalake_uri",
+							"container_name": "@pipeline().globalParameters.storage_container_datalake",
+							"file_name": "@pipeline().parameters.dataset_name"
+						}
+					}
+				]
+			},
+			{
+				"name": "Get access token",
+				"type": "WebActivity",
+				"dependsOn": [
+					{
+						"activity": "Get secret",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": true,
+					"secureInput": true
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"method": "POST",
+					"headers": {
+						"Content-Type": "application/x-www-form-urlencoded"
+					},
+					"url": "https://login.microsoftonline.com/8614d95f-762b-4789-a741-2589e3d0b08b/oauth2/v2.0/token",
+					"body": {
+						"value": "@concat('client_id=', pipeline().globalParameters.cip_client_id, '&scope=', pipeline().globalParameters.cip_scope, '&client_secret=', activity('Get secret').output.pipelineReturnValue.keyvault_secret_value, '&grant_type=client_credentials')",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "Get secret",
+				"type": "ExecutePipeline",
+				"dependsOn": [],
+				"policy": {
+					"secureInput": true
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "pl_util_get_keyvault_secret",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true,
+					"parameters": {
+						"keyvault_secret_name": {
+							"value": "@pipeline().parameters.key_vault_secret_name",
+							"type": "Expression"
+						}
+					}
+				}
+			},
+			{
+				"name": "Build SOAP activity",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "Get access token",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "soap_body",
+					"value": {
+						"value": "@concat(\n  '<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">',\n    '<soapenv:Header>',\n      '<fueloauth xmlns=\"http://exacttarget.com\">', activity('Get access token').output.access_token, '</fueloauth>',\n    '</soapenv:Header>',\n    '<soapenv:Body>',\n      '<RetrieveRequestMsg xmlns=\"http://exacttarget.com/wsdl/partnerAPI\">',\n        '<RetrieveRequest>',\n          '<ObjectType>BounceEvent</ObjectType>',\n          '<Properties>EventDate</Properties>',\n          '<Properties>EventType</Properties>',\n          '<Properties>BatchID</Properties>',\n          '<Filter xsi:type=\"SimpleFilterPart\">',\n            '<Property>EventDate</Property>',\n            '<SimpleOperator>between</SimpleOperator>',\n            '<DateValue>', pipeline().parameters.start_date, '</DateValue>',\n            '<DateValue>', pipeline().parameters.end_date, '</DateValue>',\n          '</Filter>',\n        '</RetrieveRequest>',\n      '</RetrieveRequestMsg>',\n    '</soapenv:Body>',\n  '</soapenv:Envelope>'\n)",
+						"type": "Expression"
+					}
+				}
+			}
+		],
+		"parameters": {
+			"base_url": {
+				"type": "string",
+				"defaultValue": "https://apim.dev.cloud.nibc.com/internal/salesforcemarketingcloud-event-data-api"
+			},
+			"relative_url": {
+				"type": "string",
+				"defaultValue": "1.0"
+			},
+			"dataset_name": {
+				"type": "string",
+				"defaultValue": "bounceevent"
+			},
+			"key_vault_secret_name": {
+				"type": "string",
+				"defaultValue": "apim-authorization-access-token"
+			},
+			"datastore_name": {
+				"type": "string",
+				"defaultValue": "sfmc"
+			}
+		},
+		"variables": {
+			"file_name": {
+				"type": "String"
+			},
+			"soap_body": {
+				"type": "String"
+			}
+		},
+		"folder": {
+			"name": "cloud"
+		},
+		"annotations": []
+	}
+}
