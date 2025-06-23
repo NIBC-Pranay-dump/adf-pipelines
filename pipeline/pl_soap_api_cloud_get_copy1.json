@@ -1,0 +1,243 @@
+{
+	"name": "pl_soap_api_cloud_get_copy1",
+	"properties": {
+		"description": "Use this pipeline to connect the the API managed services SOAP API method",
+		"activities": [
+			{
+				"name": "copy SOAP API dataset",
+				"description": "Copies the SOAP API dataset to datalake.",
+				"type": "Copy",
+				"dependsOn": [
+					{
+						"activity": "Get access token",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": true
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "RestSource",
+						"httpRequestTimeout": "00:01:40",
+						"requestInterval": "00.00:00:00.010",
+						"requestMethod": "POST",
+						"requestBody": "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n<soapenv:Header>\n<fueloauth xmlns=\"http://exacttarget.com\">xxx</fueloauth>\n</soapenv:Header>\n<soapenv:Body>\n<RetrieveRequestMsg xmlns=\"http://exacttarget.com/wsdl/partnerAPI\">\n<RetrieveRequest>\n<ObjectType>BounceEvent</ObjectType>\n<Properties>Client.ID</Properties>\n<Properties>TriggeredSendDefinitionObjectID</Properties>\n<Properties>SendID</Properties>\n<Properties>SubscriberKey</Properties>\n<Properties>EventDate</Properties>\n<Properties>EventType</Properties>\n<Properties>BatchID</Properties>\n<Filter xsi:type=\"ns1:SimpleFilterPart\" xmlns:ns1=\"http://exacttarget.com/wsdl/partnerAPI\">\n<Property>EventDate</Property>\n<SimpleOperator>between</SimpleOperator>\n            <DateValue>2025-04-02T03:00:00.000Z</DateValue>\n            <DateValue>2025-04-24T02:59:59.999Z</DateValue>\n</Filter>\n</RetrieveRequest>\n</RetrieveRequestMsg>\n</soapenv:Body>\n</soapenv:Envelope>",
+						"additionalHeaders": {
+							"Authorization": {
+								"value": "@concat('Bearer ', activity('Get access token').output['access_token'])",
+								"type": "Expression"
+							}
+						},
+						"paginationRules": {
+							"supportRFC5988": "true"
+						}
+					},
+					"sink": {
+						"type": "ParquetSink",
+						"storeSettings": {
+							"type": "AzureBlobFSWriteSettings",
+							"copyBehavior": "FlattenHierarchy"
+						},
+						"formatSettings": {
+							"type": "ParquetWriteSettings"
+						}
+					},
+					"enableStaging": false,
+					"translator": {
+						"value": "@json(string(pipeline().parameters.column_mapping))",
+						"type": "Expression"
+					}
+				},
+				"inputs": [
+					{
+						"referenceName": "ds_rest_api_cloud",
+						"type": "DatasetReference",
+						"parameters": {
+							"relative_url": {
+								"value": "@pipeline().parameters.relative_url",
+								"type": "Expression"
+							},
+							"base_url": {
+								"value": "@pipeline().parameters.base_url",
+								"type": "Expression"
+							}
+						}
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "ds_adls_parquet_auto_resolve",
+						"type": "DatasetReference",
+						"parameters": {
+							"datastore_name": {
+								"value": "@pipeline().parameters.datastore_name",
+								"type": "Expression"
+							},
+							"dataset_name": {
+								"value": "@pipeline().parameters.dataset_name",
+								"type": "Expression"
+							},
+							"storage_account_uri": {
+								"value": "@pipeline().globalParameters.storage_account_datalake_uri",
+								"type": "Expression"
+							},
+							"container_name": {
+								"value": "@pipeline().globalParameters.storage_container_datalake",
+								"type": "Expression"
+							},
+							"file_name": {
+								"value": "@pipeline().parameters.dataset_name",
+								"type": "Expression"
+							}
+						}
+					}
+				]
+			},
+			{
+				"name": "Get access token",
+				"type": "WebActivity",
+				"dependsOn": [
+					{
+						"activity": "Get secret",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": true,
+					"secureInput": true
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"method": "POST",
+					"headers": {
+						"Content-Type": "application/x-www-form-urlencoded"
+					},
+					"url": "https://login.microsoftonline.com/8614d95f-762b-4789-a741-2589e3d0b08b/oauth2/v2.0/token",
+					"body": {
+						"value": "@concat('client_id=', pipeline().globalParameters.cip_client_id, '&scope=', pipeline().globalParameters.cip_scope, '&client_secret=', activity('Get secret').output.pipelineReturnValue.keyvault_secret_value, '&grant_type=client_credentials')",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "Get secret",
+				"type": "ExecutePipeline",
+				"dependsOn": [],
+				"policy": {
+					"secureInput": true
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "pl_util_get_keyvault_secret",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true,
+					"parameters": {
+						"keyvault_secret_name": {
+							"value": "@pipeline().parameters.key_vault_secret_name",
+							"type": "Expression"
+						}
+					}
+				}
+			}
+		],
+		"parameters": {
+			"datastore_name": {
+				"type": "string",
+				"defaultValue": "test_event_sfmc"
+			},
+			"dataset_name": {
+				"type": "string",
+				"defaultValue": "event_sfmc"
+			},
+			"relative_url": {
+				"type": "string",
+				"defaultValue": "1.0"
+			},
+			"base_url": {
+				"type": "string",
+				"defaultValue": "https://apim.dev.cloud.nibc.com/internal/salesforcemarketingcloud-event-data-api/"
+			},
+			"key_vault_secret_name": {
+				"type": "string",
+				"defaultValue": "apim-authorization-access-token"
+			},
+			"column_mapping": {
+				"type": "string",
+				"defaultValue": {
+					"type": "TabularTranslator",
+					"mappings": [
+						{
+							"source": {
+								"path": "['Id']",
+								"type": "String"
+							},
+							"sink": {
+								"name": "id",
+								"type": "String"
+							}
+						},
+						{
+							"source": {
+								"path": "['MOJO_FacilityID__c']",
+								"type": "String"
+							},
+							"sink": {
+								"name": "mojo_facilityid_c",
+								"type": "String"
+							}
+						},
+						{
+							"source": {
+								"path": "['MOJO_Purpose__c']",
+								"type": "String"
+							},
+							"sink": {
+								"name": "mojo_purpose_c",
+								"type": "String"
+							}
+						},
+						{
+							"source": {
+								"path": "['attributes']['type']",
+								"type": "String"
+							},
+							"sink": {
+								"name": "attributes_type",
+								"type": "String"
+							}
+						},
+						{
+							"source": {
+								"path": "['attributes']['url']",
+								"type": "String"
+							},
+							"sink": {
+								"name": "attributes_url",
+								"type": "String"
+							}
+						}
+					]
+				}
+			}
+		},
+		"folder": {
+			"name": "cloud"
+		},
+		"annotations": []
+	}
+}
