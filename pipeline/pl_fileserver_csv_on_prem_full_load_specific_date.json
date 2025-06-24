@@ -1,7 +1,7 @@
 {
 	"name": "pl_fileserver_csv_on_prem_full_load_specific_date",
 	"properties": {
-		"description": "ADF pipeline to copy files from a file server:\n- ADF pipeline to copy files from a file server reachable through SHIR\n- Using full load ingestion pattern\n- For current date or functional date with addDays functionality\n- Test completeness based on metadata \n",
+		"description": "ADF pipeline to copy files from a file server:\n- ADF pipeline to copy files from a file server reachable through SHIR\n- Using full load ingestion pattern\n- For current date or functional date with addDays functionality\n- Test completeness based on metadata \n- if copy_binary_data parameter is set to true, it copies the raw csv-files to the ingestion storage account\n- the idea of delta-days was taken from the ods-mortgages pipelines where they automatically take current day minus 1 day. This delta-days is a generalization of this idea where you can set adddays=-1 but also all other (also positive) integer values\n- if is_monthly_run parameter is set to true, in the set variable-activity for functional_date the functional_data parameter will be changed to the last day of previous month. So if functional_data parameter is 2025-05-31 the variable will be set as 2025-04-30\n",
 		"activities": [
 			{
 				"name": "Check row count matches",
@@ -9,7 +9,7 @@
 				"type": "IfCondition",
 				"dependsOn": [
 					{
-						"activity": "verify row count",
+						"activity": "If files on fileserver",
 						"dependencyConditions": [
 							"Succeeded"
 						]
@@ -44,7 +44,7 @@
 				"type": "ForEach",
 				"dependsOn": [
 					{
-						"activity": "Filter filenames of fileserver",
+						"activity": "error when no files available",
 						"dependencyConditions": [
 							"Succeeded"
 						]
@@ -173,7 +173,7 @@
 			},
 			{
 				"name": "functional date",
-				"description": "Based on current date or provided parameter value, set functional date",
+				"description": "Based on current date or provided parameter value, set functional date. In case parameter is_monthly_run is set to true, it takes last date of previous month.",
 				"type": "SetVariable",
 				"dependsOn": [],
 				"policy": {
@@ -184,7 +184,7 @@
 				"typeProperties": {
 					"variableName": "functional_date",
 					"value": {
-						"value": "@formatDateTime(if(equals(pipeline().parameters.functional_date,'{yyyy-MM-dd}'), adddays(convertTimeZone(pipeline().TriggerTime,'UTC','W. Europe Standard Time'),int(pipeline().parameters.delta_days)), adddays(pipeline().parameters.functional_date,int(pipeline().parameters.delta_days))), 'yyyyMMdd')",
+						"value": "@if(bool(pipeline().parameters.is_monthly_run)\n\n\n,\nformatDateTime(\n    adddays(startOfMonth(\n\n\n    if(equals(pipeline().parameters.functional_date,'{yyyy-MM-dd}'), adddays(convertTimeZone(pipeline().TriggerTime,'UTC','W. Europe Standard Time'),int(pipeline().parameters.delta_days)), adddays(pipeline().parameters.functional_date,int(pipeline().parameters.delta_days)))\n    \n), -1)\n    \n    , 'yyyyMMdd')\n    \n    ,\n    \n    formatDateTime(\n    \n    if(equals(pipeline().parameters.functional_date,'{yyyy-MM-dd}'), adddays(convertTimeZone(pipeline().TriggerTime,'UTC','W. Europe Standard Time'),int(pipeline().parameters.delta_days)), adddays(pipeline().parameters.functional_date,int(pipeline().parameters.delta_days)))\n    \n    , 'yyyyMMdd')\n\n\n\n\n)",
 						"type": "Expression"
 					}
 				}
@@ -284,7 +284,7 @@
 			},
 			{
 				"name": "Filter filenames of fileserver",
-				"description": "",
+				"description": "the asterisk is for the files (file x of y) and the datetime the file is generated. E.g. for hds_t_dim_account_file_4_of_5_202504141234_20250414.csv, source_file_name_pattern = \"hds_t_dim_account_file_*{functional_date}.csv\". It will filter out the 5 correct files. With splitting the file on this asterisk and taking the first and the last, the correct files are filtered.",
 				"type": "Filter",
 				"dependsOn": [
 					{
@@ -308,6 +308,7 @@
 			},
 			{
 				"name": "if copy binary data",
+				"description": "By default it won't copy the raw csv-files to the ingestion storage account, but when I need to debug, then I prefer the raw csv-file and I will set this parameter on true",
 				"type": "IfCondition",
 				"dependsOn": [
 					{
@@ -320,7 +321,7 @@
 				"userProperties": [],
 				"typeProperties": {
 					"expression": {
-						"value": "@bool(pipeline().parameters.copy_binary_data)",
+						"value": "@and(bool(pipeline().parameters.copy_binary_data), greater(int(variables('total_record_count')), 0))",
 						"type": "Expression"
 					},
 					"ifTrueActivities": [
@@ -431,7 +432,7 @@
 				"userProperties": [],
 				"typeProperties": {
 					"expression": {
-						"value": "@bool(pipeline().parameters.delete_data_on_fileserver)",
+						"value": "@and(bool(pipeline().parameters.delete_data_on_fileserver), greater(int(variables('total_record_count')), 0))",
 						"type": "Expression"
 					},
 					"ifTrueActivities": [
@@ -494,9 +495,8 @@
 				}
 			},
 			{
-				"name": "Copy as parquet data",
-				"description": "Copy csv data to parquet from file server",
-				"type": "Copy",
+				"name": "If files on fileserver",
+				"type": "IfCondition",
 				"dependsOn": [
 					{
 						"activity": "if copy binary data",
@@ -505,142 +505,194 @@
 						]
 					}
 				],
-				"policy": {
-					"timeout": "0.12:00:00",
-					"retry": 0,
-					"retryIntervalInSeconds": 30,
-					"secureOutput": false,
-					"secureInput": false
-				},
 				"userProperties": [],
 				"typeProperties": {
-					"source": {
-						"type": "DelimitedTextSource",
-						"additionalColumns": [
-							{
-								"name": "filename",
-								"value": "$$FILENAME"
+					"expression": {
+						"value": "@greater(int(variables('total_record_count')), 0)",
+						"type": "Expression"
+					},
+					"ifTrueActivities": [
+						{
+							"name": "Copy as parquet data",
+							"description": "Copy csv data to parquet from file server",
+							"type": "Copy",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
 							},
-							{
-								"name": "download_timestamp",
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "DelimitedTextSource",
+									"additionalColumns": [
+										{
+											"name": "filename",
+											"value": "$$FILENAME"
+										},
+										{
+											"name": "download_timestamp",
+											"value": {
+												"value": "@formatDateTime(convertTimeZone(pipeline().TriggerTime,'UTC','W. Europe Standard Time'), 'yyyyMMdd_HHmmss')",
+												"type": "Expression"
+											}
+										}
+									],
+									"storeSettings": {
+										"type": "FileServerReadSettings",
+										"recursive": false,
+										"wildcardFileName": {
+											"value": "@variables('file_pattern_specified')",
+											"type": "Expression"
+										},
+										"enablePartitionDiscovery": false
+									},
+									"formatSettings": {
+										"type": "DelimitedTextReadSettings",
+										"skipLineCount": {
+											"value": "@int(pipeline().parameters.skip_line_count)",
+											"type": "Expression"
+										}
+									}
+								},
+								"sink": {
+									"type": "ParquetSink",
+									"storeSettings": {
+										"type": "AzureBlobFSWriteSettings",
+										"copyBehavior": "MergeFiles"
+									},
+									"formatSettings": {
+										"type": "ParquetWriteSettings"
+									}
+								},
+								"enableStaging": false
+							},
+							"inputs": [
+								{
+									"referenceName": "ds_fileserver_csv_directory_on_prem",
+									"type": "DatasetReference",
+									"parameters": {
+										"user_name": {
+											"value": "@pipeline().parameters.fileserver_user_name",
+											"type": "Expression"
+										},
+										"host_name": {
+											"value": "@pipeline().parameters.fileserver_host_name",
+											"type": "Expression"
+										},
+										"key_vault_uri": {
+											"value": "@pipeline().globalParameters.key_vault_uri",
+											"type": "Expression"
+										},
+										"fileserver_password_secret_name": {
+											"value": "@pipeline().parameters.keyvault_secret_name",
+											"type": "Expression"
+										},
+										"directory": {
+											"value": "@pipeline().parameters.fileserver_directory",
+											"type": "Expression"
+										},
+										"column_delimiter": {
+											"value": "@pipeline().parameters.column_delimiter",
+											"type": "Expression"
+										}
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "ds_adls_parquet_auto_resolve",
+									"type": "DatasetReference",
+									"parameters": {
+										"datastore_name": {
+											"value": "@pipeline().parameters.datastore_name",
+											"type": "Expression"
+										},
+										"dataset_name": {
+											"value": "@pipeline().parameters.dataset_name",
+											"type": "Expression"
+										},
+										"storage_account_uri": {
+											"value": "@pipeline().globalParameters.storage_account_datalake_uri",
+											"type": "Expression"
+										},
+										"container_name": {
+											"value": "@pipeline().globalParameters.storage_container_datalake",
+											"type": "Expression"
+										},
+										"file_name": {
+											"value": "@pipeline().parameters.dataset_name",
+											"type": "Expression"
+										}
+									}
+								}
+							]
+						},
+						{
+							"name": "verify row count",
+							"description": "the parquet is done in merge-mode and the rowsCopied reflect the total number of copied rows. The total_record_count is done in file by file in a previous step and the append-activity is used to sum the total record count",
+							"type": "SetVariable",
+							"dependsOn": [
+								{
+									"activity": "Copy as parquet data",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "row_count_match",
 								"value": {
-									"value": "@formatDateTime(convertTimeZone(pipeline().TriggerTime,'UTC','W. Europe Standard Time'), 'yyyyMMdd_HHmmss')",
+									"value": "@equals(int(variables('total_record_count')), int(activity('Copy as parquet data').output.rowsCopied))",
 									"type": "Expression"
 								}
 							}
-						],
-						"storeSettings": {
-							"type": "FileServerReadSettings",
-							"recursive": false,
-							"wildcardFileName": {
-								"value": "@variables('file_pattern_specified')",
-								"type": "Expression"
-							},
-							"enablePartitionDiscovery": false
-						},
-						"formatSettings": {
-							"type": "DelimitedTextReadSettings",
-							"skipLineCount": {
-								"value": "@int(pipeline().parameters.skip_line_count)",
-								"type": "Expression"
-							}
 						}
-					},
-					"sink": {
-						"type": "ParquetSink",
-						"storeSettings": {
-							"type": "AzureBlobFSWriteSettings",
-							"copyBehavior": "MergeFiles"
-						},
-						"formatSettings": {
-							"type": "ParquetWriteSettings"
-						}
-					},
-					"enableStaging": false
-				},
-				"inputs": [
-					{
-						"referenceName": "ds_fileserver_csv_directory_on_prem",
-						"type": "DatasetReference",
-						"parameters": {
-							"user_name": {
-								"value": "@pipeline().parameters.fileserver_user_name",
-								"type": "Expression"
-							},
-							"host_name": {
-								"value": "@pipeline().parameters.fileserver_host_name",
-								"type": "Expression"
-							},
-							"key_vault_uri": {
-								"value": "@pipeline().globalParameters.key_vault_uri",
-								"type": "Expression"
-							},
-							"fileserver_password_secret_name": {
-								"value": "@pipeline().parameters.keyvault_secret_name",
-								"type": "Expression"
-							},
-							"directory": {
-								"value": "@pipeline().parameters.fileserver_directory",
-								"type": "Expression"
-							},
-							"column_delimiter": {
-								"value": "@pipeline().parameters.column_delimiter",
-								"type": "Expression"
-							}
-						}
-					}
-				],
-				"outputs": [
-					{
-						"referenceName": "ds_adls_parquet_auto_resolve",
-						"type": "DatasetReference",
-						"parameters": {
-							"datastore_name": {
-								"value": "@pipeline().parameters.datastore_name",
-								"type": "Expression"
-							},
-							"dataset_name": {
-								"value": "@pipeline().parameters.dataset_name",
-								"type": "Expression"
-							},
-							"storage_account_uri": {
-								"value": "@pipeline().globalParameters.storage_account_datalake_uri",
-								"type": "Expression"
-							},
-							"container_name": {
-								"value": "@pipeline().globalParameters.storage_container_datalake",
-								"type": "Expression"
-							},
-							"file_name": {
-								"value": "@pipeline().parameters.dataset_name",
-								"type": "Expression"
-							}
-						}
-					}
-				]
+					]
+				}
 			},
 			{
-				"name": "verify row count",
-				"type": "SetVariable",
+				"name": "error when no files available",
+				"description": "Check if total record count is greater than 0. Otherwise generate error. This error message should only be generated when parameter is_monthly_run is false because monthly run runs every day, but will only be available on first workday of new month. ",
+				"type": "IfCondition",
 				"dependsOn": [
 					{
-						"activity": "Copy as parquet data",
+						"activity": "Filter filenames of fileserver",
 						"dependencyConditions": [
 							"Succeeded"
 						]
 					}
 				],
-				"policy": {
-					"secureOutput": false,
-					"secureInput": false
-				},
 				"userProperties": [],
 				"typeProperties": {
-					"variableName": "row_count_match",
-					"value": {
-						"value": "@equals(int(variables('total_record_count')), int(activity('Copy as parquet data').output.rowsCopied))",
+					"expression": {
+						"value": "@or(greater(int(activity('Filter filenames of fileserver').output.FilteredItemsCount), 0)\n\n,\npipeline().parameters.is_monthly_run\n)",
 						"type": "Expression"
-					}
+					},
+					"ifFalseActivities": [
+						{
+							"name": "no files available on fileserver",
+							"description": "A warning will be generated when no files are available on the fileserver",
+							"type": "Fail",
+							"dependsOn": [],
+							"userProperties": [],
+							"typeProperties": {
+								"message": {
+									"value": "@concat('No files available on server for file ', string(variables('file_pattern_specified')), '. On German bank holidays, no new files will be available. If you are unsure whether this is the reason or if another issue has occurred, please confirm with Stephan de Ruiter from the ODS-team.')",
+									"type": "Expression"
+								},
+								"errorCode": "NO_FILES_FOUND"
+							}
+						}
+					]
 				}
 			}
 		],
@@ -698,6 +750,10 @@
 				"defaultValue": false
 			},
 			"delete_data_on_fileserver": {
+				"type": "bool",
+				"defaultValue": false
+			},
+			"is_monthly_run": {
 				"type": "bool",
 				"defaultValue": false
 			}
