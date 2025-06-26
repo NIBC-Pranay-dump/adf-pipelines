@@ -3,7 +3,21 @@
 	"properties": {
 		"linkedServiceName": {
 			"referenceName": "ls_databricks",
-			"type": "LinkedServiceReference"
+			"type": "LinkedServiceReference",
+			"parameters": {
+				"azure_domain": {
+					"value": "@dataset().azure_domain",
+					"type": "Expression"
+				},
+				"dbx_cluster_id": {
+					"value": "@dataset().dbx_cluster_id",
+					"type": "Expression"
+				},
+				"dbx_workspace_resouce_id": {
+					"value": "@dataset().dbx_workspace_resouce_id",
+					"type": "Expression"
+				}
+			}
 		},
 		"parameters": {
 			"azure_domain": {
