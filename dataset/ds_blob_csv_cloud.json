@@ -1,7 +1,7 @@
 {
-	"name": "ds_blob_parquet_cloud",
+	"name": "ds_blob_csv_cloud",
 	"properties": {
-		"description": "Dataset used to save parquet files to the internal data factory storage account",
+		"description": "Saving CSV to the ADF internal storage account",
 		"linkedServiceName": {
 			"referenceName": "ls_blob_cloud",
 			"type": "LinkedServiceReference",
@@ -27,13 +27,25 @@
 			},
 			"file_name": {
 				"type": "string"
+			},
+			"column_delimiter": {
+				"type": "string",
+				"defaultValue": ","
+			},
+			"encoding": {
+				"type": "string",
+				"defaultValue": "UTF-8"
+			},
+			"first_row_as_header": {
+				"type": "bool",
+				"defaultValue": true
 			}
 		},
 		"folder": {
 			"name": "cloud"
 		},
 		"annotations": [],
-		"type": "Parquet",
+		"type": "DelimitedText",
 		"typeProperties": {
 			"location": {
 				"type": "AzureBlobStorageLocation",
@@ -41,16 +53,26 @@
 					"value": "@dataset().file_name",
 					"type": "Expression"
 				},
-				"folderPath": {
-					"value": "@concat('datastore_', dataset().datastore_name, '/dataset_', dataset().dataset_name)",
-					"type": "Expression"
-				},
+				"folderPath": "@concat('datastore_', dataset().datastore_name, '/dataset_', dataset().dataset_name)",
 				"container": {
 					"value": "@dataset().container_name",
 					"type": "Expression"
 				}
 			},
-			"compressionCodec": "snappy"
+			"columnDelimiter": {
+				"value": "@dataset().column_delimiter",
+				"type": "Expression"
+			},
+			"encodingName": {
+				"value": "@dataset().encoding",
+				"type": "Expression"
+			},
+			"escapeChar": "\\",
+			"firstRowAsHeader": {
+				"value": "@dataset().first_row_as_header",
+				"type": "Expression"
+			},
+			"quoteChar": "\""
 		},
 		"schema": []
 	}

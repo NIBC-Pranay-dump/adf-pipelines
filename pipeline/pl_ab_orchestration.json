@@ -107,6 +107,43 @@
 									}
 								}
 							}
+						},
+						{
+							"name": "Set pipeline output",
+							"type": "SetVariable",
+							"dependsOn": [
+								{
+									"activity": "Run model with databricks job",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "pipelineReturnValue",
+								"value": [
+									{
+										"key": "has_model_run",
+										"value": {
+											"type": "Boolean",
+											"content": true
+										}
+									},
+									{
+										"key": "sf_filtered_api_table",
+										"value": {
+											"type": "String",
+											"content": "@activity('Run model with databricks job').output.sf_filtered_api"
+										}
+									}
+								],
+								"setSystemVariable": true
+							}
 						}
 					]
 				}
