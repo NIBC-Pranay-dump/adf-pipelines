@@ -65,8 +65,6 @@
 						{
 							"name": "Set dbx table value",
 							"type": "SetVariable",
-							"state": "Inactive",
-							"onInactiveMarkAs": "Succeeded",
 							"dependsOn": [],
 							"policy": {
 								"secureOutput": false,
@@ -84,8 +82,6 @@
 						{
 							"name": "Copy table to CSV format",
 							"type": "Copy",
-							"state": "Inactive",
-							"onInactiveMarkAs": "Succeeded",
 							"dependsOn": [
 								{
 									"activity": "Set dbx table value",
@@ -186,8 +182,6 @@
 							"name": "Get CSV data",
 							"description": "TODO: secure the output",
 							"type": "Lookup",
-							"state": "Inactive",
-							"onInactiveMarkAs": "Succeeded",
 							"dependsOn": [
 								{
 									"activity": "Copy table to CSV format",
@@ -252,6 +246,8 @@
 							"name": "Get secret for CIP",
 							"description": "",
 							"type": "ExecutePipeline",
+							"state": "Inactive",
+							"onInactiveMarkAs": "Succeeded",
 							"dependsOn": [],
 							"policy": {
 								"secureInput": true
@@ -275,6 +271,8 @@
 							"name": "Get access token",
 							"description": "This activity depends on the copy job as the secret we get as the output - used in all 3 following web steps - might expire if the model doesn't output the tables fast.",
 							"type": "WebActivity",
+							"state": "Inactive",
+							"onInactiveMarkAs": "Succeeded",
 							"dependsOn": [
 								{
 									"activity": "Get secret for CIP",
@@ -306,6 +304,8 @@
 						{
 							"name": "Create SalesForce Job ID",
 							"type": "WebActivity",
+							"state": "Inactive",
+							"onInactiveMarkAs": "Succeeded",
 							"dependsOn": [
 								{
 									"activity": "Get access token",
@@ -354,6 +354,8 @@
 						{
 							"name": "Set Job ID",
 							"type": "SetVariable",
+							"state": "Inactive",
+							"onInactiveMarkAs": "Succeeded",
 							"dependsOn": [
 								{
 									"activity": "Create SalesForce Job ID",
@@ -456,6 +458,8 @@
 						{
 							"name": "Close SalesForce Job fail",
 							"type": "WebActivity",
+							"state": "Inactive",
+							"onInactiveMarkAs": "Succeeded",
 							"dependsOn": [
 								{
 									"activity": "Update SalesFoce Job ID",
@@ -492,6 +496,8 @@
 						{
 							"name": "Fail job if data upload failed",
 							"type": "Fail",
+							"state": "Inactive",
+							"onInactiveMarkAs": "Succeeded",
 							"dependsOn": [
 								{
 									"activity": "Close SalesForce Job fail",
