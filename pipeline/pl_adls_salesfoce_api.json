@@ -112,6 +112,11 @@
 									"storeSettings": {
 										"type": "AzureBlobFSReadSettings",
 										"recursive": true,
+										"wildcardFolderPath": {
+											"value": "@variables('output_export_path')",
+											"type": "Expression"
+										},
+										"wildcardFileName": "*.paruqet",
 										"enablePartitionDiscovery": false
 									},
 									"formatSettings": {
@@ -144,7 +149,11 @@
 									"referenceName": "ds_adls_parquet_wildcard_path_auto_resolve",
 									"type": "DatasetReference",
 									"parameters": {
-										"storage_account_uri": "@pipeline().globalParameters.storage_account_datalake_uri"
+										"storage_account_uri": "@pipeline().globalParameters.storage_account_datalake_uri",
+										"container_name": {
+											"value": "@variables('export_container')",
+											"type": "Expression"
+										}
 									}
 								}
 							],
@@ -570,18 +579,6 @@
 			},
 			"dbx_job_params_model": {
 				"type": "string"
-			},
-			"azure_domain": {
-				"type": "string",
-				"defaultValue": "https://adb-1053042427915632.12.azuredatabricks.net"
-			},
-			"dbx_cluster_id": {
-				"type": "string",
-				"defaultValue": "1220-112536-2dhkacra"
-			},
-			"dbx_workspace_resouce_id": {
-				"type": "string",
-				"defaultValue": "1053042427915632"
 			},
 			"datastore_name": {
 				"type": "string",
