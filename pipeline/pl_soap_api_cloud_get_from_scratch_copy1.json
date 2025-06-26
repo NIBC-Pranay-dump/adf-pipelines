@@ -295,7 +295,7 @@
 						"formatSettings": {
 							"type": "XmlReadSettings",
 							"validationMode": "none",
-							"detectDataType": false,
+							"detectDataType": true,
 							"namespaces": true
 						}
 					},
