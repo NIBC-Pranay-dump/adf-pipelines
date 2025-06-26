@@ -376,21 +376,7 @@
 				"defaultValue": "0c28ca60-24cd-45bd-95f1-01fdaee9c41c/.default"
 			},
 			"column_mapping": {
-				"type": "string",
-				"defaultValue": {
-					"type": "TabularTranslator",
-					"mappings": [
-						{
-							"source": {
-								"path": "$['value']"
-							},
-							"sink": {
-								"name": "$['value']"
-							}
-						}
-					],
-					"mapComplexValuesToString": true
-				}
+				"type": "string"
 			},
 			"dataset_id": {
 				"type": "string",
