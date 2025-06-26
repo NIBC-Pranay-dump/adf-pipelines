@@ -4,83 +4,6 @@
 		"description": "Use this pipeline to connect the the API managed services SOAP API method",
 		"activities": [
 			{
-				"name": "copy SOAP API dataset",
-				"description": "Copies the SOAP API dataset to datalake.",
-				"type": "Copy",
-				"dependsOn": [
-					{
-						"activity": "Build SOAP activity",
-						"dependencyConditions": [
-							"Succeeded"
-						]
-					}
-				],
-				"policy": {
-					"timeout": "0.12:00:00",
-					"retry": 0,
-					"retryIntervalInSeconds": 30,
-					"secureOutput": false,
-					"secureInput": false
-				},
-				"userProperties": [],
-				"typeProperties": {
-					"source": {
-						"type": "RestSource",
-						"httpRequestTimeout": "00:01:40",
-						"requestInterval": "00.00:00:00.010",
-						"requestMethod": "POST",
-						"requestBody": {
-							"value": "@variables('soap_body')",
-							"type": "Expression"
-						},
-						"additionalHeaders": {
-							"Authorization": {
-								"value": "@concat('Bearer ', activity('Get access token').output['access_token'])",
-								"type": "Expression"
-							},
-							"Content-Type": "text/xml",
-							"Soapaction": "Retrieve"
-						},
-						"paginationRules": {
-							"supportRFC5988": "true"
-						}
-					},
-					"sink": {
-						"type": "ParquetSink",
-						"storeSettings": {
-							"type": "AzureBlobFSWriteSettings"
-						},
-						"formatSettings": {
-							"type": "ParquetWriteSettings"
-						}
-					},
-					"enableStaging": false
-				},
-				"inputs": [
-					{
-						"referenceName": "ds_rest_api_cloud",
-						"type": "DatasetReference",
-						"parameters": {
-							"relative_url": "1.0",
-							"base_url": "https://apim.dev.cloud.nibc.com/internal/salesforcemarketingcloud-event-data-api"
-						}
-					}
-				],
-				"outputs": [
-					{
-						"referenceName": "ds_adls_parquet_auto_resolve",
-						"type": "DatasetReference",
-						"parameters": {
-							"datastore_name": "@pipeline().parameters.datastore_name",
-							"dataset_name": "@pipeline().parameters.dataset_name",
-							"storage_account_uri": "@pipeline().globalParameters.storage_account_datalake_uri",
-							"container_name": "@pipeline().globalParameters.storage_container_datalake",
-							"file_name": "@pipeline().parameters.dataset_name"
-						}
-					}
-				]
-			},
-			{
 				"name": "Get access token",
 				"type": "WebActivity",
 				"dependsOn": [
@@ -138,7 +61,7 @@
 				"type": "SetVariable",
 				"dependsOn": [
 					{
-						"activity": "Get access token",
+						"activity": "Set end_date",
 						"dependencyConditions": [
 							"Succeeded"
 						]
@@ -152,13 +75,310 @@
 				"typeProperties": {
 					"variableName": "soap_body",
 					"value": {
-						"value": "@concat(\n  '<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">',\n    '<soapenv:Header>',\n      '<fueloauth xmlns=\"http://exacttarget.com\"></fueloauth>',\n    '</soapenv:Header>',\n    '<soapenv:Body>',\n      '<RetrieveRequestMsg xmlns=\"http://exacttarget.com/wsdl/partnerAPI\">',\n        '<RetrieveRequest>',\n          '<ObjectType>BounceEvent</ObjectType>',\n          '<Properties>EventDate</Properties>',\n          '<Properties>EventType</Properties>',\n          '<Properties>BatchID</Properties>',\n          '<Filter xsi:type=\"SimpleFilterPart\">',\n            '<Property>EventDate</Property>',\n            '<SimpleOperator>between</SimpleOperator>',\n            '<DateValue>2025-04-02T03:00:00.000Z</DateValue>',\n            '<DateValue>2025-04-06T03:00:00.000Z</DateValue>',\n          '</Filter>',\n        '</RetrieveRequest>',\n      '</RetrieveRequestMsg>',\n    '</soapenv:Body>',\n  '</soapenv:Envelope>'\n)",
+						"value": "@concat(\n  '<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">',\n    '<soapenv:Header>',\n      '<fueloauth xmlns=\"http://exacttarget.com\">', activity('Get access token').output.access_token, '</fueloauth>',\n    '</soapenv:Header>',\n    '<soapenv:Body>',\n      '<RetrieveRequestMsg xmlns=\"http://exacttarget.com/wsdl/partnerAPI\">',\n        '<RetrieveRequest>',\n          '<ObjectType>',pipeline().parameters.dataset_name,'</ObjectType>',\n          pipeline().parameters.properties,\n          '<Filter xsi:type=\"SimpleFilterPart\">',\n            '<Property>EventDate</Property>',\n            '<SimpleOperator>between</SimpleOperator>',\n            '<DateValue>', variables('start_date'), '</DateValue>',\n            '<DateValue>', variables('end_date'), '</DateValue>',\n          '</Filter>',\n        '</RetrieveRequest>',\n      '</RetrieveRequestMsg>',\n    '</soapenv:Body>',\n  '</soapenv:Envelope>'\n)",
 						"type": "Expression"
 					}
 				}
+			},
+			{
+				"name": "Web1",
+				"type": "WebActivity",
+				"dependsOn": [
+					{
+						"activity": "Build SOAP activity",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"method": "POST",
+					"headers": {
+						"Authorization": {
+							"value": "@concat('Bearer ', activity('Get access token').output['access_token'])",
+							"type": "Expression"
+						},
+						"Content-Type": "text/xml",
+						"Soapaction": "Retrieve"
+					},
+					"url": {
+						"value": "@concat(pipeline().parameters.base_url,'/', pipeline().parameters.relative_url)",
+						"type": "Expression"
+					},
+					"connectVia": {
+						"referenceName": "cloud",
+						"type": "IntegrationRuntimeReference"
+					},
+					"body": {
+						"value": "@variables('soap_body')",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "Set start_date",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "Get access token",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "start_date",
+					"value": {
+						"value": "@if(\n    empty(pipeline().parameters.start_date),\n    formatDateTime(addDays(utcNow(), -1), 'yyyy-MM-ddT00:00:00.000Z'),\n    pipeline().parameters.start_date\n)\n\n\n",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "Set end_date",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "Set start_date",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "end_date",
+					"value": {
+						"value": "@if(\n    empty(pipeline().parameters.end_date),\n    formatDateTime(addDays(utcNow(), -1), 'yyyy-MM-ddT23:59:59.999Z'),\n    pipeline().parameters.end_date\n)\n\n\n",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "store raw XML",
+				"description": "",
+				"type": "Copy",
+				"dependsOn": [
+					{
+						"activity": "Build SOAP activity",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "BinarySource",
+						"storeSettings": {
+							"type": "HttpReadSettings",
+							"requestMethod": "POST",
+							"additionalHeaders": {
+								"value": "Authorization: Bearer @{activity('Get access token').output['access_token']}\nContent-Type: text/xml\nSoapaction: Retrieve",
+								"type": "Expression"
+							},
+							"requestBody": {
+								"value": "@variables('soap_body')",
+								"type": "Expression"
+							},
+							"requestTimeout": ""
+						},
+						"formatSettings": {
+							"type": "BinaryReadSettings"
+						}
+					},
+					"sink": {
+						"type": "BinarySink",
+						"storeSettings": {
+							"type": "AzureBlobStorageWriteSettings"
+						}
+					},
+					"enableStaging": false
+				},
+				"inputs": [
+					{
+						"referenceName": "ds_anonymous_http_binary_cloud",
+						"type": "DatasetReference",
+						"parameters": {
+							"base_url": {
+								"value": "@concat(pipeline().parameters.base_url,'/')",
+								"type": "Expression"
+							},
+							"relative_url": {
+								"value": "@pipeline().parameters.relative_url",
+								"type": "Expression"
+							}
+						}
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "ds_blob_binary_cloud",
+						"type": "DatasetReference",
+						"parameters": {
+							"storage_account_uri": {
+								"value": "@pipeline().globalParameters.storage_account_data_factory_uri",
+								"type": "Expression"
+							},
+							"container_name": {
+								"value": "@pipeline().globalParameters.storage_container_data_factory",
+								"type": "Expression"
+							},
+							"datastore_name": {
+								"value": "@pipeline().parameters.datastore_name",
+								"type": "Expression"
+							},
+							"dataset_name": {
+								"value": "@pipeline().parameters.dataset_name",
+								"type": "Expression"
+							},
+							"file_name": {
+								"value": "@concat(pipeline().parameters.dataset_name,'.xml')",
+								"type": "Expression"
+							}
+						}
+					}
+				]
+			},
+			{
+				"name": "convert XML to parquet",
+				"description": "Copy XML data to a flattened parquet file",
+				"type": "Copy",
+				"dependsOn": [
+					{
+						"activity": "store raw XML",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "XmlSource",
+						"storeSettings": {
+							"type": "AzureBlobStorageReadSettings",
+							"recursive": false,
+							"enablePartitionDiscovery": false
+						},
+						"formatSettings": {
+							"type": "XmlReadSettings",
+							"validationMode": "none",
+							"detectDataType": false,
+							"namespaces": true
+						}
+					},
+					"sink": {
+						"type": "ParquetSink",
+						"storeSettings": {
+							"type": "AzureBlobFSWriteSettings"
+						},
+						"formatSettings": {
+							"type": "ParquetWriteSettings"
+						}
+					},
+					"enableStaging": false,
+					"translator": {
+						"value": "@json(string(pipeline().parameters.column_mapping))",
+						"type": "Expression"
+					}
+				},
+				"inputs": [
+					{
+						"referenceName": "ds_blob_xml_cloud",
+						"type": "DatasetReference",
+						"parameters": {
+							"storage_account_uri": {
+								"value": "@pipeline().globalParameters.storage_account_data_factory_uri",
+								"type": "Expression"
+							},
+							"container_name": {
+								"value": "@pipeline().globalParameters.storage_container_data_factory",
+								"type": "Expression"
+							},
+							"datastore_name": {
+								"value": "@pipeline().parameters.datastore_name",
+								"type": "Expression"
+							},
+							"dataset_name": {
+								"value": "@pipeline().parameters.dataset_name",
+								"type": "Expression"
+							},
+							"file_name": {
+								"value": "@concat(pipeline().parameters.dataset_name,'.xml')",
+								"type": "Expression"
+							}
+						}
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "ds_adls_parquet_auto_resolve",
+						"type": "DatasetReference",
+						"parameters": {
+							"datastore_name": {
+								"value": "@pipeline().parameters.datastore_name",
+								"type": "Expression"
+							},
+							"dataset_name": {
+								"value": "@pipeline().parameters.dataset_name",
+								"type": "Expression"
+							},
+							"storage_account_uri": {
+								"value": "@pipeline().globalParameters.storage_account_datalake_uri",
+								"type": "Expression"
+							},
+							"container_name": {
+								"value": "@pipeline().globalParameters.storage_container_datalake",
+								"type": "Expression"
+							},
+							"file_name": {
+								"value": "@pipeline().parameters.dataset_name",
+								"type": "Expression"
+							}
+						}
+					}
+				]
 			}
 		],
 		"parameters": {
+			"start_date": {
+				"type": "string"
+			},
+			"end_date": {
+				"type": "string"
+			},
 			"base_url": {
 				"type": "string",
 				"defaultValue": "https://apim.dev.cloud.nibc.com/internal/salesforcemarketingcloud-event-data-api"
@@ -178,13 +398,23 @@
 			"datastore_name": {
 				"type": "string",
 				"defaultValue": "sfmc"
+			},
+			"properties": {
+				"type": "string",
+				"defaultValue": "<Properties>EventDate</Properties><Properties>EventType</Properties><Properties>BatchID</Properties>"
+			},
+			"column_mapping": {
+				"type": "string"
 			}
 		},
 		"variables": {
-			"file_name": {
+			"soap_body": {
 				"type": "String"
 			},
-			"soap_body": {
+			"start_date": {
+				"type": "String"
+			},
+			"end_date": {
 				"type": "String"
 			}
 		},
