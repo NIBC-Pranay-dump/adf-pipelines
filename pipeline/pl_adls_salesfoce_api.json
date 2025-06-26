@@ -58,7 +58,7 @@
 				"userProperties": [],
 				"typeProperties": {
 					"expression": {
-						"value": "@activity('Execute the AB pipeline').output.has_model_run",
+						"value": "@pipeline().parameters.debug_run_if",
 						"type": "Expression"
 					},
 					"ifTrueActivities": [
@@ -380,7 +380,7 @@
 							"description": "This part actually pushes the data to salesfoce",
 							"type": "WebActivity",
 							"state": "Inactive",
-							"onInactiveMarkAs": "Succeeded",
+							"onInactiveMarkAs": "Failed",
 							"dependsOn": [
 								{
 									"activity": "Set Job ID",
@@ -456,8 +456,6 @@
 						{
 							"name": "Close SalesForce Job fail",
 							"type": "WebActivity",
-							"state": "Inactive",
-							"onInactiveMarkAs": "Succeeded",
 							"dependsOn": [
 								{
 									"activity": "Update SalesFoce Job ID",
@@ -489,6 +487,23 @@
 								"body": {
 									"state": "Aborted"
 								}
+							}
+						},
+						{
+							"name": "Fail job if data upload failed",
+							"type": "Fail",
+							"dependsOn": [
+								{
+									"activity": "Close SalesForce Job fail",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"userProperties": [],
+							"typeProperties": {
+								"message": "Data upload failed",
+								"errorCode": "Data Upload Failed"
 							}
 						}
 					]
@@ -557,6 +572,10 @@
 			"apim_entra_scope_acp": {
 				"type": "string",
 				"defaultValue": "8a6cebb3-ad36-48a7-80b9-de2fcf14f6e6/.default"
+			},
+			"debug_run_if": {
+				"type": "bool",
+				"defaultValue": true
 			}
 		},
 		"variables": {
