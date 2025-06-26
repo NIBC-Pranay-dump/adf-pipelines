@@ -308,7 +308,132 @@
 							"type": "ParquetWriteSettings"
 						}
 					},
-					"enableStaging": false
+					"enableStaging": false,
+					"translator": {
+						"type": "TabularTranslator",
+						"mappings": [
+							{
+								"source": {
+									"path": "$['soap:Envelope']['soap:Header']['wsa:Action']"
+								},
+								"sink": {
+									"name": "wsa:Action"
+								}
+							},
+							{
+								"source": {
+									"path": "$['soap:Envelope']['soap:Header']['wsa:MessageID']"
+								},
+								"sink": {
+									"name": "wsa:MessageID"
+								}
+							},
+							{
+								"source": {
+									"path": "$['soap:Envelope']['soap:Header']['wsa:RelatesTo']"
+								},
+								"sink": {
+									"name": "wsa:RelatesTo"
+								}
+							},
+							{
+								"source": {
+									"path": "$['soap:Envelope']['soap:Header']['wsa:To']"
+								},
+								"sink": {
+									"name": "wsa:To"
+								}
+							},
+							{
+								"source": {
+									"path": "$['soap:Envelope']['soap:Header']['wsse:Security']['wsu:Timestamp']['wsu:Created']"
+								},
+								"sink": {
+									"name": "wsu:Created"
+								}
+							},
+							{
+								"source": {
+									"path": "$['soap:Envelope']['soap:Header']['wsse:Security']['wsu:Timestamp']['wsu:Expires']"
+								},
+								"sink": {
+									"name": "wsu:Expires"
+								}
+							},
+							{
+								"source": {
+									"path": "$['soap:Envelope']['soap:Header']['wsse:Security']['wsu:Timestamp']['wsu:@Id']"
+								},
+								"sink": {
+									"name": "wsu:@Id"
+								}
+							},
+							{
+								"source": {
+									"path": "$['soap:Envelope']['soap:Body']['RetrieveResponseMsg']['OverallStatus']"
+								},
+								"sink": {
+									"name": "OverallStatus"
+								}
+							},
+							{
+								"source": {
+									"path": "$['soap:Envelope']['soap:Body']['RetrieveResponseMsg']['RequestID']"
+								},
+								"sink": {
+									"name": "RequestID"
+								}
+							},
+							{
+								"source": {
+									"path": "$['soap:Envelope']['soap:Body']['RetrieveResponseMsg']['Results'][0]['PartnerKey']['xsi:@nil']"
+								},
+								"sink": {
+									"name": "soap:Envelope_soap:Body_RetrieveResponseMsg_Results'][0]['PartnerKey_xsi:@nil"
+								}
+							},
+							{
+								"source": {
+									"path": "$['soap:Envelope']['soap:Body']['RetrieveResponseMsg']['Results'][0]['ObjectID']['xsi:@nil']"
+								},
+								"sink": {
+									"name": "soap:Envelope_soap:Body_RetrieveResponseMsg_Results'][0]['ObjectID_xsi:@nil"
+								}
+							},
+							{
+								"source": {
+									"path": "$['soap:Envelope']['soap:Body']['RetrieveResponseMsg']['Results'][0]['EventDate']"
+								},
+								"sink": {
+									"name": "EventDate"
+								}
+							},
+							{
+								"source": {
+									"path": "$['soap:Envelope']['soap:Body']['RetrieveResponseMsg']['Results'][0]['EventType']"
+								},
+								"sink": {
+									"name": "EventType"
+								}
+							},
+							{
+								"source": {
+									"path": "$['soap:Envelope']['soap:Body']['RetrieveResponseMsg']['Results'][0]['BatchID']"
+								},
+								"sink": {
+									"name": "BatchID"
+								}
+							},
+							{
+								"source": {
+									"path": "$['soap:Envelope']['soap:Body']['RetrieveResponseMsg']['Results'][0]['xsi:@type']"
+								},
+								"sink": {
+									"name": "xsi:@type"
+								}
+							}
+						]
+					}
 				},
 				"inputs": [
 					{
