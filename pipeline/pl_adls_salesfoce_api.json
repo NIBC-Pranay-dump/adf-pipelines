@@ -44,446 +44,454 @@
 				}
 			},
 			{
-				"name": "Copy table to CSV format",
-				"type": "Copy",
-				"state": "Inactive",
-				"onInactiveMarkAs": "Succeeded",
+				"name": "Check if model run or skipped",
+				"description": "In majority of the cases, the model will skip execution. We don't want to proceed with this pipeline then",
+				"type": "IfCondition",
 				"dependsOn": [
 					{
-						"activity": "Set dbx database value",
-						"dependencyConditions": [
-							"Succeeded"
-						]
-					},
-					{
-						"activity": "Set dbx table value",
+						"activity": "Execute the AB pipeline",
 						"dependencyConditions": [
 							"Succeeded"
 						]
 					}
 				],
-				"policy": {
-					"timeout": "0.12:00:00",
-					"retry": 0,
-					"retryIntervalInSeconds": 30,
-					"secureOutput": false,
-					"secureInput": false
-				},
 				"userProperties": [],
 				"typeProperties": {
-					"source": {
-						"type": "AzureDatabricksDeltaLakeSource",
-						"exportSettings": {
-							"type": "AzureDatabricksDeltaLakeExportCommand"
-						}
+					"expression": {
+						"value": "@activity('Execute the AB pipeline').output.has_model_run",
+						"type": "Expression"
 					},
-					"sink": {
-						"type": "DelimitedTextSink",
-						"storeSettings": {
-							"type": "AzureBlobStorageWriteSettings"
+					"ifTrueActivities": [
+						{
+							"name": "Set dbx table value",
+							"type": "SetVariable",
+							"state": "Inactive",
+							"onInactiveMarkAs": "Succeeded",
+							"dependsOn": [],
+							"policy": {
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "table",
+								"value": {
+									"value": "@activity('Execute the AB pipeline').output.sf_filtered_api_table",
+									"type": "Expression"
+								}
+							}
 						},
-						"formatSettings": {
-							"type": "DelimitedTextWriteSettings",
-							"quoteAllText": true,
-							"fileExtension": ".txt"
-						}
-					},
-					"enableStaging": false
-				},
-				"inputs": [
-					{
-						"referenceName": "ds_delta_table_dbx",
-						"type": "DatasetReference",
-						"parameters": {
-							"azure_domain": {
-								"value": "@pipeline().parameters.azure_domain",
-								"type": "Expression"
+						{
+							"name": "Copy table to CSV format",
+							"type": "Copy",
+							"state": "Inactive",
+							"onInactiveMarkAs": "Succeeded",
+							"dependsOn": [
+								{
+									"activity": "Set dbx table value",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
 							},
-							"dbx_cluster_id": {
-								"value": "@pipeline().parameters.dbx_cluster_id",
-								"type": "Expression"
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "AzureDatabricksDeltaLakeSource",
+									"exportSettings": {
+										"type": "AzureDatabricksDeltaLakeExportCommand"
+									}
+								},
+								"sink": {
+									"type": "DelimitedTextSink",
+									"storeSettings": {
+										"type": "AzureBlobStorageWriteSettings"
+									},
+									"formatSettings": {
+										"type": "DelimitedTextWriteSettings",
+										"quoteAllText": true,
+										"fileExtension": ".txt"
+									}
+								},
+								"enableStaging": false
 							},
-							"dbx_workspace_resouce_id": {
-								"value": "@pipeline().parameters.dbx_workspace_resouce_id",
-								"type": "Expression"
+							"inputs": [
+								{
+									"referenceName": "ds_delta_table_dbx",
+									"type": "DatasetReference",
+									"parameters": {
+										"azure_domain": {
+											"value": "@pipeline().parameters.azure_domain",
+											"type": "Expression"
+										},
+										"dbx_cluster_id": {
+											"value": "@pipeline().parameters.dbx_cluster_id",
+											"type": "Expression"
+										},
+										"dbx_workspace_resouce_id": {
+											"value": "@pipeline().parameters.dbx_workspace_resouce_id",
+											"type": "Expression"
+										},
+										"database": {
+											"value": "@variables('database')",
+											"type": "Expression"
+										},
+										"table": {
+											"value": "@variables('table')",
+											"type": "Expression"
+										}
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "ds_blob_csv_cloud",
+									"type": "DatasetReference",
+									"parameters": {
+										"storage_account_uri": {
+											"value": "@pipeline().globalParameters.storage_account_data_factory_uri",
+											"type": "Expression"
+										},
+										"container_name": {
+											"value": "@pipeline().globalParameters.storage_container_data_factory",
+											"type": "Expression"
+										},
+										"datastore_name": {
+											"value": "@pipeline().parameters.datastore_name",
+											"type": "Expression"
+										},
+										"dataset_name": {
+											"value": "@pipeline().parameters.dataset_name",
+											"type": "Expression"
+										},
+										"file_name": {
+											"value": "@pipeline().parameters.dataset_name",
+											"type": "Expression"
+										},
+										"column_delimiter": ",",
+										"encoding": "UTF-8",
+										"first_row_as_header": true
+									}
+								}
+							]
+						},
+						{
+							"name": "Get CSV data",
+							"description": "TODO: secure the output",
+							"type": "Lookup",
+							"state": "Inactive",
+							"onInactiveMarkAs": "Succeeded",
+							"dependsOn": [
+								{
+									"activity": "Copy table to CSV format",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
 							},
-							"database": {
-								"value": "@variables('database')",
-								"type": "Expression"
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "DelimitedTextSource",
+									"storeSettings": {
+										"type": "AzureBlobStorageReadSettings",
+										"recursive": true,
+										"enablePartitionDiscovery": false
+									},
+									"formatSettings": {
+										"type": "DelimitedTextReadSettings"
+									}
+								},
+								"dataset": {
+									"referenceName": "ds_blob_csv_cloud",
+									"type": "DatasetReference",
+									"parameters": {
+										"storage_account_uri": {
+											"value": "@pipeline().globalParameters.storage_account_data_factory_uri",
+											"type": "Expression"
+										},
+										"container_name": {
+											"value": "@pipeline().globalParameters.storage_container_data_factory",
+											"type": "Expression"
+										},
+										"datastore_name": {
+											"value": "@pipeline().parameters.datastore_name",
+											"type": "Expression"
+										},
+										"dataset_name": {
+											"value": "@pipeline().parameters.dataset_name",
+											"type": "Expression"
+										},
+										"file_name": {
+											"value": "@pipeline().parameters.dataset_name",
+											"type": "Expression"
+										},
+										"column_delimiter": ",",
+										"encoding": "UTF-8",
+										"first_row_as_header": true
+									}
+								},
+								"firstRowOnly": false
+							}
+						},
+						{
+							"name": "Get secret for CIP",
+							"description": "",
+							"type": "ExecutePipeline",
+							"dependsOn": [],
+							"policy": {
+								"secureInput": true
 							},
-							"table": {
-								"value": "@variables('table')",
-								"type": "Expression"
+							"userProperties": [],
+							"typeProperties": {
+								"pipeline": {
+									"referenceName": "pl_util_get_keyvault_secret",
+									"type": "PipelineReference"
+								},
+								"waitOnCompletion": true,
+								"parameters": {
+									"keyvault_secret_name": {
+										"value": "@pipeline().parameters.cip_auth_key_vault_secret_name",
+										"type": "Expression"
+									}
+								}
+							}
+						},
+						{
+							"name": "Get access token",
+							"description": "This activity depends on the copy job as the secret we get as the output - used in all 3 following web steps - might expire if the model doesn't output the tables fast.",
+							"type": "WebActivity",
+							"dependsOn": [
+								{
+									"activity": "Get secret for CIP",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": true,
+								"secureInput": true
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"method": "POST",
+								"headers": {
+									"Content-Type": "application/x-www-form-urlencoded"
+								},
+								"url": "https://login.microsoftonline.com/8614d95f-762b-4789-a741-2589e3d0b08b/oauth2/v2.0/token",
+								"body": {
+									"value": "@concat('client_id=', pipeline().parameters.apim_cid_acp, '&scope=', pipeline().parameters.apim_entra_scope_acp, '&client_secret=', activity('Get secret for CIP').output.pipelineReturnValue.keyvault_secret_value, '&grant_type=client_credentials')",
+									"type": "Expression"
+								}
+							}
+						},
+						{
+							"name": "Create SalesForce Job ID",
+							"type": "WebActivity",
+							"dependsOn": [
+								{
+									"activity": "Get access token",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								},
+								{
+									"activity": "Get CSV data",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"method": "POST",
+								"headers": {
+									"Content-Type": "application/json",
+									"Authorization": {
+										"value": "@concat('Bearer ', activity('Get access token').output['access_token'])",
+										"type": "Expression"
+									}
+								},
+								"url": {
+									"value": "@pipeline().parameters.salesfoce_create_job_id_url",
+									"type": "Expression"
+								},
+								"connectVia": {
+									"referenceName": "cloud",
+									"type": "IntegrationRuntimeReference"
+								},
+								"body": {
+									"value": "{\"object\": \"OnlineTooling__c\", \"operation\": \"upsert\", \"externalIdFieldName\": \"External_ODS_Id__c\", \"lineEnding\": \"LF\", \"contentType\": \"CSV\"}",
+									"type": "Expression"
+								}
+							}
+						},
+						{
+							"name": "Set Job ID",
+							"type": "SetVariable",
+							"dependsOn": [
+								{
+									"activity": "Create SalesForce Job ID",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "job_id",
+								"value": {
+									"value": "@activity('Create SalesForce Job ID').output.id",
+									"type": "Expression"
+								}
+							}
+						},
+						{
+							"name": "Update SalesFoce Job ID",
+							"description": "This part actually pushes the data to salesfoce",
+							"type": "WebActivity",
+							"state": "Inactive",
+							"onInactiveMarkAs": "Succeeded",
+							"dependsOn": [
+								{
+									"activity": "Set Job ID",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"method": "PUT",
+								"headers": {
+									"Authorization": {
+										"value": "@concat('Bearer ', activity('Get access token').output['access_token'])",
+										"type": "Expression"
+									}
+								},
+								"url": {
+									"value": "@concat(pipeline().parameters.salesfoce_update_job_id_url, '', variables('job_id'))",
+									"type": "Expression"
+								},
+								"body": {
+									"value": "@activity('Get CSV data').output.value",
+									"type": "Expression"
+								}
+							}
+						},
+						{
+							"name": "Close SalesForce Job success",
+							"type": "WebActivity",
+							"state": "Inactive",
+							"onInactiveMarkAs": "Succeeded",
+							"dependsOn": [
+								{
+									"activity": "Update SalesFoce Job ID",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"method": "PATCH",
+								"headers": {
+									"Authorization": {
+										"value": "@concat('Bearer ', activity('Get access token').output['access_token'])",
+										"type": "Expression"
+									}
+								},
+								"url": {
+									"value": "@concat(pipeline().parameters.salesfoce_close_job_id_url, variables('job_id'))",
+									"type": "Expression"
+								},
+								"body": {
+									"state": "UploadComplete"
+								}
+							}
+						},
+						{
+							"name": "Close SalesForce Job fail",
+							"type": "WebActivity",
+							"state": "Inactive",
+							"onInactiveMarkAs": "Succeeded",
+							"dependsOn": [
+								{
+									"activity": "Update SalesFoce Job ID",
+									"dependencyConditions": [
+										"Failed"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"method": "PATCH",
+								"headers": {
+									"Authorization": {
+										"value": "@concat('Bearer ', activity('Get access token').output['access_token'])",
+										"type": "Expression"
+									}
+								},
+								"url": {
+									"value": "@concat(pipeline().parameters.salesfoce_close_job_id_url, variables('job_id'))",
+									"type": "Expression"
+								},
+								"body": {
+									"state": "Aborted"
+								}
 							}
 						}
-					}
-				],
-				"outputs": [
-					{
-						"referenceName": "ds_blob_csv_cloud",
-						"type": "DatasetReference",
-						"parameters": {
-							"storage_account_uri": {
-								"value": "@pipeline().globalParameters.storage_account_data_factory_uri",
-								"type": "Expression"
-							},
-							"container_name": {
-								"value": "@pipeline().globalParameters.storage_container_data_factory",
-								"type": "Expression"
-							},
-							"datastore_name": {
-								"value": "@pipeline().parameters.datastore_name",
-								"type": "Expression"
-							},
-							"dataset_name": {
-								"value": "@pipeline().parameters.dataset_name",
-								"type": "Expression"
-							},
-							"file_name": {
-								"value": "@pipeline().parameters.dataset_name",
-								"type": "Expression"
-							},
-							"column_delimiter": ",",
-							"encoding": "UTF-8",
-							"first_row_as_header": true
-						}
-					}
-				]
-			},
-			{
-				"name": "Create SalesForce Job ID",
-				"type": "WebActivity",
-				"dependsOn": [
-					{
-						"activity": "Copy table to CSV format",
-						"dependencyConditions": [
-							"Succeeded"
-						]
-					},
-					{
-						"activity": "Get access token",
-						"dependencyConditions": [
-							"Succeeded"
-						]
-					}
-				],
-				"policy": {
-					"timeout": "0.12:00:00",
-					"retry": 0,
-					"retryIntervalInSeconds": 30,
-					"secureOutput": false,
-					"secureInput": false
-				},
-				"userProperties": [],
-				"typeProperties": {
-					"method": "POST",
-					"headers": {
-						"Content-Type": "application/json",
-						"Authorization": {
-							"value": "@concat('Bearer ', activity('Get access token').output['access_token'])",
-							"type": "Expression"
-						}
-					},
-					"url": {
-						"value": "@pipeline().parameters.salesfoce_create_job_id_url",
-						"type": "Expression"
-					},
-					"connectVia": {
-						"referenceName": "cloud",
-						"type": "IntegrationRuntimeReference"
-					},
-					"body": {
-						"value": "@json('{\"object\": \"OnlineTooling__c\", \"operation\": \"upsert\", \"externalIdFieldName\": \"External_ODS_Id__c\", \"lineEnding\": \"LF\", \"contentType\": \"CSV\"}')",
-						"type": "Expression"
-					}
-				}
-			},
-			{
-				"name": "Update SalesFoce Job ID",
-				"description": "This part actually pushes the data to salesfoce",
-				"type": "WebActivity",
-				"state": "Inactive",
-				"onInactiveMarkAs": "Succeeded",
-				"dependsOn": [
-					{
-						"activity": "Set Job ID",
-						"dependencyConditions": [
-							"Succeeded"
-						]
-					},
-					{
-						"activity": "Get CSV data",
-						"dependencyConditions": [
-							"Succeeded"
-						]
-					}
-				],
-				"policy": {
-					"timeout": "0.12:00:00",
-					"retry": 0,
-					"retryIntervalInSeconds": 30,
-					"secureOutput": false,
-					"secureInput": false
-				},
-				"userProperties": [],
-				"typeProperties": {
-					"method": "PUT",
-					"headers": {
-						"Authorization": {
-							"value": "@concat('Bearer ', activity('Get access token').output['access_token'])",
-							"type": "Expression"
-						}
-					},
-					"url": {
-						"value": "@concat(pipeline().parameters.salesfoce_update_job_id_url, '', variables('job_id'))",
-						"type": "Expression"
-					},
-					"body": {
-						"value": "@activity('Get CSV data').output.value",
-						"type": "Expression"
-					}
-				}
-			},
-			{
-				"name": "Close SalesForce Job ID",
-				"type": "WebActivity",
-				"state": "Inactive",
-				"onInactiveMarkAs": "Succeeded",
-				"dependsOn": [
-					{
-						"activity": "Update SalesFoce Job ID",
-						"dependencyConditions": [
-							"Succeeded",
-							"Failed"
-						]
-					}
-				],
-				"policy": {
-					"timeout": "0.12:00:00",
-					"retry": 0,
-					"retryIntervalInSeconds": 30,
-					"secureOutput": false,
-					"secureInput": false
-				},
-				"userProperties": [],
-				"typeProperties": {
-					"method": "PATCH",
-					"headers": {
-						"Authorization": {
-							"value": "@concat('Bearer ', activity('Get access token').output['access_token'])",
-							"type": "Expression"
-						}
-					},
-					"url": {
-						"value": "@concat(pipeline().parameters.salesfoce_close_job_id_url, variables('job_id'))",
-						"type": "Expression"
-					},
-					"body": {
-						"state": "UploadComplete"
-					}
-				}
-			},
-			{
-				"name": "Set Job ID",
-				"type": "SetVariable",
-				"dependsOn": [
-					{
-						"activity": "Create SalesForce Job ID",
-						"dependencyConditions": [
-							"Succeeded"
-						]
-					}
-				],
-				"policy": {
-					"secureOutput": false,
-					"secureInput": false
-				},
-				"userProperties": [],
-				"typeProperties": {
-					"variableName": "job_id",
-					"value": {
-						"value": "@activity('Create SalesForce Job ID').output.id",
-						"type": "Expression"
-					}
-				}
-			},
-			{
-				"name": "Get CSV data",
-				"description": "TODO: secure the output",
-				"type": "Lookup",
-				"state": "Inactive",
-				"onInactiveMarkAs": "Succeeded",
-				"dependsOn": [
-					{
-						"activity": "Copy table to CSV format",
-						"dependencyConditions": [
-							"Succeeded"
-						]
-					}
-				],
-				"policy": {
-					"timeout": "0.12:00:00",
-					"retry": 0,
-					"retryIntervalInSeconds": 30,
-					"secureOutput": false,
-					"secureInput": false
-				},
-				"userProperties": [],
-				"typeProperties": {
-					"source": {
-						"type": "DelimitedTextSource",
-						"storeSettings": {
-							"type": "AzureBlobStorageReadSettings",
-							"recursive": true,
-							"enablePartitionDiscovery": false
-						},
-						"formatSettings": {
-							"type": "DelimitedTextReadSettings"
-						}
-					},
-					"dataset": {
-						"referenceName": "ds_blob_csv_cloud",
-						"type": "DatasetReference",
-						"parameters": {
-							"storage_account_uri": {
-								"value": "@pipeline().globalParameters.storage_account_data_factory_uri",
-								"type": "Expression"
-							},
-							"container_name": {
-								"value": "@pipeline().globalParameters.storage_container_data_factory",
-								"type": "Expression"
-							},
-							"datastore_name": {
-								"value": "@pipeline().parameters.datastore_name",
-								"type": "Expression"
-							},
-							"dataset_name": {
-								"value": "@pipeline().parameters.dataset_name",
-								"type": "Expression"
-							},
-							"file_name": {
-								"value": "@pipeline().parameters.dataset_name",
-								"type": "Expression"
-							},
-							"column_delimiter": ",",
-							"encoding": "UTF-8",
-							"first_row_as_header": true
-						}
-					},
-					"firstRowOnly": false
-				}
-			},
-			{
-				"name": "Get secret for CIP",
-				"description": "",
-				"type": "ExecutePipeline",
-				"dependsOn": [],
-				"policy": {
-					"secureInput": true
-				},
-				"userProperties": [],
-				"typeProperties": {
-					"pipeline": {
-						"referenceName": "pl_util_get_keyvault_secret",
-						"type": "PipelineReference"
-					},
-					"waitOnCompletion": true,
-					"parameters": {
-						"keyvault_secret_name": {
-							"value": "@pipeline().parameters.cip_auth_key_vault_secret_name",
-							"type": "Expression"
-						}
-					}
-				}
-			},
-			{
-				"name": "Get access token",
-				"description": "This activity depends on the copy job as the secret we get as the output - used in all 3 following web steps - might expire if the model doesn't output the tables fast.",
-				"type": "WebActivity",
-				"dependsOn": [
-					{
-						"activity": "Get secret for CIP",
-						"dependencyConditions": [
-							"Succeeded"
-						]
-					},
-					{
-						"activity": "Copy table to CSV format",
-						"dependencyConditions": [
-							"Succeeded"
-						]
-					}
-				],
-				"policy": {
-					"timeout": "0.12:00:00",
-					"retry": 0,
-					"retryIntervalInSeconds": 30,
-					"secureOutput": true,
-					"secureInput": true
-				},
-				"userProperties": [],
-				"typeProperties": {
-					"method": "POST",
-					"headers": {
-						"Content-Type": "application/x-www-form-urlencoded"
-					},
-					"url": "https://login.microsoftonline.com/8614d95f-762b-4789-a741-2589e3d0b08b/oauth2/v2.0/token",
-					"body": {
-						"value": "@concat('client_id=', pipeline().parameters.apim_cid_acp, '&scope=', pipeline().parameters.apim_entra_scope_acp, '&client_secret=', activity('Get secret for CIP').output.pipelineReturnValue.keyvault_secret_value, '&grant_type=client_credentials')",
-						"type": "Expression"
-					}
-				}
-			},
-			{
-				"name": "Set dbx database value",
-				"type": "SetVariable",
-				"state": "Inactive",
-				"onInactiveMarkAs": "Succeeded",
-				"dependsOn": [
-					{
-						"activity": "Execute the AB pipeline",
-						"dependencyConditions": [
-							"Succeeded"
-						]
-					}
-				],
-				"policy": {
-					"secureOutput": false,
-					"secureInput": false
-				},
-				"userProperties": [],
-				"typeProperties": {
-					"variableName": "database",
-					"value": {
-						"value": "@activity('Execute the AB pipeline').output.database",
-						"type": "Expression"
-					}
-				}
-			},
-			{
-				"name": "Set dbx table value",
-				"type": "SetVariable",
-				"state": "Inactive",
-				"onInactiveMarkAs": "Succeeded",
-				"dependsOn": [
-					{
-						"activity": "Execute the AB pipeline",
-						"dependencyConditions": [
-							"Succeeded"
-						]
-					}
-				],
-				"policy": {
-					"secureOutput": false,
-					"secureInput": false
-				},
-				"userProperties": [],
-				"typeProperties": {
-					"variableName": "table",
-					"value": {
-						"value": "@activity('Execute the AB pipeline').output.table",
-						"type": "Expression"
-					}
+					]
 				}
 			}
 		],
