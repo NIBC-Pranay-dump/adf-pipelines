@@ -63,7 +63,8 @@
 					},
 					"ifTrueActivities": [
 						{
-							"name": "Set dbx table value",
+							"name": "Set export container value",
+							"description": "Based on the output of the model run pipeline, we want to set the export container to the correct value",
 							"type": "SetVariable",
 							"dependsOn": [],
 							"policy": {
@@ -72,19 +73,26 @@
 							},
 							"userProperties": [],
 							"typeProperties": {
-								"variableName": "table",
+								"variableName": "export_container",
 								"value": {
-									"value": "@activity('Execute the AB pipeline').output.sf_filtered_api_table",
+									"value": "@activity('Execute the AB pipeline').output.export_container",
 									"type": "Expression"
 								}
 							}
 						},
 						{
-							"name": "Copy table to CSV format",
+							"name": "Copy parquet to CSV format",
+							"description": "This is required as we will be sending a CSV to the Salesforce endpoint",
 							"type": "Copy",
 							"dependsOn": [
 								{
-									"activity": "Set dbx table value",
+									"activity": "Set export container value",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								},
+								{
+									"activity": "Set export file path",
 									"dependencyConditions": [
 										"Succeeded"
 									]
@@ -100,9 +108,14 @@
 							"userProperties": [],
 							"typeProperties": {
 								"source": {
-									"type": "AzureDatabricksDeltaLakeSource",
-									"exportSettings": {
-										"type": "AzureDatabricksDeltaLakeExportCommand"
+									"type": "ParquetSource",
+									"storeSettings": {
+										"type": "AzureBlobFSReadSettings",
+										"recursive": true,
+										"enablePartitionDiscovery": false
+									},
+									"formatSettings": {
+										"type": "ParquetReadSettings"
 									}
 								},
 								"sink": {
@@ -116,33 +129,22 @@
 										"fileExtension": ".txt"
 									}
 								},
-								"enableStaging": false
+								"enableStaging": false,
+								"translator": {
+									"type": "TabularTranslator",
+									"typeConversion": true,
+									"typeConversionSettings": {
+										"allowDataTruncation": true,
+										"treatBooleanAsNumber": false
+									}
+								}
 							},
 							"inputs": [
 								{
-									"referenceName": "ds_delta_table_dbx",
+									"referenceName": "ds_adls_parquet_wildcard_path_auto_resolve",
 									"type": "DatasetReference",
 									"parameters": {
-										"azure_domain": {
-											"value": "@pipeline().parameters.azure_domain",
-											"type": "Expression"
-										},
-										"dbx_cluster_id": {
-											"value": "@pipeline().parameters.dbx_cluster_id",
-											"type": "Expression"
-										},
-										"dbx_workspace_resouce_id": {
-											"value": "@pipeline().parameters.dbx_workspace_resouce_id",
-											"type": "Expression"
-										},
-										"database": {
-											"value": "cdp_exports_acp",
-											"type": "Expression"
-										},
-										"table": {
-											"value": "actief_beheer.export_sf_filtered",
-											"type": "Expression"
-										}
+										"storage_account_uri": "@pipeline().globalParameters.storage_account_datalake_uri"
 									}
 								}
 							],
@@ -184,7 +186,7 @@
 							"type": "Lookup",
 							"dependsOn": [
 								{
-									"activity": "Copy table to CSV format",
+									"activity": "Copy parquet to CSV format",
 									"dependencyConditions": [
 										"Succeeded"
 									]
@@ -511,6 +513,24 @@
 								"message": "Data upload failed",
 								"errorCode": "Data Upload Failed"
 							}
+						},
+						{
+							"name": "Set export file path",
+							"description": "Based on the output of the model run pipeline, we want to set the export output file path to the correct value",
+							"type": "SetVariable",
+							"dependsOn": [],
+							"policy": {
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "output_export_path",
+								"value": {
+									"value": "@activity('Execute the AB pipeline').output.output_export_path",
+									"type": "Expression"
+								}
+							}
 						}
 					]
 				}
@@ -588,10 +608,10 @@
 			"job_id": {
 				"type": "String"
 			},
-			"database": {
+			"export_container": {
 				"type": "String"
 			},
-			"table": {
+			"output_export_path": {
 				"type": "String"
 			}
 		},
