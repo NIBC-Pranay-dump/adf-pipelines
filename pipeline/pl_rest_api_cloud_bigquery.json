@@ -33,7 +33,8 @@
 							"Authorization": "@concat('Bearer ', activity('Get access token').output['access_token'])"
 						},
 						"paginationRules": {
-							"supportRFC5988": "true"
+							"QueryParameters.pageToken": "$.$.pageToken",
+							"EndCondition:$.pageToken": "Empty"
 						}
 					},
 					"sink": {
