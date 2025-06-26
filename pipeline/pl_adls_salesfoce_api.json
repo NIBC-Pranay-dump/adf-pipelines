@@ -136,11 +136,11 @@
 											"type": "Expression"
 										},
 										"database": {
-											"value": "@variables('database')",
+											"value": "cdp_exports_acp",
 											"type": "Expression"
 										},
 										"table": {
-											"value": "@variables('table')",
+											"value": "actief_beheer.export_sf_filtered",
 											"type": "Expression"
 										}
 									}
