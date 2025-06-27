@@ -510,7 +510,7 @@
 			},
 			"dataset_name": {
 				"type": "string",
-				"defaultValue": "bounceevent"
+				"defaultValue": "bounceevent_test"
 			},
 			"key_vault_secret_name": {
 				"type": "string",
