@@ -354,7 +354,7 @@
 								},
 								"sink": {
 									"name": "wsu:Created",
-									"type": "timestamp"
+									"type": "datetime"
 								}
 							},
 							{
@@ -363,7 +363,7 @@
 								},
 								"sink": {
 									"name": "wsu:Expires",
-									"type": "timestamp"
+									"type": "datetime"
 								}
 							},
 							{
@@ -417,7 +417,7 @@
 								},
 								"sink": {
 									"name": "EventDate",
-									"type": "timestamp"
+									"type": "datetime"
 								}
 							},
 							{
