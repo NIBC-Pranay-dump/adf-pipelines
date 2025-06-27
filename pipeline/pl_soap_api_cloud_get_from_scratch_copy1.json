@@ -389,7 +389,7 @@
 									"path": "$['soap:Envelope']['soap:Body']['RetrieveResponseMsg']['Results'][0]['PartnerKey']['xsi:@nil']"
 								},
 								"sink": {
-									"name": "soap:Envelope_soap:Body_RetrieveResponseMsg_Results'][0]['PartnerKey_xsi:@nil"
+									"name": "PartnerKeyxsi"
 								}
 							},
 							{
@@ -397,7 +397,7 @@
 									"path": "$['soap:Envelope']['soap:Body']['RetrieveResponseMsg']['Results'][0]['ObjectID']['xsi:@nil']"
 								},
 								"sink": {
-									"name": "soap:Envelope_soap:Body_RetrieveResponseMsg_Results'][0]['ObjectID_xsi:@nil"
+									"name": "ObjectId"
 								}
 							},
 							{
@@ -429,10 +429,11 @@
 									"path": "$['soap:Envelope']['soap:Body']['RetrieveResponseMsg']['Results'][0]['xsi:@type']"
 								},
 								"sink": {
-									"name": "xsi:@type"
+									"name": "xsitype"
 								}
 							}
-						]
+						],
+						"mapComplexValuesToString": true
 					}
 				},
 				"inputs": [
