@@ -317,7 +317,8 @@
 									"path": "$['soap:Envelope']['soap:Header']['wsa:Action']"
 								},
 								"sink": {
-									"name": "wsa:Action"
+									"name": "wsa:Action",
+									"type": "string"
 								}
 							},
 							{
@@ -325,7 +326,8 @@
 									"path": "$['soap:Envelope']['soap:Header']['wsa:MessageID']"
 								},
 								"sink": {
-									"name": "wsa:MessageID"
+									"name": "wsa:MessageID",
+									"type": "string"
 								}
 							},
 							{
@@ -333,7 +335,8 @@
 									"path": "$['soap:Envelope']['soap:Header']['wsa:RelatesTo']"
 								},
 								"sink": {
-									"name": "wsa:RelatesTo"
+									"name": "wsa:RelatesTo",
+									"type": "string"
 								}
 							},
 							{
@@ -341,7 +344,8 @@
 									"path": "$['soap:Envelope']['soap:Header']['wsa:To']"
 								},
 								"sink": {
-									"name": "wsa:To"
+									"name": "wsa:To",
+									"type": "string"
 								}
 							},
 							{
@@ -349,7 +353,8 @@
 									"path": "$['soap:Envelope']['soap:Header']['wsse:Security']['wsu:Timestamp']['wsu:Created']"
 								},
 								"sink": {
-									"name": "wsu:Created"
+									"name": "wsu:Created",
+									"type": "timestamp"
 								}
 							},
 							{
@@ -357,7 +362,8 @@
 									"path": "$['soap:Envelope']['soap:Header']['wsse:Security']['wsu:Timestamp']['wsu:Expires']"
 								},
 								"sink": {
-									"name": "wsu:Expires"
+									"name": "wsu:Expires",
+									"type": "timestamp"
 								}
 							},
 							{
@@ -365,7 +371,8 @@
 									"path": "$['soap:Envelope']['soap:Header']['wsse:Security']['wsu:Timestamp']['wsu:@Id']"
 								},
 								"sink": {
-									"name": "wsu:@Id"
+									"name": "wsu:@Id",
+									"type": "string"
 								}
 							},
 							{
@@ -373,7 +380,8 @@
 									"path": "$['soap:Envelope']['soap:Body']['RetrieveResponseMsg']['OverallStatus']"
 								},
 								"sink": {
-									"name": "OverallStatus"
+									"name": "OverallStatus",
+									"type": "string"
 								}
 							},
 							{
@@ -381,7 +389,8 @@
 									"path": "$['soap:Envelope']['soap:Body']['RetrieveResponseMsg']['RequestID']"
 								},
 								"sink": {
-									"name": "RequestID"
+									"name": "RequestID",
+									"type": "string"
 								}
 							},
 							{
@@ -407,7 +416,8 @@
 									"path": "$['soap:Envelope']['soap:Body']['RetrieveResponseMsg']['Results'][0]['EventDate']"
 								},
 								"sink": {
-									"name": "EventDate"
+									"name": "EventDate",
+									"type": "timestamp"
 								}
 							},
 							{
@@ -415,7 +425,8 @@
 									"path": "$['soap:Envelope']['soap:Body']['RetrieveResponseMsg']['Results'][0]['EventType']"
 								},
 								"sink": {
-									"name": "EventType"
+									"name": "EventType",
+									"type": "string"
 								}
 							},
 							{
@@ -423,7 +434,8 @@
 									"path": "$['soap:Envelope']['soap:Body']['RetrieveResponseMsg']['Results'][0]['BatchID']"
 								},
 								"sink": {
-									"name": "BatchID"
+									"name": "BatchID",
+									"type": "string"
 								}
 							},
 							{
