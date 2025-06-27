@@ -534,7 +534,7 @@
 			},
 			"datastore_name": {
 				"type": "string",
-				"defaultValue": "sfmc"
+				"defaultValue": "salesforce_marketing_cloud"
 			},
 			"properties": {
 				"type": "string",
